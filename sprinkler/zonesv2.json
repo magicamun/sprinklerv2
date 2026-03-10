@@ -62,7 +62,7 @@
     },
     {
       "zone_id": 7,
-      "zone_name": "Unused (Zone 7)",
+      "name": "Unused (Zone 7)",
       "switch": "switch.au_garten_bewaesserung_0_ch34",
       "default_duration": 600,
       "load": 1,
