@@ -1,0 +1,16 @@
+  - id: rueckstauklappe_off_alarm
+    alias: "Rückstauklappe Geschlossen Alarm"
+    mode: single
+
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.au_garage_rueckstauklappe
+        to: "off"
+
+    action:
+      - service: notify.pushover
+        data:
+          message: "🚨 Rückstauklappe ist zugefahren!"
+          data:
+            title: "Garage Rückstauklappe"
+            priority: 1

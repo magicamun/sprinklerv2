@@ -1,0 +1,394 @@
+input_number:
+  soil_capacity_mm:
+    name: Boden Sättigung (Max)
+    min: 10
+    max: 40
+    step: 1
+    initial: 30
+
+  soil_optimal_mm:
+    name: Boden Optimal
+    min: 5
+    max: 30
+    step: 1
+    initial: 20
+
+  soil_min_mm:
+    name: Boden Minimum
+    min: 0
+    max: 30
+    step: 1
+    initial: 5
+    
+sensor:
+# Local
+#
+# Temperatur, Humidity Weatherman
+  - platform: statistics
+    name: local_weatherman_temperatur_avg
+    entity_id: sensor.aussentemperatur
+    state_characteristic: mean
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: local_weatherman_temperatur_min
+    entity_id: sensor.aussentemperatur
+    state_characteristic: value_min
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: local_weatherman_temperatur_max
+    entity_id: sensor.aussentemperatur
+    state_characteristic: value_max
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: local_weatherman_humidity_avg
+    entity_id: sensor.rel_feuchte
+    state_characteristic: mean
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: local_weatherman_humidity_min
+    entity_id: sensor.rel_feuchte
+    state_characteristic: value_min
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: local_weatherman_humidity_max
+    entity_id: sensor.rel_feuchte
+    state_characteristic: value_max
+    max_age:
+      hours: 24
+
+# Temperaturfühler Terrasse
+  - platform: statistics
+    name: local_terrasse_temperatur_avg
+    entity_id: sensor.au_terasse_sensor_temperatur_temperatur
+    state_characteristic: mean
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: local_terrasse_temperatur_min
+    entity_id: sensor.au_terasse_sensor_temperatur_temperatur
+    state_characteristic: value_min
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: local_terrasse_temperatur_max
+    entity_id: sensor.au_terasse_sensor_temperatur_temperatur
+    state_characteristic: value_max
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: local_terrasse_humidity_avg
+    entity_id: sensor.au_terasse_sensor_temperatur_luftfeuchtigkeit
+    state_characteristic: mean
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: local_terrasse_humidity_min
+    entity_id: sensor.au_terasse_sensor_temperatur_luftfeuchtigkeit
+    state_characteristic: value_min
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: local_terrasse_humidity_max
+    entity_id: sensor.au_terasse_sensor_temperatur_luftfeuchtigkeit
+    state_characteristic: value_max
+    max_age:
+      hours: 24
+
+# OpenWeatherMap
+#
+# Temperatur OpenWeatherMap
+  - platform: statistics
+    name: openweather_temperature_avg
+    entity_id: sensor.openweathermap_temperatur
+    state_characteristic: mean
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: openweather_temperature_min
+    entity_id: sensor.openweathermap_temperatur
+    state_characteristic: value_min
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: openweather_temperature_max
+    entity_id: sensor.openweathermap_temperatur
+    state_characteristic: value_max
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: openweather_humidity_avg
+    entity_id: sensor.openweathermap_luftfeuchtigkeit
+    state_characteristic: mean
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: openweather_humidity_min
+    entity_id: sensor.openweathermap_luftfeuchtigkeit
+    state_characteristic: value_min
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: openweather_humidity_max
+    entity_id: sensor.openweathermap_luftfeuchtigkeit
+    state_characteristic: value_max
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: openweather_wind_speed_avg
+    entity_id: sensor.openweathermap_windgeschwindigkeit
+    state_characteristic: mean
+    max_age:
+      hours: 24
+
+# DWD, Station Donaueschingen
+#
+# Temperatur DWD
+  - platform: statistics
+    name: dwd_temperature_avg
+    entity_id: sensor.donaueschingen_land_temperatur
+    state_characteristic: mean
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: dwd_temperature_min
+    entity_id: sensor.donaueschingen_land_temperatur
+    state_characteristic: value_min
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: dwd_temperature_max
+    entity_id: sensor.donaueschingen_land_temperatur
+    state_characteristic: value_max
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: dwd_humidity_avg
+    entity_id: sensor.donaueschingen_land_relative_luftfeuchtigkeit
+    state_characteristic: mean
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: dwd_humidity_min
+    entity_id: sensor.donaueschingen_land_relative_luftfeuchtigkeit
+    state_characteristic: value_min
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: dwd_humidity_max
+    entity_id: sensor.donaueschingen_land_relative_luftfeuchtigkeit
+    state_characteristic: value_max
+    max_age:
+      hours: 24
+
+  - platform: statistics
+    name: dwd_wind_speed_avg
+    entity_id: sensor.donaueschingen_land_relative_windgeschwindigkeit
+    state_characteristic: mean
+    max_age:
+      hours: 24
+
+template:
+  # Beschreibung zum "warum"
+  - sensor:
+      - name: irrigation_eto_explanation
+        icon: mdi:information-outline
+        state: >
+          {% set eto = states('sensor.irrigation_eto_mm') | float(0) %}
+          {% set t = states('sensor.local_temperature_avg') | float(0) %}
+          {% set rh = states('sensor.local_humidity_avg') | float(0) %}
+          {% set sun = states('sensor.local_sun_hours_today') | float(0) %}
+          {% set wind = state_attr('sensor.irrigation_eto_mm', 'wind_ms') | float(0) %}
+
+          {% if eto <= 1.2 %}
+            Sehr geringer Wasserbedarf
+          {% elif eto <= 3 %}
+            Mäßiger Wasserbedarf
+          {% else %}
+            Hoher Wasserbedarf
+          {% endif %}
+          – 
+          {% if sun > 6 %}
+            viel Sonne,
+          {% elif sun > 2 %}
+            etwas Sonne,
+          {% else %}
+            kaum Sonne,
+          {% endif %}
+          {% if t > 20 %}
+            warm,
+          {% elif t > 10 %}
+            mild,
+          {% else %}
+            kühl,
+          {% endif %}
+          {% if rh < 50 %}
+            trockene Luft
+          {% elif rh < 75 %}
+            normale Luftfeuchte
+          {% else %}
+            hohe Luftfeuchte
+          {% endif %}
+
+  # Local Aggregation/Abstraktion
+  - sensor:
+      - name: local_temperature_avg
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state: >
+          {% set s1 = states('sensor.local_terrasse_temperatur_avg') | float(default=none) %}
+          {% set s2 = states('sensor.local_weatherman_temperatur_avg') | float(default=none) %}
+
+          {% if s1 is not none and s2 is not none %}
+            {{ ((s1 + s2) / 2) | round(2) }}
+          {% elif s1 is not none %}
+            {{ s1 | round(2) }}
+          {% elif s2 is not none %}
+            {{ s2 | round(2) }}
+          {% else %}
+            {{ none }}
+          {% endif %}
+  - sensor:
+      - name: local_humidity_avg
+        unit_of_measurement: "%"
+        device_class: humidity
+        state: >
+          {% set s1 = states('sensor.local_terrasse_humidity_avg') | float(default=none) %}
+          {% set s2 = states('sensor.local_weatherman_humidity_avg') | float(default=none) %}
+
+          {% if s1 is not none and s2 is not none %}
+            {{ ((s1 + s2) / 2) | round(2) }}
+          {% elif s1 is not none %}
+            {{ s1 | round(2) }}
+          {% elif s2 is not none %}
+            {{ s2 | round(2) }}
+          {% else %}
+            {{ none }}
+          {% endif %}
+  - sensor:
+      - name: local_rain_today_mm
+        unit_of_measurement: "mm"
+        state: >
+          {% if states('sensor.regen_mm_heute') not in ['unknown','unavailable'] %}
+            {{ states('sensor.regen_mm_heute') | float }}
+          {% else %}
+            {{ none }}
+          {% endif %}
+  - sensor:
+      - name: local_rain_yesterday_mm
+        unit_of_measurement: "mm"
+        state: >
+          {% if states('sensor.regen_mm_gestern') not in ['unknown','unavailable'] %}
+            {{ states('sensor.regen_mm_gestern') | float }}
+          {% else %}
+            {{ none }}
+          {% endif %}
+  - sensor:
+      - name: local_sun_hours_today
+        unit_of_measurement: "h"
+        icon: mdi:weather-sunny
+        state: >
+          {{ states('sensor.sonnenstunden_heute') | float(default=0) }}
+
+  - sensor:
+      - name: openweather_wind_speed_ms
+        unit_of_measurement: "m/s"
+        state: >
+          {{ (states('sensor.openweather_wind_speed_avg') | float(0)) / 3.6 }}
+
+  - sensor:
+      - name: dwd_wind_speed_ms
+        unit_of_measurement: "m/s"
+        state: >
+          {{ (states('sensor.dwd_wind_speed_avg') | float(0)) / 3.6 }}
+
+  - sensor:
+      - name: dwd_sun_hours_today
+        unit_of_measurement: "h"
+        icon: mdi:weather-sunny
+        state: >
+          {% set s = states('sensor.dwd_sonnenscheindauer') %}
+          {% if s not in ['unknown', 'unavailable', ''] %}
+            {{ (s | float / 3600) | round(2) }}
+          {% else %}
+            0
+          {% endif %}
+
+  - sensor:
+      - name: soil_rain_mm_today
+        unit_of_measurement: "mm"
+        icon: mdi:weather-rainy
+        state: >
+          {% set local = states('sensor.local_rain_today_mm') | float(default=none) %}
+          {% set dwd = states('sensor.dwd_rain_today_mm') | float(default=none) %}
+
+          {% if local is not none %}
+            {{ local }}
+          {% elif dwd is not none %}
+            {{ dwd }}
+          {% else %}
+            0
+          {% endif %}
+
+# ETo - Werte
+  - sensor:
+      - name: irrigation_eto_raw_local
+        unit_of_measurement: "mm"
+        state_class: measurement
+        icon: mdi:water-percent
+        state: "{{ states('sensor.irrigation_eto_raw_local') | float(0) }}"
+
+      - name: "ETo Lokal"
+        unit_of_measurement: "mm"
+        state_class: measurement
+        icon: mdi:water-percent
+        state: "{{ states('sensor.irrigation_eto_raw_local') | float(0) }}"
+
+      - name: irrigation_eto_raw_openweather
+        unit_of_measurement: "mm"
+        state_class: measurement
+        icon: mdi:water-percent
+        state: "{{ states('sensor.irrigation_eto_raw_openweather') | float(0) }}"
+
+      - name: "ETo Open Weather"
+        unit_of_measurement: "mm"
+        state_class: measurement
+        icon: mdi:water-percent
+        state: "{{ states('sensor.irrigation_eto_raw_openweather') | float(0) }}"
+
+      - name: irrigation_eto_raw_dwd
+        unit_of_measurement: "mm"
+        state_class: measurement
+        icon: mdi:water-percent
+        state: "{{ states('sensor.irrigation_eto_raw_dwd') | float(0) }}"
+
+      - name: "ETo DWD"
+        unit_of_measurement: "mm"
+        state_class: measurement
+        icon: mdi:water-percent
+        state: "{{ states('sensor.irrigation_eto_raw_dwd') | float(0) }}"

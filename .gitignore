@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+
+# HA runtime
+home-assistant.log*
+*.db
+*.db-shm
+*.db-wal
+
+# cache
+.cache/
+.storage/
+.backups/
+
+# editor
+.vscode/
+.idea/
+
+# docker
+*.tar
+
+# system
+.DS_Store

@@ -1,0 +1,45 @@
+  - id: wassermelder_kg_pushover
+    alias: "Wassermelder KG – PushOver final"
+    description: "Push bei Feuchte, Alarm bei Wassereinbruch, Entwarnung bei Trocken"
+    mode: single
+
+    trigger:
+      - platform: state
+        entity_id: sensor.kg_at_sensor_wasser
+        to:
+          - dry
+          - wet
+          - water
+
+    action:
+      - service: notify.pushover
+        data:
+          message: >
+            {% set s = trigger.to_state.state %}
+            {% if s == 'dry' %}
+              ✅ Wassermelder KG: Entwarnung – alles trocken
+            {% elif s == 'wet' %}
+              ⚠️ Wassermelder KG: Feuchtigkeit erkannt
+            {% elif s == 'water' %}
+              🚨 Wassermelder KG: WASSEREINBRUCH!
+            {% else %}
+              ❓ Wassermelder KG: Unbekannter Zustand ({{ s }})
+            {% endif %}
+          data:
+            title: "Wassermelder KG"
+            priority: >
+              {% if trigger.to_state.state == 'water' %}
+                2
+              {% elif trigger.to_state.state == 'wet' %}
+                1
+              {% else %}
+                0
+              {% endif %}
+            retry: >
+              {% if trigger.to_state.state == 'water' %}
+                30
+              {% endif %}
+            expire: >
+              {% if trigger.to_state.state == 'water' %}
+                1800
+              {% endif %}

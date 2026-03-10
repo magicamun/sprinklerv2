@@ -1,0 +1,13 @@
+# Datei: mqtt/select/raincontrol.yaml
+  - name: "RainControl Modus"
+    unique_id: "raincontrol_mode"
+    state_topic: "RainControl/Modus"
+    command_topic: "RainControl/cmd/Mode"
+    options:
+      - "Auto"
+      - "Zisterne"
+      - "Hauswasser"
+    value_template: "{{ value | title }}"
+    device:
+      identifiers: ["raincontrol_001"]
+      name: "RainControl"

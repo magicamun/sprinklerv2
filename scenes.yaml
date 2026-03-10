@@ -1,0 +1,132 @@
+- id: '1769344017273'
+  name: Garten Abends
+  entities:
+    switch.au_garten_schalter_ch1:
+      interface_id: RaspberryMatic-BidCos-RF
+      address: NEQ0999661:1
+      model: HM-LC-Sw4-SM
+      parameter: STATE
+      function:
+      value_state: valid
+      device_class: switch
+      friendly_name: Beet Buchs
+      state: 'on'
+    switch.au_garten_schalter_ch4:
+      interface_id: RaspberryMatic-BidCos-RF
+      address: NEQ0999661:4
+      model: HM-LC-Sw4-SM
+      parameter: STATE
+      function:
+      value_state: valid
+      device_class: switch
+      friendly_name: Mauer
+      state: 'on'
+    switch.au_garten_schalter_ch2:
+      interface_id: RaspberryMatic-BidCos-RF
+      address: NEQ0999661:2
+      model: HM-LC-Sw4-SM
+      parameter: STATE
+      function:
+      value_state: valid
+      device_class: switch
+      friendly_name: Beet links
+      state: 'on'
+    switch.au_garten_schalter_ch3:
+      interface_id: RaspberryMatic-BidCos-RF
+      address: NEQ0999661:3
+      model: HM-LC-Sw4-SM
+      parameter: STATE
+      function:
+      value_state: valid
+      device_class: switch
+      friendly_name: Beet rechts
+      state: 'on'
+  metadata:
+    switch.au_garten_schalter_ch1:
+      entity_only: true
+    switch.au_garten_schalter_ch4:
+      entity_only: true
+    switch.au_garten_schalter_ch2:
+      entity_only: true
+    switch.au_garten_schalter_ch3:
+      entity_only: true
+  icon: mdi:television-ambient-light
+- id: '1769344128939'
+  name: Garten Abends aus
+  entities:
+    switch.au_garten_schalter_ch1:
+      interface_id: RaspberryMatic-BidCos-RF
+      address: NEQ0999661:1
+      model: HM-LC-Sw4-SM
+      parameter: STATE
+      function:
+      value_state: valid
+      device_class: switch
+      friendly_name: Beet Buchs
+      state: 'off'
+    switch.au_garten_schalter_ch4:
+      interface_id: RaspberryMatic-BidCos-RF
+      address: NEQ0999661:4
+      model: HM-LC-Sw4-SM
+      parameter: STATE
+      function:
+      value_state: valid
+      device_class: switch
+      friendly_name: Mauer
+      state: 'off'
+    switch.au_garten_schalter_ch2:
+      interface_id: RaspberryMatic-BidCos-RF
+      address: NEQ0999661:2
+      model: HM-LC-Sw4-SM
+      parameter: STATE
+      function:
+      value_state: valid
+      device_class: switch
+      friendly_name: Beet links
+      state: 'off'
+    switch.au_garten_schalter_ch3:
+      interface_id: RaspberryMatic-BidCos-RF
+      address: NEQ0999661:3
+      model: HM-LC-Sw4-SM
+      parameter: STATE
+      function:
+      value_state: valid
+      device_class: switch
+      friendly_name: Beet rechts
+      state: 'off'
+  metadata:
+    switch.au_garten_schalter_ch1:
+      entity_only: true
+    switch.au_garten_schalter_ch4:
+      entity_only: true
+    switch.au_garten_schalter_ch2:
+      entity_only: true
+    switch.au_garten_schalter_ch3:
+      entity_only: true
+  icon: mdi:television-ambient-light
+- id: '1769344199291'
+  name: Garage öffnen
+  entities:
+    cover.garagentor:
+      device_class: garage
+      friendly_name: Garagentor
+      supported_features: 3
+      current_position: 100
+      state: open
+  icon: mdi:garage-open-variant
+  metadata:
+    cover.garagentor:
+      entity_only: true
+- id: '1769344225738'
+  name: Garage schließen
+  entities:
+    cover.garagentor:
+      device_class: garage
+      friendly_name: Garagentor
+      supported_features: 3
+      current_position: 0
+      state: closing
+  icon: mdi:garage-open-variant
+  metadata:
+    cover.garagentor:
+      entity_only: true

@@ -1,0 +1,1021 @@
+homeassistant    | 2026-03-02 23:55:00.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:00.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:00.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:00.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:00.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:00.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:00.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:00.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:00.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:00.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:00.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:00.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:00.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:00.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:00.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:00.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:00.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:01.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:01.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:01.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:01.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:01.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:01.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:01.004 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:01.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:01.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:01.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:01.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:01.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:01.005 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:01.005 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:01.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:01.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:01.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:02.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:02.001 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:02.001 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:02.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:02.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:02.002 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:02.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:02.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:02.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:02.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:02.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:02.003 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:02.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:02.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:02.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:02.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:02.004 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:03.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:03.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:03.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:03.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:03.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:03.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:03.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:03.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:03.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:03.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:03.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:03.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:03.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:03.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:03.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:03.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:03.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:04.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:04.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:04.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:04.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:04.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:04.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:04.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:04.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:04.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:04.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:04.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:04.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:04.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:04.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:04.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:04.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:04.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:05.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:05.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:05.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:05.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:05.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:05.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:05.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:05.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:05.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:05.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:05.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:05.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:05.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:05.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:05.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:05.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:05.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:06.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:06.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:06.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:06.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:06.004 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:06.004 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:06.004 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:06.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:06.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:06.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:06.005 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:06.005 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:06.005 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:06.005 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:06.006 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:06.006 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:06.006 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:07.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:07.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:07.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:07.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:07.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:07.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:07.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:07.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:07.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:07.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:07.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:07.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:07.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:07.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:07.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:07.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:07.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:08.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:08.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:08.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:08.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:08.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:08.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:08.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:08.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:08.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:08.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:08.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:08.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:08.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:08.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:08.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:08.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:08.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:09.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:09.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:09.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:09.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:09.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:09.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:09.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:09.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:09.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:09.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:09.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:09.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:09.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:09.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:09.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:09.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:09.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:10.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:10.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:10.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:10.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:10.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:10.004 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:10.004 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:10.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:10.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:10.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:10.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:10.005 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:10.005 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:10.005 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:10.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:10.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:10.006 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:11.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:11.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:11.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:11.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:11.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:11.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:11.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:11.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:11.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:11.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:11.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:11.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:11.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:11.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:11.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:11.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:11.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:11.009 WARNING (Thread-1 (_monitor)) [homeassistant.util.logging] Module pyscript.eto is logging too frequently. 200 messages since last count
+homeassistant    | 2026-03-02 23:55:12.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:12.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:12.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:12.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:12.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:12.004 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:12.004 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:12.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:12.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:12.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:12.005 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:12.005 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:12.005 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:12.005 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:12.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:12.006 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:12.006 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:13.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:13.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:13.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:13.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:13.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:13.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:13.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:13.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:13.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:13.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:13.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:13.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:13.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:13.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:13.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:13.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:13.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:14.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:14.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:14.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:14.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:14.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:14.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:14.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:14.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:14.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:14.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:14.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:14.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:14.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:14.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:14.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:14.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:14.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:15.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:15.001 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:15.001 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:15.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:15.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:15.002 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:15.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:15.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:15.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:15.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:15.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:15.003 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:15.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:15.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:15.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:15.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:15.004 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:16.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:16.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:16.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:16.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:16.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:16.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:16.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:16.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:16.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:16.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:16.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:16.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:16.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:16.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:16.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:16.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:16.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:17.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:17.001 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:17.001 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:17.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:17.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:17.002 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:17.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:17.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:17.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:17.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:17.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:17.003 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:17.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:17.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:17.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:17.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:17.004 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:18.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:18.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:18.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:18.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:18.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:18.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:18.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:18.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:18.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:18.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:18.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:18.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:18.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:18.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:18.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:18.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:18.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:19.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:19.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:19.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:19.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:19.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:19.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:19.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:19.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:19.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:19.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:19.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:19.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:19.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:19.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:19.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:19.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:19.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:20.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:20.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:20.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:20.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:20.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:20.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:20.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:20.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:20.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:20.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:20.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:20.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:20.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:20.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:20.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:20.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:20.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:21.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:21.001 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:21.001 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:21.001 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:21.001 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:21.002 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:21.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:21.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:21.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:21.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:21.002 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:21.003 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:21.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:21.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:21.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:21.003 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:21.004 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:22.014 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:22.014 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:22.014 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:22.015 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:22.015 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:22.015 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:22.015 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:22.015 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:22.015 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:22.016 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:22.016 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:22.016 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:22.016 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:22.016 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:22.017 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:22.017 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:22.017 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:23.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:23.001 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:23.001 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:23.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:23.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:23.002 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:23.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:23.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:23.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:23.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:23.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:23.003 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:23.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:23.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:23.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:23.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:23.004 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:24.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:24.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:24.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:24.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:24.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:24.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:24.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:24.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:24.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:24.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:24.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:24.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:24.005 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:24.005 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:24.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:24.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:24.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:25.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:25.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:25.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:25.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:25.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:25.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:25.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:25.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:25.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:25.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:25.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:25.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:25.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:25.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:25.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:25.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:25.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:26.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:26.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:26.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:26.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:26.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:26.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:26.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:26.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:26.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:26.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:26.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:26.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:26.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:26.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:26.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:26.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:26.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:27.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:27.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:27.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:27.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:27.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:27.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:27.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:27.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:27.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:27.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:27.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:27.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:27.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:27.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:27.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:27.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:27.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:28.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:28.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:28.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:28.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:28.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:28.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:28.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:28.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:28.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:28.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:28.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:28.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:28.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:28.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:28.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:28.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:28.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:29.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:29.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:29.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:29.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:29.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:29.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:29.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:29.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:29.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:29.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:29.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:29.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:29.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:29.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:29.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:29.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:29.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:30.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:30.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:30.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:30.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:30.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:30.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:30.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:30.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:30.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:30.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:30.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:30.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:30.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:30.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:30.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:30.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:30.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:31.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:31.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:31.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:31.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:31.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:31.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:31.004 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:31.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:31.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:31.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:31.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:31.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:31.005 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:31.005 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:31.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:31.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:31.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:32.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:32.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:32.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:32.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:32.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:32.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:32.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:32.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:32.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:32.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:32.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:32.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:32.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:32.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:32.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:32.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:32.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:33.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:33.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:33.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:33.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:33.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:33.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:33.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:33.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:33.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:33.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:33.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:33.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:33.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:33.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:33.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:33.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:33.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:34.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:34.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:34.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:34.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:34.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:34.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:34.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:34.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:34.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:34.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:34.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:34.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:34.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:34.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:34.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:34.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:34.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:35.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:35.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:35.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:35.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:35.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:35.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:35.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:35.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:35.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:35.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:35.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:35.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:35.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:35.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:35.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:35.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:35.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:36.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:36.001 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:36.001 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:36.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:36.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:36.002 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:36.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:36.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:36.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:36.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:36.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:36.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:36.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:36.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:36.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:36.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:36.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:37.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:37.001 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:37.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:37.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:37.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:37.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:37.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:37.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:37.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:37.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:37.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:37.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:37.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:37.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:37.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:37.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:37.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:38.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:38.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:38.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:38.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:38.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:38.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:38.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:38.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:38.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:38.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:38.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:38.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:38.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:38.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:38.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:38.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:38.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:39.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:39.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:39.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:39.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:39.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:39.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:39.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:39.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:39.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:39.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:39.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:39.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:39.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:39.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:39.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:39.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:39.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:40.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:40.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:40.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:40.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:40.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:40.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:40.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:40.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:40.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:40.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:40.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:40.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:40.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:40.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:40.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:40.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:40.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:41.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:41.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:41.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:41.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:41.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:41.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:41.004 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:41.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:41.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:41.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:41.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:41.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:41.005 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:41.005 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:41.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:41.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:41.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:42.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:42.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:42.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:42.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:42.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:42.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:42.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:42.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:42.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:42.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:42.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:42.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:42.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:42.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:42.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:42.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:42.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:43.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:43.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:43.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:43.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.46 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:43.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:43.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:43.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:43.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:43.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:43.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:43.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:43.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:43.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:43.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:43.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:43.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:43.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:44.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:44.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:44.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:44.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.48 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:44.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:44.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:44.004 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:44.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:44.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:44.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:44.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:44.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:44.005 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:44.005 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:44.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:44.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:44.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:45.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:45.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:45.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:45.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.48 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:45.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:45.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:45.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:45.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:45.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:45.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:45.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:45.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:45.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:45.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:45.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:45.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:45.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:46.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:46.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:46.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:46.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.48 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:46.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:46.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:46.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:46.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:46.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:46.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:46.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:46.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:46.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:46.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:46.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:46.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:46.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:47.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:47.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:47.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:47.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.48 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:47.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:47.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:47.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:47.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:47.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:47.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:47.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:47.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:47.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:47.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:47.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:47.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:47.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:48.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:48.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:48.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:48.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.48 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:48.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:48.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:48.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:48.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:48.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:48.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:48.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:48.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:48.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:48.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:48.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:48.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:48.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:49.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:49.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:49.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:49.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.48 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:49.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:49.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:49.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:49.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:49.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:49.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:49.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:49.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:49.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:49.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:49.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:49.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:49.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:50.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:50.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:50.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:50.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.48 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:50.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:50.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:50.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:50.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:50.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:50.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:50.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:50.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:50.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:50.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:50.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:50.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:50.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:51.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:51.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:51.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:51.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.48 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:51.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:51.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:51.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:51.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:51.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:51.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:51.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:51.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:51.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:51.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:51.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:51.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:51.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:52.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:52.001 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:52.001 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:52.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.48 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:52.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:52.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:52.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:52.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:52.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:52.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:52.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:52.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:52.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:52.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:52.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:52.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:52.004 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:53.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:53.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:53.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:53.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.48 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:53.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:53.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:53.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:53.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:53.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:53.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:53.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:53.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:53.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:53.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:53.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:53.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:53.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:54.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:54.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:54.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:54.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.48 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:54.003 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:54.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:54.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:54.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:54.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:54.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:54.004 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:54.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:54.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:54.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:54.005 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:54.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:54.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:55.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:55.001 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:55.001 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:55.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.48 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:55.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:55.002 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:55.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:55.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:55.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:55.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:55.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:55.003 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:55.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:55.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:55.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:55.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:55.004 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:56.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:56.001 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:56.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:56.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.48 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:56.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:56.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:56.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:56.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:56.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:56.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:56.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:56.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:56.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:56.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:56.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:56.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:56.004 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:57.002 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:57.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:57.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:57.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.48 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:57.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:57.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:57.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:57.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:57.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:57.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:57.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:57.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:57.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:57.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:57.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:57.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:57.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:58.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:58.001 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:58.001 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:58.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.48 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:58.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:58.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:58.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:58.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:58.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:58.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:58.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:58.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:58.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:58.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:58.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:58.005 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:58.005 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm
+homeassistant    | 2026-03-02 23:55:59.001 INFO (MainThread) [pyscript.eto] Daily ETo trigger (local): sun=6.10h rain=0.00mm
+homeassistant    | 2026-03-02 23:55:59.002 INFO (MainThread) [pyscript.eto] ETo calculation started (source=local)
+homeassistant    | 2026-03-02 23:55:59.002 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'local'
+homeassistant    | 2026-03-02 23:55:59.002 INFO (MainThread) [pyscript.eto] ETo inputs: T=9.29 RH=65.48 Sun=6.1 Wind=2.0
+homeassistant    | 2026-03-02 23:55:59.002 INFO (MainThread) [pyscript.eto] ETo result: 1.03 mm
+homeassistant    | 2026-03-02 23:55:59.003 INFO (MainThread) [pyscript.eto] ETo finished: (local): 1.03 mm
+homeassistant    | 2026-03-02 23:55:59.003 INFO (MainThread) [pyscript.eto] Daily ETo trigger (openweather)
+homeassistant    | 2026-03-02 23:55:59.003 INFO (MainThread) [pyscript.eto] ETo calculation started (source=openweather)
+homeassistant    | 2026-03-02 23:55:59.003 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'openweather'
+homeassistant    | 2026-03-02 23:55:59.003 INFO (MainThread) [pyscript.eto] ETo inputs: T=7.13 RH=84.75 Sun=None Wind=0.916666666666667
+homeassistant    | 2026-03-02 23:55:59.003 INFO (MainThread) [pyscript.eto] ETo result: 0.97 mm
+homeassistant    | 2026-03-02 23:55:59.004 INFO (MainThread) [pyscript.eto] ETo finished: (openweather): 0.97 mm
+homeassistant    | 2026-03-02 23:55:59.004 INFO (MainThread) [pyscript.eto] ETo calculation started (source=dwd)
+homeassistant    | 2026-03-02 23:55:59.004 INFO (MainThread) [pyscript.eto] ETo: collecting weather data from 'dwd'
+homeassistant    | 2026-03-02 23:55:59.004 INFO (MainThread) [pyscript.eto] ETo inputs: T=4.78 RH=75.97 Sun=0.0 Wind=0.0
+homeassistant    | 2026-03-02 23:55:59.004 INFO (MainThread) [pyscript.eto] ETo result: -0.60 mm
+homeassistant    | 2026-03-02 23:55:59.004 INFO (MainThread) [pyscript.eto] ETo finished: (dwd): 0.00 mm

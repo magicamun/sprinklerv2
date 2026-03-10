@@ -1,0 +1,161 @@
+# ========================
+# BINARY_SENSOR: true/false Werte
+# ========================
+  - name: "Robonect Online"
+    state_topic: "greenkeeper/mqtt"
+    unique_id: "robonect_online"
+    device_class: connectivity
+    device:
+      identifiers: ["robonect_001"]
+      name: "Robonect"
+      model: "Greenkeeper"
+      manufacturer: "Robonect"
+    
+  - name: "Robonect Garage Offen"
+    state_topic: "greenkeeper/door/open"
+    unique_id: "robonect_door_open"
+    device_class: door
+    device:
+      identifiers: ["robonect_001"]
+      name: "Robonect"
+
+  - name: "Robonect Gestoppt"
+    state_topic: "greenkeeper/mower/stopped"
+    unique_id: "robonect_stopped"
+    device_class: running
+    device:
+      identifiers: ["robonect_001"]
+      name: "Robonect"
+
+  - name: "Robonect Wetter Pause"
+    state_topic: "greenkeeper/weather/data/break"
+    unique_id: "robonect_weather_break"
+    device_class: problem
+    device:
+      identifiers: ["robonect_001"]
+      name: "Robonect"
+        # --- Kanal 0 ---
+  - name: "Robonect Timer CH0 Aktiv"
+    state_topic: "greenkeeper/mower/timer/ch0/enable"
+    unique_id: "robonect_timer_ch0_enable"
+    device_class: running
+    device:
+      identifiers: ["robonect_001"]
+      name: "Robonect"
+
+  # --- Kanal 1 ---
+  - name: "Robonect Timer CH1 Aktiv"
+    state_topic: "greenkeeper/mower/timer/ch1/enable"
+    unique_id: "robonect_timer_ch1_enable"
+    device_class: running
+    device:
+      identifiers: ["robonect_001"]
+      name: "Robonect"
+
+  # --- Kanal 2 ---
+  - name: "Robonect Timer CH2 Aktiv"
+    state_topic: "greenkeeper/mower/timer/ch2/enable"
+    unique_id: "robonect_timer_ch2_enable"
+    device_class: running
+    device:
+      identifiers: ["robonect_001"]
+      name: "Robonect"
+
+  # --- Kanal 3 ---
+  - name: "Robonect Timer CH3 Aktiv"
+    state_topic: "greenkeeper/mower/timer/ch3/enable"
+    unique_id: "robonect_timer_ch3_enable"
+    device_class: running
+    device:
+      identifiers: ["robonect_001"]
+      name: "Robonect"
+
+  # --- Kanal 4 ---
+  - name: "Robonect Timer CH4 Aktiv"
+    state_topic: "greenkeeper/mower/timer/ch4/enable"
+    unique_id: "robonect_timer_ch4_enable"
+    device_class: running
+    device:
+      identifiers: ["robonect_001"]
+      name: "Robonect"
+
+  # --- Kanal 5 ---
+  - name: "Robonect Timer CH5 Aktiv"
+    state_topic: "greenkeeper/mower/timer/ch5/enable"
+    unique_id: "robonect_timer_ch5_enable"
+    device_class: running
+    device:
+      identifiers: ["robonect_001"]
+      name: "Robonect"
+
+  # --- Kanal 6 ---
+  - name: "Robonect Timer CH6 Aktiv"
+    state_topic: "greenkeeper/mower/timer/ch6/enable"
+    unique_id: "robonect_timer_ch6_enable"
+    device_class: running
+    device:
+      identifiers: ["robonect_001"]
+      name: "Robonect"
+
+  # --- Kanal 7 ---
+  - name: "Robonect Timer CH7 Aktiv"
+    state_topic: "greenkeeper/mower/timer/ch7/enable"
+    unique_id: "robonect_timer_ch7_enable"
+    device_class: running
+    device:
+      identifiers: ["robonect_001"]
+      name: "Robonect"
+
+  # --- Kanal 8 ---
+  - name: "Robonect Timer CH8 Aktiv"
+    state_topic: "greenkeeper/mower/timer/ch8/enable"
+    unique_id: "robonect_timer_ch8_enable"
+    device_class: running
+    device:
+      identifiers: ["robonect_001"]
+      name: "Robonect"
+
+  # --- Kanal 9 ---
+  - name: "Robonect Timer CH9 Aktiv"
+    state_topic: "greenkeeper/mower/timer/ch9/enable"
+    unique_id: "robonect_timer_ch9_enable"
+    device_class: running
+    device:
+      identifiers: ["robonect_001"]
+      name: "Robonect"
+
+  # --- Kanal 10 ---
+  - name: "Robonect Timer CH10 Aktiv"
+    state_topic: "greenkeeper/mower/timer/ch10/enable"
+    unique_id: "robonect_timer_ch10_enable"
+    device_class: running
+    device:
+      identifiers: ["robonect_001"]
+      name: "Robonect"
+
+  # --- Kanal 11 ---
+  - name: "Robonect Timer CH11 Aktiv"
+    state_topic: "greenkeeper/mower/timer/ch11/enable"
+    unique_id: "robonect_timer_ch11_enable"
+    device_class: running
+    device:
+      identifiers: ["robonect_001"]
+      name: "Robonect"
+
+  # --- Kanal 12 ---
+  - name: "Robonect Timer CH12 Aktiv"
+    state_topic: "greenkeeper/mower/timer/ch12/enable"
+    unique_id: "robonect_timer_ch12_enable"
+    device_class: running
+    device:
+      identifiers: ["robonect_001"]
+      name: "Robonect"
+
+  # --- Kanal 13 ---
+  - name: "Robonect Timer CH13 Aktiv"
+    state_topic: "greenkeeper/mower/timer/ch13/enable"
+    unique_id: "robonect_timer_ch13_enable"
+    device_class: running
+    device:
+      identifiers: ["robonect_001"]
+      name: "Robonect"

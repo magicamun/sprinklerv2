@@ -1,0 +1,372 @@
+# ===================================================
+# Package: Garagentor Hörmann – Laufzeiten
+# ===================================================
+
+
+# ---------------------------------------------------
+# Helper: Startzeit der Fahrt
+# ---------------------------------------------------
+input_datetime:
+  garage_tor_start:
+    name: "Garage Tor Startzeit"
+    has_date: true
+    has_time: true
+
+# ===================================================
+# Package: Garage – Input-Select / Helper
+# ===================================================
+input_select:
+  garage_tor_control:
+    name: "Garage Tor Control"
+    options:
+      - open
+      - closed
+      - opening
+      - closing
+      - stopped
+    initial: stopped
+    icon: mdi:garage
+
+              
+# ---------------------------------------------------
+# Automationen: Start / Abbruch
+# ---------------------------------------------------
+automation:
+# ===================================================
+# Package: Garage Tor – State Machine
+# ===================================================
+  - id: garage_tor_state_machine
+    alias: "Garage Tor – State Machine"
+    mode: single
+
+    trigger:
+      # Endlagen verlassen → Fahrt beginnt
+      - platform: state
+        id: ch1_leave_open
+        entity_id: binary_sensor.au_garage_status_ch1
+        from: "on"
+        to: "off"
+
+      - platform: state
+        id: ch2_leave_closed
+        entity_id: binary_sensor.au_garage_status_ch2
+        from: "on"
+        to: "off"
+
+      # Status nach Neustart synchronisieren
+      - platform: homeassistant
+        event: start
+
+      # Endlagen erreicht (optional, wenn State Machine nach Neustart setzen soll)
+      - platform: state
+        id: ch1_end_open
+        entity_id: binary_sensor.au_garage_status_ch1
+        to: "on"
+
+      - platform: state
+        id: ch2_end_closed
+        entity_id: binary_sensor.au_garage_status_ch2
+        to: "on"
+
+    action:
+      - variables:
+          ch1: "{{ is_state('binary_sensor.au_garage_status_ch1', 'on') }}"
+          ch2: "{{ is_state('binary_sensor.au_garage_status_ch2', 'on') }}"
+          prev: "{{ states('input_select.garage_tor_control') }}"
+
+      - choose:
+          # =========================
+          # Endlage AUF → open
+          # =========================
+          - conditions:
+              - condition: trigger
+                id: ch1_end_open
+            sequence:
+              - service: input_select.select_option
+                target:
+                  entity_id: input_select.garage_tor_control
+                data:
+                  option: open
+
+          # =========================
+          # Endlage ZU → closed
+          # =========================
+          - conditions:
+              - condition: trigger
+                id: ch2_end_closed
+            sequence:
+              - service: input_select.select_option
+                target:
+                  entity_id: input_select.garage_tor_control
+                data:
+                  option: closed
+
+          # =========================
+          # Fahrt beginnt → opening / closing
+          # =========================
+          - conditions:
+              - condition: trigger
+                id: ch1_leave_open
+            sequence:
+              - service: input_select.select_option
+                target:
+                  entity_id: input_select.garage_tor_control
+                data:
+                  option: closing
+
+          - conditions:
+              - condition: trigger
+                id: ch2_leave_closed
+            sequence:
+              - service: input_select.select_option
+                target:
+                  entity_id: input_select.garage_tor_control
+                data:
+                  option: opening
+                  
+          - conditions:
+              - condition: template
+                value_template: "{{ ch1 }}"
+            sequence:
+              - service: input_select.select_option
+                target:
+                  entity_id: input_select.garage_tor_control
+                data:
+                  option: open
+
+          - conditions:
+              - condition: template
+                value_template: "{{ ch2 }}"
+            sequence:
+              - service: input_select.select_option
+                target:
+                  entity_id: input_select.garage_tor_control
+                data:
+                  option: closed
+        
+        # =========================
+        # Default → stopped
+        # =========================
+        default:
+          - service: input_select.select_option
+            target:
+              entity_id: input_select.garage_tor_control
+            data:
+              option: stopped              
+              
+  # --- Startzeit setzen: Endlage wird verlassen ---
+  - id: garage_tor_set_start
+    alias: "Garage Tor – Set Start"
+    trigger:
+      - platform: state
+        entity_id:
+          - binary_sensor.au_garage_status_ch1
+          - binary_sensor.au_garage_status_ch2
+        from: "on"
+        to: "off"
+    action:
+      - service: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.garage_tor_start
+        data:
+          datetime: "{{ now() }}"
+
+
+  # --- Startzeit invalidieren bei Stop ---
+  - id: garage_tor_startzeit_invalidieren
+    alias: "Garage Tor – Startzeit invalidieren bei Stop"
+    trigger:
+      - platform: state
+        entity_id: input_select.garage_tor_control
+        to: "stopped"
+    action:
+      - service: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.garage_tor_start
+        data:
+          datetime: "unknown"
+
+  - id: garage_luefter_luftfeuchte
+    alias: "Garage – Lüfter nach Luftfeuchte"
+    description: "Steuert den Garagenlüfter abhängig von Luftfeuchte Garage/Terrasse und Garagentor"
+    mode: single
+    
+    trigger:
+      - platform: state
+        entity_id:
+          - binary_sensor.au_garage_status_ch2
+          - sensor.au_garage_sensor_temperatur_luftfeuchtigkeit
+          - sensor.au_terasse_sensor_temperatur_luftfeuchtigkeit
+          - input_number.schwellwert_luftfeuchte_garage
+    
+    action:
+      - choose:
+      # ==========================
+      # LÜFTER EIN
+      # ==========================
+          - conditions:
+              - condition: state
+                entity_id: binary_sensor.au_garage_status_ch2
+                state: "on"   # Garage zu
+    
+              - condition: template
+                value_template: >
+                  {{ states('sensor.au_garage_sensor_temperatur_luftfeuchtigkeit') | float(0)
+                     >
+                     states('sensor.au_terasse_sensor_temperatur_luftfeuchtigkeit') | float(0) }}
+        
+              - condition: template
+                value_template: >
+                  {{ states('sensor.au_garage_sensor_temperatur_luftfeuchtigkeit') | float(0)
+                     >
+                     states('input_number.schwellwert_luftfeuchte_garage') | float(0) }}
+        
+            sequence:
+              - service: switch.turn_on
+                target:
+                  entity_id: switch.au_garage_schalter_ch1
+    
+            # ==========================
+            # SONST: LÜFTER AUS
+            # ==========================
+        default:
+          - service: switch.turn_off
+            target:
+               entity_id: switch.au_garage_schalter_ch1
+              
+template:
+  - cover:
+      - name: "Garagentor"
+        unique_id: garage_tor_cover
+
+        device_class: garage
+
+        # =========================
+        # STATUS (rein lesend)
+        # =========================
+        state: >
+          {% if is_state('binary_sensor.au_garage_status_ch1', 'on') %}
+            open
+          {% elif is_state('binary_sensor.au_garage_status_ch2', 'on') %}
+            closed
+          {% else %}
+            {{ states('input_select.garage_tor_control') }}
+          {% endif %}
+
+        # =========================
+        # ÖFFNEN (nur wenn ZU)
+        # =========================
+        open_cover:
+          - condition: state
+            entity_id: binary_sensor.au_garage_status_ch2
+            state: "on"
+          - service: homematicip_local.switch_set_on_time
+            target:
+              entity_id: switch.au_garage_tor_ch30
+            data:
+              on_time: 1
+          - service: switch.turn_on
+            target:
+              entity_id: switch.au_garage_tor_ch30
+
+        # =========================
+        # SCHLIESSEN (nur wenn AUF)
+        # =========================
+        close_cover:
+          - condition: state
+            entity_id: binary_sensor.au_garage_status_ch1
+            state: "on"
+          - service: homematicip_local.switch_set_on_time
+            target:
+              entity_id: switch.au_garage_tor_ch38
+            data:
+              on_time: 1
+          - service: switch.turn_on
+            target:
+              entity_id: switch.au_garage_tor_ch38
+
+              
+              
+# ---------------------------------------------------
+# Template-Sensoren: Laufzeiten & Mittelwerte
+# ---------------------------------------------------
+  # -------- Laufzeit Hoch --------
+  - trigger:
+      - platform: state
+        entity_id: binary_sensor.au_garage_status_ch1
+        from: "off"
+        to: "on"
+    sensor:
+      - name: "Garage Tor Laufzeit Hoch"
+        unique_id: garage_tor_laufzeit_hoch
+        unit_of_measurement: s
+        state: >
+          {% set start = states('input_datetime.garage_tor_start') %}
+          {% if start not in ['unknown', 'unavailable', ''] %}
+            {{ as_timestamp(now()) - as_timestamp(start) | round(1) | float(0) }}
+          {% else %}
+            unknown
+          {% endif %}
+
+
+  # -------- Laufzeit Runter --------
+  - trigger:
+      - platform: state
+        entity_id: binary_sensor.au_garage_status_ch2
+        from: "off"
+        to: "on"
+    sensor:
+      - name: "Garage Tor Laufzeit Runter"
+        unique_id: garage_tor_laufzeit_runter
+        unit_of_measurement: s
+        state: >
+          {% set start = states('input_datetime.garage_tor_start') %}
+          {% if start not in ['unknown', 'unavailable', ''] %}
+            {{ as_timestamp(now()) - as_timestamp(start) | round(1) | float(0) }}
+          {% else %}
+            unknown
+          {% endif %}
+
+
+  # -------- Mittelwert Hoch --------
+  - trigger:
+      - platform: state
+        entity_id: sensor.garage_tor_laufzeit_hoch
+    sensor:
+      - name: "Garage Tor Laufzeit Hoch Mittel"
+        unique_id: garage_tor_laufzeit_hoch_mittel
+        unit_of_measurement: s
+        state: >
+          {% set new = states('sensor.garage_tor_laufzeit_hoch') | float(0) %}
+          {% set old = states(this.entity_id) | float(0) %}
+          {% if new > 0 %}
+            {% if old > 0 %}
+              {{ ((old + new) / 2) | round(1) }}
+            {% else %}
+              {{ new }}
+            {% endif %}
+          {% else %}
+            {{ old }}
+          {% endif %}
+
+
+  # -------- Mittelwert Runter --------
+  - trigger:
+      - platform: state
+        entity_id: sensor.garage_tor_laufzeit_runter
+    sensor:
+      - name: "Garage Tor Laufzeit Runter Mittel"
+        unique_id: garage_tor_runtime_laufzeit_runter_mittel
+        unit_of_measurement: s
+        state: >
+          {% set new = states('sensor.garage_tor_laufzeit_runter') | float(0) %}
+          {% set old = states(this.entity_id) | float(0) %}
+          {% if new > 0 %}
+            {% if old > 0 %}
+              {{ ((old + new) / 2) | round(1) }}
+            {% else %}
+              {{ new }}
+            {% endif %}
+          {% else %}
+            {{ old }}
+          {% endif %}

@@ -1,0 +1,101 @@
+##############################
+# CarPlay Arrival Package
+##############################
+
+input_boolean:
+  lutz_iphone_carplay:
+    name: Lutz iPhone CarPlay aktiv
+    icon: mdi:car-connected
+    
+  sandra_iphone_carplay:
+    name: Sandra iPhone CarPlay aktiv
+    icon: mdi:car-connected
+    
+automation:
+  - alias: "[CarPlay] Webhook Dispatcher"
+    id: carplay_webhook_dispatch
+    trigger:
+      - platform: webhook
+        webhook_id: carplay
+        allowed_methods:
+          - POST
+        local_only: false
+
+    variables:
+      device: "{{ trigger.json.device }}"
+      state: "{{ trigger.json.carplay }}"
+
+    action:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ state == 'on' }}"
+            sequence:
+              - service: input_boolean.turn_on
+                target:
+                  entity_id: "input_boolean.{{ device }}_carplay"
+
+          - conditions:
+              - condition: template
+                value_template: "{{ state == 'off' }}"
+            sequence:
+              - service: input_boolean.turn_off
+                target:
+                  entity_id: "input_boolean.{{ device }}_carplay"
+
+  - alias: "[Carplay] Lutz kommt mit Auto"
+    id: carplay_lutz_arrival
+    mode: single
+    
+    trigger:
+      - platform: zone
+        entity_id: device_tracker.lutz_iphone
+        zone: zone.toroffnung
+        event: enter
+    
+    condition:
+      - condition: state
+        entity_id: input_boolean.lutz_iphone_carplay
+        state: "on"
+    
+      - condition: state
+        entity_id: cover.garagentor
+        state: "closed"
+    
+    action:
+      - service: scene.turn_on
+        target:
+          entity_id: scene.garage_offnen
+      - service: logbook.log
+        data:
+          name: "Auto erkannt"
+          message: "CarPlay Lutz aktiv & Zone Toröffnung betreten!"
+
+  - alias: "[Carplay] Sandra kommt mit Auto"
+    id: carplay_sandra_arrival
+    mode: single
+    
+    trigger:
+      - platform: zone
+        entity_id: device_tracker.iphone_von_sandra
+        zone: zone.toroffnung
+        event: enter
+    
+    condition:
+      - condition: state
+        entity_id: input_boolean.sandra_iphone_carplay
+        state: "on"
+    
+      - condition: state
+        entity_id: cover.garagentor
+        state: "closed"
+    
+    action:
+      - service: scene.turn_on
+        target:
+          entity_id: scene.garage_offnen
+      - service: logbook.log
+        data:
+          name: "Auto erkannt"
+          message: "CarPlay Sandra aktiv & Zone Toröffnung betreten!"
+

@@ -1,0 +1,27 @@
+- alias: "Robonect steuert Gartentor"
+  id: robonect_garagentor_cmd
+  mode: single
+
+  trigger:
+    - platform: mqtt
+      topic: "greenkeeper/door/cmd"
+
+  condition: []
+
+  action:
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.payload == 'open' }}"
+          sequence:
+            - service: cover.open_cover
+              target:
+                entity_id: cover.au_garten_tor_maehroboter
+
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.payload == 'close' }}"
+          sequence:
+            - service: cover.close_cover
+              target:
+                entity_id: cover.au_garten_tor_maehroboter

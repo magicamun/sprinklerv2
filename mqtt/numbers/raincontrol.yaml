@@ -1,0 +1,121 @@
+# ==================================================
+# RainControl – Limits (Numeric Values)
+# ==================================================
+
+# ------------------------
+# Unteres Limit
+# ------------------------
+- name: "RainControl Set Limit Low"
+  state_topic: "RainControl/LimitLow"
+  command_topic: "RainControl/cmd/Limit"
+  unique_id: "raincontrol_set_limit_low"
+  command_template: "low {{ value }}"
+  unit_of_measurement: "L"
+  min: 0
+  max: 6500
+  step: 1
+  mode: slider
+  device:
+    identifiers:
+      - raincontrol_001
+    name: "RainControl"
+    model: "Arduino Zisterne"
+    manufacturer: "DIY"
+
+# ------------------------
+# Oberes Limit
+# ------------------------
+- name: "RainControl Set Limit High"
+  state_topic: "RainControl/LimitHigh"
+  command_topic: "RainControl/cmd/Limit"
+  unique_id: "raincontrol_set_limit_high"
+  command_template: "high {{ value }}"
+  unit_of_measurement: "L"
+  min: 0
+  max: 6500
+  step: 5
+  mode: slider
+  device:
+    identifiers:
+      - raincontrol_001
+    name: "RainControl"
+    model: "Arduino Zisterne"
+    manufacturer: "DIY"
+    
+# ------------------------
+# Calibrate AnalogMin
+# ------------------------
+- name: "RainControl Calibrate AnalogMin"
+  state_topic: "RainControl/AnalogMin"
+  command_topic: "RainControl/cmd/Calibrate"
+  command_template: "analogmin {{ value }}"
+  unique_id: "raincontrol_set_calibrate_analogmin"
+  unit_of_measurement: "L"
+  min: 0
+  max: 4095
+  step: 5
+  mode: slider
+  device:
+    identifiers:
+      - raincontrol_001
+    name: "RainControl"
+    model: "Arduino Zisterne"
+    manufacturer: "DIY"
+    
+# ------------------------
+# Calibrate AnalogMax
+# ------------------------
+- name: "RainControl Calibrate AnalogMax"
+  state_topic: "RainControl/AnalogMax"
+  command_topic: "RainControl/cmd/Calibrate"
+  command_template: "analogmax {{ value }}"
+  unique_id: "raincontrol_set_calibrate_analogmax"
+  unit_of_measurement: "L"
+  min: 0
+  max: 4095
+  step: 5
+  mode: slider
+  device:
+    identifiers:
+      - raincontrol_001
+    name: "RainControl"
+    model: "Arduino Zisterne"
+    manufacturer: "DIY"
+
+
+# ------------------------
+# Calibrate LiterMax
+# ------------------------
+- name: "RainControl Calibrate LiterMax"
+  state_topic: "RainControl/LiterMax"
+  command_topic: "RainControl/cmd/Calibrate"
+  command_template: "litermax {{ value }}"
+  unique_id: "raincontrol_set_calibrate_litermax"
+  unit_of_measurement: "L"
+  min: 0
+  max: 7000
+  step: 5
+  mode: slider
+  device:
+    identifiers:
+      - raincontrol_001
+    name: "RainControl"
+    model: "Arduino Zisterne"
+    manufacturer: "DIY"
+
+- name: "RainControl Calibrate Scale"
+  state_topic: "RainControl/scale"
+  command_topic: "RainControl/cmd/Calibrate"
+  command_template: "scale {{ value }}" 
+  unique_id: "raincontrol_calibrate_scale"
+  unit_of_measurement: ""
+  min: 0
+  max: 2
+  step: 0.001
+  mode: box
+  device:
+    identifiers:
+      - raincontrol_001
+    name: "RainControl"
+    model: "Arduino Zisterne"
+    manufacturer: DIY

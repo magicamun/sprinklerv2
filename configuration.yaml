@@ -1,0 +1,54 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+http:
+  server_port: 8123
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 192.168.50.2  # IP des Nginx Reverse-Proxy im DMZ VLAN
+  ip_ban_enabled: false
+  login_attempts_threshold: 10
+
+# Include Packages (Garage, Roboter, Weihnachtsbeleuchtung etc.)
+homeassistant:
+  internal_url: http://192.168.10.36:8123
+  packages: !include_dir_named packages
+
+browser_mod:
+
+homekit: !include homekit.yaml
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+# Include Automations from Directory
+automation: !include_dir_merge_list automations
+
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+# Include mqtt-Devices
+mqtt:
+    sensor: !include_dir_merge_list mqtt/sensors
+    binary_sensor: !include_dir_merge_list mqtt/binary_sensors
+    select: !include_dir_merge_list mqtt/selects
+    number: !include_dir_merge_list mqtt/numbers
+
+template: !include_dir_merge_list templates
+
+pyscript:
+  allow_all_imports: true
+  hass_is_global: true
+
+logger:
+  default: info
+  logs:
+    custom_components.pyscript: info
+
+recorder:
+  exclude:
+    entities:
+      - sensor.sprinkler_timeline
+      - sensor.sprinklerv2_timeline

@@ -1,0 +1,133 @@
+{
+  "programs": [
+    {
+      "program_id": "morning_lawn",
+      "program_name": "Rasen Abends",
+      "enabled": true,
+      "mode": "finish_at",
+      "policy": "strict",
+
+      "schedule": {
+        "type": "sun",
+        "event": "sunrise",
+        "offset_minutes": 240
+      },
+
+      "weekdays": ["mon", "tue", "thu", "fri", "sun"],
+
+      "weather": {
+        "enabled": true,
+        "scale_min": 50,
+        "scale_max": 150,
+        "rain_skip_mm": 3
+      },
+
+      "zones": [
+        {
+          "zone_id": 1,
+          "duration": "00:50:00"
+        },
+        {
+          "zone_id": 2,
+          "duration": "00:45:00"
+        },
+        {
+          "zone_id": 3,
+          "duration": "00:45:00"
+        }
+      ]
+    },
+    {
+      "program_id": "test_terrasse",
+      "program_name": "Terrasse Test",
+      "enabled": true,
+      "mode": "start_at",
+      "policy": "strict",
+
+      "schedule": {
+        "type": "fixed",
+        "time": "17:20"
+      },
+
+      "weekdays": ["tue", "thu", "fri", "sat", "sun"],
+
+      "weather": {
+        "enabled": true,
+        "scale_min": 50,
+        "scale_max": 150,
+        "rain_skip_mm": 3
+      },
+
+      "zones": [
+        {
+          "zone_id": 9,
+          "duration": "00:05:00"
+        },
+        {
+          "zone_id": 10,
+          "duration": "00:05:00"
+        },
+        {
+          "zone_id": 11,
+          "duration": "00:05:00"
+        }
+      ]
+    },
+    {
+      "program_id": "evening_beds",
+      "program_name": "Beete abends",
+      "enabled": true,
+
+      "mode": "start_at",
+      "policy": "strict",
+
+      "schedule": {
+        "type": "fixed",
+        "time": "20:30"
+      },
+
+      "weekdays": ["mon", "fri"],
+
+      "weather": {
+        "enabled": false
+      },
+
+      "zones": [
+        {
+          "zone_id": 5,
+          "duration": "01:00:00"
+        },
+        {
+          "zone_id": 6,
+          "duration": "01:00:00"
+        }
+      ]
+    },
+    {
+      "program_id": "evening_buchs",
+      "program_name": "Buchs abends",
+      "enabled": true,
+
+      "mode": "finish_at",
+      "policy": "strict",
+
+      "schedule": {
+        "type": "fixed",
+        "time": "22:00"
+      },
+
+      "weekdays": ["mon", "wed", "fri"],
+
+      "weather": {
+        "enabled": false
+      },
+
+      "zones": [
+        {
+          "zone_id": 4,
+          "duration": "01:00:00"
+        }
+      ]
+    }
+  ]
+}

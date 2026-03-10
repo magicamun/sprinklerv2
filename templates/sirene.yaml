@@ -1,0 +1,11 @@
+- sensor:
+    - name: "Armzustand Sirene Galerie"   # Friendly Name
+      state: >
+        {% set s = states('select.dg_galerie_alarm_sirene_armstate') %}
+        {% if s == 'disarmed' %} Deaktiviert
+        {% elif s == 'extsens_armed' %} Außensensor Aktiv
+        {% elif s == 'allsens_armed' %} Alle Sensoren Aktiv
+        {% elif s == 'alarm_blocked' %} Alarm Blockiert
+        {% else %} {{ s }} {% endif %}
+      # Hier optional deine Entity ID
+      unique_id: armzustand_sirene_galerie

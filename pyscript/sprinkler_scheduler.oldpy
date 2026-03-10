@@ -1,0 +1,2692 @@
+import datetime
+import logging
+import json
+import os
+# from collections import defaultdict
+# --- Pyscript editor hints (no runtime effect) ---
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    state: Any
+    switch: Any
+    sensor: Any
+    light: Any
+    task: Any
+    service: Any
+    time_trigger: Any
+
+sprinkler_scheduler_task = None
+sprinkler_scheduler_running = False
+
+log           = logging.getLogger("pyscript.sprinkler")
+log_scheduler = logging.getLogger("pyscript.sprinkler.scheduler")
+log_queue     = logging.getLogger("pyscript.sprinkler.queue")
+log_zones     = logging.getLogger("pyscript.sprinkler.zones")
+log_services  = logging.getLogger("pyscript.sprinkler.services")
+log_publish   = logging.getLogger("pyscript.sprinkler.publish")
+log_programs  = logging.getLogger("pyscript.sprinkler.programs")
+log_persist   = logging.getLogger("pyscript.sprinkler.persist")
+log_soil      = logging.getLogger("pyscript.sprinkler.soil")
+log_ui        = logging.getLogger("pyscript.sprinkler.ui")
+
+log.info("=== sprinkler_scheduler pyscript loaded ===")
+
+
+class UI_CODE:
+    # ---- Zone ----
+    ZONE_STARTED = "ZONE_STARTED"
+    ZONE_CANCELLED = "ZONE_CANCELLED"
+    ZONE_EXTENDED = "ZONE_EXTENDED"
+    ZONE_UPDATED = "ZONE_UPDATED"
+    ZONE_DELETED = "ZONE_DELETED"
+    ZONE_FINISHED = "ZONE_FINISHED"
+    ZONE_ADDED = "ZONE_ADDED"
+
+    ZONE_RUNNING = "ZONE_RUNNING"
+    ZONE_QUEUED = "ZONE_QUEUED"
+    ZONE_IN_PROGRAM = "ZONE_IN_PROGRAM"
+    ZONE_INVALID_PAYLOAD = "ZONE_INVALID_PAYLOAD"
+    ZONE_NOT_FOUND = "ZONE_NOT_FOUND"
+    ZONE_NOT_RUNNING = "ZONE_NOT_RUNNING"
+    ZONE_NOT_QUEUED = "ZONE_NOT_QUEUED"
+    ZONE_IDLE = "ZONE_IDLE"
+    ZONE_IGNORED = "ZONE_IGNORED"
+    ZONE_NOT_ADDED = "ZONE_NOT_ADDED"
+    ZONE_ACTIVE = "ZONE_ACTIVE"
+
+    # ---- Program ----
+    PROGRAM_STARTED = "PROGRAM_STARTED"
+    PROGRAM_CANCELLED = "PROGRAM_CANCELLED"
+    PROGRAM_COMPLETED = "PROGRAM_COMPLETED"
+
+    PROGRAM_CONFLICT = "PROGRAM_CONFLICT"
+    PROGRAM_NOT_FOUND = "PROGRAM_NOT_FOUND"
+
+    # ---- Scheduler ----
+    SCHEDULER_STARTED = "SCHEDULER_STARTED"
+    SCHEDULER_STOPPED = "SCHEDULER_STOPPED"
+    SCHEDULER_ERROR = "SCHEDULER_ERROR"
+
+    # ---- Internal ----
+    INTERNAL_ERROR = "INTERNAL_ERROR"
+
+    # ---- User ----
+    USER_NOT_ADMIN = "USER_NOT_ADMIN"
+
+
+# Statische Queue mit einem Queue-Entry für den Scheduler pro Zone
+idle_queue = []
+active_queue = []
+done_queue = []
+program_queue = []
+_last_retention_run = None
+
+used = 0
+_qe_id_counter = 1000
+program_blueprints = []
+
+# For testing of defict - set None for actual values
+TEST_DEFICIT =  None
+
+DONE_QUEUE_FILE = "/config/pyscript/data/sprinkler_done_queue.jsonl"
+DONE_RETENTION_DAYS = 28
+
+STATE_PREFIX = "sensor.sprinkler_zone"
+
+ZONES_FILE = "/config/sprinkler/zones.json"
+
+# -------------------------
+# Helper-Funktionen
+# -------------------------
+def fire_ui_event(
+    context,
+    *,
+    action: str,
+    status: str,
+    code: str,
+    entity_type: str = None,
+    entity_id: int = None,
+    request_id: str = None,
+    data: dict = None,
+):
+    payload = {
+        "action": action,
+        "status": status,  # success | error | info
+        "code": code,
+        "entity_type": entity_type,
+        "entity_id": entity_id,
+        "request_id": request_id,
+        "user_id": context.user_id if context else None,
+    }
+
+    if data:
+        payload["data"] = data
+
+    event.fire("sprinkler_ui_feedback", **payload)
+
+def ui_success(
+    context,
+    *,
+    action: str,
+    code: str,
+    entity_type: str = None,
+    entity_id: int = None,
+    request_id: str = None,
+    **data,
+):
+    fire_ui_event(
+        context,
+        action=action,
+        status="success",
+        code=code,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        request_id=request_id,
+        data=data or None,
+    )
+
+def ui_error(
+    context,
+    *,
+    action: str,
+    code: str,
+    entity_type: str = None,
+    entity_id: int = None,
+    request_id: str = None,
+    **data,
+):
+    fire_ui_event(
+        context,
+        action=action,
+        status="error",
+        code=code,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        request_id=request_id,
+        data=data or None,
+    )
+
+def ui_info(
+    context,
+    *,
+    action: str,
+    code: str,
+    entity_type: str = None,
+    entity_id: int = None,
+    request_id: str = None,
+    **data,
+):
+    fire_ui_event(
+        context,
+        action=action,
+        status="info",
+        code=code,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        request_id=request_id,
+        data=data or None,
+    )
+
+def isAdmin(user_id: str) -> bool:
+    log_ui.debug(f"User-Id {user_id} is Admin?")
+    return True
+
+def hw_switch_on(entity_id):
+    if state.get("input_boolean.sprinkler_hw_simulation") == "on":
+        log_zones.info(f"[HW-SIM] Would turn ON {entity_id}")
+        return
+
+    switch.turn_on(entity_id=entity_id)
+
+
+def hw_switch_off(entity_id):
+    if state.get("input_boolean.sprinkler_hw_simulation") == "on":
+        log_zones.info(f"[HW-SIM] Would turn OFF {entity_id}")
+        return
+
+    switch.turn_off(entity_id=entity_id)
+
+def next_qe_id():
+    global _qe_id_counter
+    qe_id = _qe_id_counter
+    _qe_id_counter += 1
+    return qe_id
+
+def duration_to_seconds(value, default=60):
+    """
+    Wandelt duration in Sekunden um.
+    Erlaubt:
+      - int (Sekunden)
+      - "HH:MM:SS"
+      - "MM:SS"
+    """
+    if value is None:
+        return default
+
+    if isinstance(value, int):
+        return value
+
+    if isinstance(value, str):
+        try:
+            parts = [int(p) for p in value.split(":")]
+            if len(parts) == 3:
+                h, m, s = parts
+            elif len(parts) == 2:
+                h, m, s = 0, parts[0], parts[1]
+            else:
+                raise ValueError
+            return h * 3600 + m * 60 + s
+        except Exception:
+            raise ValueError(f"Ungültige duration: {value}")
+
+    raise ValueError(f"Ungültiger duration-Typ: {type(value)}")
+
+
+def format_hhmmss(seconds):
+    if seconds is None:
+        return "00:00:00"
+
+    seconds = int(max(0, seconds))
+    h = seconds // 3600
+    m = (seconds % 3600) // 60
+    s = seconds % 60
+    return f"{h:02d}:{m:02d}:{s:02d}"
+
+
+# -------------------------
+# Globale Zones aus json
+# -------------------------
+_zones = {}
+valid_zones = {}
+
+def get_next_zone_id():
+    if not _zones:
+        return 1
+    return max(_zones.keys()) + 1
+
+
+def build_zone_attributes(zone_id, qe_id=None):
+    global _zones
+    zone = _zones.get(zone_id)
+
+    return {
+        "zone_id": zone_id,  
+        "qe_id": qe_id, 
+        "name": zone["name"],
+        "switch": zone["switch"],
+        "default_duration": duration_to_seconds(zone.get("default_duration", "00:10:00")),
+        "enabled": zone.get("enabled", True),
+        "load": zone.get("load", 1),
+        "precipitation_rate_mm_per_hour": zone.get("precipitation_rate_mm_per_hour"),
+        "zone_factor": zone.get("zone_factor", 1.0),
+    }
+    
+def load_zones():
+    global _zones
+
+    if not os.path.exists(ZONES_FILE):
+        log_persist.warning("Zones file not found, starting empty.")
+        _zones = {}
+        return
+
+    fd = os.open(ZONES_FILE, os.O_RDONLY)
+
+    try:
+        # Datei komplett lesen
+        chunks = []
+        while True:
+            data = os.read(fd, 4096)
+            if not data:
+                break
+            chunks.append(data)
+
+        json_str = b"".join(chunks).decode("utf-8")
+
+    finally:
+        os.close(fd)
+
+    if not json_str.strip():
+        log_persist.warning("Zones file empty, starting empty.")
+        _zones = {}
+        return
+
+    data = json.loads(json_str)
+
+    if not isinstance(data, dict):
+        raise ValueError("Zones file must contain dict keyed by zone_id")
+
+    zones = {}
+
+    for key, zone in data.items():
+        zone_id = int(key)
+
+        if zone.get("zone_id") != zone_id:
+            raise ValueError(f"Zone ID mismatch in {zone}")
+
+        zones[zone_id] = zone
+
+    _zones = zones
+
+    log_persist.info(f"Loaded {len(_zones)} zones.")
+
+@service
+def debug_zone_runtime(zone_id: int):
+    deficit = float(state.get("sensor.sim_soil_deficit_mm") or 0)
+    minutes = calculate_zone_seconds(zone_id)
+
+    log_zones.info(
+        f"Zone {zone_id}: deficit={deficit:.2f} → runtime={minutes} Seconds"
+    )
+
+def calculate_zone_seconds(zone_id, soil_deficit_mm=None, base_minutes=None):
+    zone = _zones[zone_id]
+
+    # Defizit automatisch lesen, wenn nicht übergeben
+    if soil_deficit_mm is None:
+        soil_deficit_mm = float(
+            state.get("sensor.sim_soil_deficit_mm") or 0
+        )
+
+    if soil_deficit_mm <= 0:
+        return 0
+
+    mm_per_hour = zone.get("precipitation_rate_mm_per_hour")
+    if not mm_per_hour:
+        log_zones.warning(f"Zone {zone_id}: no precipitation rate defined")
+        return base_minutes or 0
+
+    zone_factor = zone.get("zone_factor", 1.0)
+
+    adjusted_deficit = soil_deficit_mm * zone_factor
+
+    minutes = (adjusted_deficit / mm_per_hour) * 3600
+
+    log_zones.info(f"Runtime Adjusted: {zone_id} {zone_factor} {adjusted_deficit} {minutes}")
+    
+    MIN_RUNTIME = 3
+    if minutes < MIN_RUNTIME:
+        return 0
+
+    return round(minutes)
+
+def write_zone_remaining(entry):
+    zone_id = entry["zone_id"]
+    entity = f"{STATE_PREFIX}_{zone_id:02d}_remaining"
+
+    if not state.exist(entity):
+        return
+
+    status = entry.get("status")
+    source = entry.get("source", "")
+    qe_id = entry.get("qe_id")
+    program_id = entry.get("program_id")
+    remaining = entry.get("remaining")
+
+    is_program = source.startswith("program:")
+    is_manual = qe_id == zone_id
+
+    # ---------------------------------------
+    # MANUAL ENTRIES
+    # ---------------------------------------
+    if is_manual:
+        state.set(entity, remaining)
+        return
+    # ---------------------------------------
+    # PROGRAM ENTRIES
+    # ---------------------------------------
+    if is_program:
+
+        # Nur wenn Programm aktiv ist
+        if not program_has_active_entries(program_id):
+            return
+
+        if status == "running":
+            state.set(entity, remaining)
+
+        elif status == "queued":
+            state.set(entity, remaining)
+
+        elif status in ("skipped", "cancelled"):
+            state.set(entity, remaining)
+
+        # skip / cancel → keine Spiegelung
+
+        return
+    
+def write_zone_runtime_state(entry):
+    zone_id = entry["zone_id"]
+    entity = f"{STATE_PREFIX}_{zone_id:02d}"
+
+    if not state.exist(entity):
+        return
+
+    status = entry.get("status")
+    source = entry.get("source", "")
+    qe_id = entry.get("qe_id")
+    program_id = entry.get("program_id")
+
+    is_manual = qe_id == zone_id
+    is_program = source.startswith("program:")
+
+    # ---------------------
+    # MANUAL
+    # ---------------------
+    if is_manual:
+        state.set(entity, status, build_zone_attributes(zone_id, qe_id))
+        return
+
+    # ---------------------
+    # PROGRAM
+    # ---------------------
+    if is_program:
+
+        if not program_is_running(program_id):
+            return
+
+        if status in ("running", "queued"):
+            state.set(entity, status, build_zone_attributes(zone_id, qe_id))
+
+        elif status in ("skipped", "cancelled", "done"):
+            state.set(entity, status, build_zone_attributes(zone_id, qe_id))
+
+        return
+
+def ensure_zone_states(qe):
+    if qe is None:
+        return
+    zone_id = qe.get("zone_id")
+    soil_entity = f"{STATE_PREFIX}_{zone_id:02d}_soil_water_mm"
+    deficit_entity = f"{STATE_PREFIX}_{zone_id:02d}_soil_deficit_mm"
+    state_entity = f"{STATE_PREFIX}_{zone_id:02d}"
+    remaining_entity = f"{STATE_PREFIX}_{zone_id:02d}_remaining"
+
+    # if not state.exist(state_entity):
+    log_zones.info(f"Initializing States for {state_entity}")
+    state.set(
+        state_entity, qe.get("status"), build_zone_attributes(zone_id, zone_id)
+    )
+
+    state.set(remaining_entity, qe.get("planned_duration"))
+
+    optimal = float(state.get("input_number.soil_optimal_mm") or 0)
+
+    # Soil initialisieren falls nicht vorhanden
+    # if state.get(soil_entity) is None:
+    if not state.exist(soil_entity):
+        log_zones.info(f"Initializing States for {soil_entity}")
+        state.set(
+            soil_entity,
+            optimal,
+            {
+                "unit_of_measurement": "mm",
+                "state_class": "measurement",
+                "icon": "mdi:cup-water",
+            },
+        )
+
+    soil = float(state.get(soil_entity) or 0)
+    deficit = max(0, optimal - soil)
+
+    state.set(
+        deficit_entity,
+        round(deficit, 2),
+        {
+            "unit_of_measurement": "mm",
+            "state_class": "measurement",
+            "icon": "mdi:water-minus",
+        },
+    )
+
+def remove_zone_states(zone_id: int = None):
+    if zone_id is None:
+        return
+
+    log_zones.debug(f"States {zone_id} zurücksetzen")
+    soil_entity = f"{STATE_PREFIX}_{zone_id:02d}_soil_water_mm"
+    deficit_entity = f"{STATE_PREFIX}_{zone_id:02d}_soil_deficit_mm"
+    state_entity = f"{STATE_PREFIX}_{zone_id:02d}"
+    remaining_entity = f"{STATE_PREFIX}_{zone_id:02d}_remaining"
+
+    state.set(soil_entity, 0)
+    state.set(deficit_entity, 0)
+    state.set(state_entity, "", "")
+    state.set(remaining_entity, 0)
+
+
+# -------------------------
+# Globale Programme aus json
+# -------------------------
+PROGRAMS_FILE = "/config/pyscript/sprinkler_programs.json"
+
+programs = []
+def normalize_program(p: dict):
+
+    try:
+        program = {
+            "program_id": p["program_id"],
+            "program_name": p.get("program_name", p["program_id"]),
+            "enabled": True,
+
+            "mode": p.get("mode", "start_at"),      # start_at | finish_at
+            "policy": p.get("policy", "strict"),    # aktuell nur strict
+
+            "schedule": p["schedule"],
+            "weekdays": set(p.get("weekdays", [])),
+
+            "weather": p.get("weather", {"enabled": False}),
+            "zones": [],
+        }
+
+        idx = 1
+
+        for z in p.get("zones", []):
+            zone_id = z["zone_id"]
+            if zone_id not in _zones:
+                log_programs.warning(f"Program {p['program_id']}: unknown zone {zone_id}")
+                return None
+
+            program["zones"].append({
+                "zone_id": zone_id,
+                "program_zone_index": idx,
+                "planned_duration": duration_to_seconds(z["duration"]),
+                "load": _zones[zone_id].get("load", 1),
+            })
+            idx += 1
+
+        return program
+
+    except Exception as e:
+        log_programs.error(f"Invalid program {p.get('program_id')}: {e}")
+        return None
+    
+def load_programs():
+    global programs
+    programs = []
+
+    try:
+        # Open the file
+        fd = os.open(PROGRAMS_FILE, os.O_RDWR)
+
+        #getting file size
+        f_size = os.path.getsize(PROGRAMS_FILE)	
+
+        # Reading text
+        log_programs.info(f"File- Size {f_size}")
+        programs_json_str = os.read(fd, f_size)
+
+        data = json.loads(programs_json_str)
+
+        log_programs.info(programs_json_str)
+        # Close opened file
+        os.close(fd) # **korrekte Pyscript-Funktion**
+    except Exception as e:
+        log_programs.error(f"Cannot read programs JSON: {e}")
+        return
+
+    for p in data.get("programs", []):
+        if not p.get("enabled", False):
+            continue
+
+        prog = normalize_program(p)
+        if prog:
+            programs.append(prog)
+
+    log_programs.info(f"Loaded programs: {[p['program_id'] for p in programs]}")
+
+def weekday_name(dt):
+    return ["mon", "tue", "wed", "thu", "fri", "sat", "sun"][dt.weekday()]
+
+def with_time(day, h, m):
+    return datetime.datetime.combine(
+        day,
+        datetime.time(h, m)
+    )
+
+def today_at(time_str, base=None):
+    if base is None:
+        base = datetime.datetime.now().date()
+
+    h, m = map(int, time_str.split(":"))
+
+    return datetime.datetime(base.year, base.month, base.day, h, m, 0)
+
+def normalize_dt(dt):
+    if not dt:
+        return None
+
+    # String -> datetime
+    if isinstance(dt, str):
+        dt = datetime.datetime.fromisoformat(dt)
+
+    # aware datetime -> lokale Zeit -> naiv
+    if isinstance(dt, datetime.datetime) and dt.tzinfo is not None:
+        dt = dt.astimezone().replace(tzinfo=None)
+
+    # date -> datetime
+    if isinstance(dt, datetime.date) and not isinstance(dt, datetime.datetime):
+        dt = datetime.datetime.combine(dt, datetime.time.min)
+
+    return dt
+
+def compute_anchor_time(program, day):
+    sched = program["schedule"]
+
+    if sched["type"] == "fixed":
+        return today_at(sched["time"], day)
+
+    if sched["type"] == "sun":
+        event = sched["event"]          # sunrise | sunset
+        offset = sched.get("offset_minutes", 0)
+
+        if event == "sunrise":
+            raw = state.get("sensor.sun_next_rising")
+            log_programs.warning(
+                f"[SUN-DEBUG] raw sensor.sun_next_rising = {raw} "
+                f"(type={type(raw)})"
+            )
+        elif event == "sunset":
+            raw = state.get("sensor.sun_next_setting")
+            log_programs.warning(
+                f"[SUN-DEBUG] raw sensor.sun_next_setting = {raw} "
+                f"(type={type(raw)})"
+            )
+        else:
+            raise ValueError(f"Unknown sun event {event}")
+
+        if not raw:
+            raise RuntimeError(f"Sun sensor for {event} not available")
+
+        t = normalize_dt(raw)
+
+        # 🔑 WICHTIG: auf den gewünschten Tag „ziehen“
+        if t.date() != day:
+            t = datetime.datetime.combine(day, t.time())
+
+        t += datetime.timedelta(minutes=offset)
+
+        latest = sched.get("latest_end")
+        if latest:
+            latest_t = today_at(latest, day)
+            if t > latest_t:
+                t = latest_t
+
+        return t
+
+    raise ValueError(f"Unknown schedule type {sched['type']}")
+
+def expand_program_to_entries(program, day):
+    entries = []
+
+    program_id = program["program_id"]
+    day_str = day.isoformat()  # YYYY-MM-DD
+
+    idx = 1
+
+    for z in program["zones"]:
+        qe = {
+            "qe_id": None,          # Not yet determined
+            "program_id": program_id,
+            "program_name": program.get("program_name"),
+            "program_zone_index": z["program_zone_index"],
+
+            "zone_id": z["zone_id"],
+            "zone_name": _zones[z["zone_id"]]["name"],
+            "switch": _zones[z["zone_id"]]["switch"],
+            "enabled": z.get("enabled", True),  
+
+            "status": None,
+            "policy": program.get("policy", "strict"),
+            "load": z.get("load", 1),
+
+            # Planungsebene
+            "planned_start": None,
+            "planned_end": None,
+            "planned_duration": z["planned_duration"],
+
+            # Scheduler-Ebene
+            "scheduled_start": None,
+            "scheduled_end": None,
+            "scheduled_duration": None,
+            "slot": 0, 
+
+            # Aktuelle Werte
+            "actual_start": None,
+            "actual_end": None,
+            "remaining": z["planned_duration"],
+
+#
+#            "start": None,   # - not known yet<
+#            "end": None,
+#
+#            "duration": z["duration"],
+
+  
+
+            "source": f"program:{program_id}:{day_str}:{idx}",
+
+            ## "_last_tick": None,
+
+        }
+        entries.append(qe)
+        idx += 1
+
+    return entries
+
+def plan_strict_forward(entries, anchor, capacity):
+    current_start = anchor
+    wave_end = None
+    used_slots = 0
+    next_slot = 0
+
+    for e in entries:
+        load = e["load"]
+        dur = datetime.timedelta(seconds=e["planned_duration"])
+
+        if used_slots + load <= capacity:
+            assert used_slots <= capacity
+            e["scheduled_start"] = current_start
+            e["planned_start"] = current_start
+            e["scheduled_duration"] = dur.total_seconds()
+            e["scheduled_end"] = current_start + dur
+            e["planned_end"] = current_start + dur
+            e["slot"] = next_slot
+            end = current_start + dur
+
+            used_slots += load
+            next_slot += load
+
+            wave_end = max(wave_end, end) if wave_end else end
+        else:
+            assert used_slots <= capacity
+            current_start = wave_end
+            used_slots = load
+            next_slot = load
+            
+            e["scheduled_start"] = current_start
+            e["planned_start"] = current_start
+            e["scheduled_duration"] = dur.total_seconds()
+            e["scheduled_end"] = current_start + dur
+            e["planned_end"] = current_start + dur
+            e["slot"] = 0
+
+            wave_end = current_start + dur
+
+
+    return wave_end
+
+def plan_strict_backward(entries, anchor, capacity):
+    current_end = anchor
+    wave_start = None
+    used_slots = 0
+    next_slot = 0
+
+    for e in reversed(entries):
+        load = e["load"]
+        dur = datetime.timedelta(seconds=e["planned_duration"])
+
+        if used_slots + load <= capacity:
+            assert used_slots <= capacity
+            start = current_end - dur
+            e["scheduled_start"] = start
+            e["planned_start"] = start
+            e["scheduled_duration"] = dur.total_seconds()
+            e["scheduled_end"] = current_end
+            e["planned_end"] = current_end
+            e["slot"] = next_slot
+
+            used_slots += load
+            next_slot += load
+
+            wave_start = min(wave_start, start) if wave_start else start
+        else:
+            assert used_slots <= capacity
+            current_end = wave_start
+            start = current_end - dur
+            e["scheduled_start"] = start
+            e["planned_start"] = start
+            e["scheduled_duration"] = dur.total_seconds()
+            e["scheduled_end"] = current_end
+            e["planned_end"] = current_end
+            e["slot"] = 0
+
+            used_slots = load
+            next_slot = load
+ 
+            wave_start = start
+
+    return wave_start
+
+def refresh_program_zone_states(program_id: str):
+    for e in active_queue:
+        if e.get("program_id") == program_id:
+            write_zone_runtime_state(e)
+
+def program_is_running(program_id: str) -> bool:
+    for e in active_queue:
+        if (
+            e.get("program_id") == program_id
+            and e.get("status") == "running"
+        ):
+            return True
+    return False
+
+def program_has_active_entries(program_id: str) -> bool:
+    for e in active_queue:
+        src = e.get("source", "")
+        if src.startswith(f"program:{program_id}:"):
+            return True
+    return False
+
+def program_id_from_source(source: str):
+    if not source:
+        return None
+    if not source.startswith("program:"):
+        return None
+    # program:evening_beds:2026-02-02:2
+    try:
+        return source.split(":", 2)[1]
+    except Exception:
+        return None
+
+def program_weather_enabled(program_id):
+    for p in programs:
+        if p.get("program_id") == program_id:
+            weather_cfg = p.get("weather", {})
+            return weather_cfg.get("enabled", False)
+    return False
+
+def log_program_plan(program_id, entries):
+    log_programs.info(f"[program] {program_id}")
+
+    for e in entries:
+        log_programs.info(f"DEBUG entry type={type(e)} value={e}")
+
+
+def publish_program_debug(program_id, entries):
+    lines = []
+    for e in entries:
+        lines.append(
+            f"{e['zone_id']} "
+            f"{e['planned_start'].strftime('%H:%M')}–{qe_end(e).strftime('%H:%M')}"
+        )
+
+    state.set(
+        f"sensor.sprinkler_program_{program_id}_plan",
+        " | ".join(lines),
+        attributes={
+            "program": program_id,
+            "count": len(entries),
+        }
+    )
+
+def qe_exists_with_source(source):
+    for q in active_queue:
+        if q.get("source") == source:
+            return True
+        
+    for q in done_queue:
+        if q.get("source") == source and q.get("status") == "done":
+            return True
+    return False
+
+def sort_active_queue():
+    active_queue.sort(
+        key=lambda e: (
+            0 if e["status"] == "running" 
+            else 1 if e.get("policy") == "strict"
+            else 2,
+            e.get("scheduled_start") or datetime.datetime.max
+        )
+    )
+
+def program_time_window(entries):
+    starts = [e["scheduled_start"] for e in entries if e.get("scheduled_start")]
+    ends = [qe_end(e) for e in entries if qe_end(e)]
+
+    if not starts or not ends:
+        return None, None
+
+    return min(starts), max(ends)
+
+def compute_program_conflict_delta(program_entries):
+    """
+    Prüft Konflikte zwischen einem kompletten Programm
+    und active_queue (running + strict queued).
+
+    Returns:
+        datetime.timedelta (>=0)
+    """
+    prog_start, prog_end = program_time_window(program_entries)
+    if not prog_start or not prog_end:
+        return datetime.timedelta(0)
+
+    delta = datetime.timedelta(0)
+
+    for other in active_queue:
+        if other["status"] not in ("running", "queued"):
+            continue
+        if other.get("policy") != "strict" and other["status"] != "running":
+            continue
+
+        other_start = normalize_dt(other.get("scheduled_start"))
+        other_end = qe_end(other)
+
+        if not other_start or not other_end:
+            continue
+
+        if overlaps(prog_start + delta, prog_end + delta,
+                    other_start, other_end):
+            shift = other_end - prog_start
+            if shift > delta:
+                delta = shift
+
+    return max(delta, datetime.timedelta(0))
+
+def enqueue_program_block(program_block):
+    entries = program_block["entries"]
+
+    delta = compute_program_conflict_delta(entries)
+
+    if delta.total_seconds() > 0:
+        log_scheduler.info(
+            f"[program-enqueue] shifting program {program_block['program_id']} "
+            f"by {delta}"
+        )
+
+    for e in entries:
+        enqueue_strict_entry(e, delta)
+
+    # Block ist erledigt
+    program_queue.remove(program_block)
+
+    log_scheduler.info(
+        f"[program-enqueue] program {program_block['program_id']} enqueued"
+    )
+
+def enqueue_program_blueprints():
+    global active_queue
+    global program_blueprints
+
+
+    for plan in program_blueprints:
+        program_id = plan["program_id"]
+
+        for bp in plan["entries"]:
+            source = bp.get("source")
+
+            if qe_exists_with_source(source):
+                continue
+
+            qe = {
+                "qe_id": next_qe_id(),
+                "program_id": bp["program_id"],
+                "program_name": bp["program_name"],
+                "program_zone_index": bp["program_zone_index"],
+
+                "zone_id": bp["zone_id"],
+                "zone_name": _zones[bp["zone_id"]]["name"],
+                "switch": _zones[bp["zone_id"]]["switch"],
+                "enabled": True,
+
+                "status": "queued",
+                "policy": "strict",
+                "load": _zones[bp["zone_id"]].get("load", 1),
+
+                "planned_start": bp["planned_start"],
+                "planned_end": bp["planned_end"],
+                "planned_duration": bp["planned_duration"],
+
+                "scheduled_start": None,
+                "scheduled_end": None,
+                "scheduled_duration": None,
+
+                "actual_start": None,
+                "actual_end": None,
+                "remaining": bp["planned_duration"],
+
+                #"start": bp["start"],
+                #"end": bp["end"],
+                #"duration": bp["duration"],
+
+                "source": source,
+            #    "actual_start": None,
+            #    "actual_end": None,
+            #    "_last_tick": None,
+
+            }
+
+            enqueue_strict_entry(qe)
+
+def compute_next_program_run(program, now):
+    for offset in range(0, 8):  # heute + 7 Tage
+        day = normalize_dt((now.date() + datetime.timedelta(days=offset)))
+
+        if weekday_name(day) not in program["weekdays"]:
+            continue
+
+        anchor = compute_anchor_time(program, day)
+        anchor = normalize_dt(anchor)
+
+        # ❗️Vergangenheit ausschließen
+        if anchor <= now:
+            continue
+        
+        return {
+            "day": day,
+            "anchor": anchor,
+        }
+
+    return None
+
+def schedule_next_run_for_program(program):
+    global program_queue
+    now = normalize_dt(datetime.datetime.now())
+    program_id = program["program_id"]
+
+    run = compute_next_program_run(program, now)
+    if not run:
+        log_programs.info(
+            f"[program] no upcoming run for {program['program_id']}"
+        )
+        return
+
+    day = run["day"]
+    anchor = run["anchor"]
+
+    entries = expand_program_to_entries(program, day=day)
+
+    capacity = get_capacity()
+
+    # 2. strict-Planung
+    if program["policy"] == "strict":
+        if program["mode"] == "start_at":
+            plan_strict_forward(entries, run["anchor"], capacity)
+        elif program["mode"] == "finish_at":
+            plan_strict_backward(entries, run["anchor"], capacity)
+
+    #  neu verketten -> Lücken im Slot raus, keine Wetteranpassung
+    adapt_program_durations(program_id, recalc_durations=False)
+
+    # 3. als Block in program_queue ablegen
+    program_queue.append({
+        "program_id": program_id,
+        "day": day,
+        "anchor": anchor,
+        "entries": entries,      
+    })
+
+    log_programs.info(
+        f"[program] planned {len(entries)} entries for {program['program_id']} on {day}"
+    )
+
+def reschedule_single_program(program_id):
+    global active_queue, done_queue
+
+    # 1) Alte QEs entfernen
+    to_remove = [
+        e for e in active_queue
+        if e.get("source", "").startswith(f"program:{program_id}:")
+    ]
+
+    for e in to_remove:
+        active_queue.remove(e)
+        done_queue.append(e.copy())
+
+    # 2) Neu planen
+    program = None
+    for p in programs:
+        if p["program_id"] == program_id:
+            program = p
+            break
+
+    if program:
+        schedule_next_run_for_program(program)
+
+def validate_entry(e):
+    if e["scheduled_start"] and e["scheduled_end"]:
+        if e["scheduled_end"] < e["scheduled_start"]:
+            log_scheduler.error(f"Invalid time order QE {e['qe_id']}")
+
+def overlaps(a_start, a_end, b_start, b_end):
+    return a_start < b_end and a_end > b_start
+
+def adapt_program_durations(program_id: str, recalc_durations: bool = True):
+    global active_queue
+
+    log_scheduler.info(
+        f"Adapt program {program_id} | recalc={recalc_durations}"
+    )
+
+    slots = {}
+
+    # 🔹 Entries pro Slot aus active_queue sammeln
+    for entry in active_queue:
+        if entry.get("program_id") != program_id:
+            continue
+
+        if entry.get("status") not in ("queued", "running"):
+            continue
+
+        slot_nr = entry.get("slot", 0)
+
+        if slot_nr not in slots:
+            slots[slot_nr] = []
+
+        slots[slot_nr].append(entry)
+
+    log_scheduler.info(
+        f"Program {program_id}: found slots {list(slots.keys())}"
+    )
+   
+    # 🔹 Slotweise verarbeiten
+    for slot, entries in slots.items():
+
+        # wichtig: nach START sortieren, nicht start_time
+        entries.sort(key=lambda e: e.get("scheduled_start"))
+
+        previous_end = None
+
+        for i, entry in enumerate(entries):
+
+            zone_id = entry.get("zone_id")
+            zone = _zones.get(zone_id)
+            if not zone:
+                continue
+
+            old_duration = entry.get("scheduled_duration", 0)
+            new_duration = old_duration
+
+            # --- optional Duration neu berechnen
+            if recalc_durations:
+                deficit = float(
+                    state.get(f"{STATE_PREFIX}_{zone_id:02d}_soil_deficit_mm") or 0
+                )
+                if TEST_DEFICIT is not None:
+                    deficit = TEST_DEFICIT        # For testing Purposes only
+
+                log_scheduler.info(
+                    f"[ADAPT] Zone {zone_id} state={STATE_PREFIX}_{zone_id:02d}_soil_deficit_mm  = {deficit}"
+                )
+
+                ## Neue Dauer in Sekunden ermitteln
+                new_duration = calculate_zone_seconds(
+                    zone_id,
+                    deficit
+                )
+            
+            # ============================================================
+            # 🔥 WICHTIGER TEIL:
+            # Bei 0-Duration → NICHT die Kette neu berechnen
+            # ============================================================
+            if recalc_durations and new_duration == 0:
+                entry["scheduled_duration"] = 0
+                entry["remaining"] = 0
+                entry["status"] = "skip"
+                write_zone_remaining(entry)
+                write_zone_runtime_state(entry)
+
+                log_scheduler.info(
+                    f"[ADAPT] Zone {zone_id} duration=0 → no rechain"
+                )
+
+                # ❗ scheduled_start bleibt wie geplant
+                # ❗ scheduled_end bleibt wie geplant
+                continue
+
+
+            # -------------------------
+            # Normale Re-Kettung
+            # -------------------------
+            if i == 0:
+                entry["scheduled_duration"] = new_duration
+                entry["remaining"] = new_duration
+                previous_end = (
+                    entry["scheduled_start"] +
+                    datetime.timedelta(seconds=new_duration)
+                )
+                entry["scheduled_end"] = previous_end
+            else:
+                entry["scheduled_start"] = previous_end
+                entry["scheduled_duration"] = new_duration
+                entry["remaining"] = new_duration
+                previous_end = (
+                    entry["scheduled_start"] +
+                    datetime.timedelta(seconds=new_duration)
+                )
+                entry["scheduled_end"] = previous_end
+
+            write_zone_remaining(entry)
+
+            log_scheduler.info(
+                f"[ADAPT] Program {program_id} | "
+                f"Slot {slot} | Zone {zone_id} "
+                f"{old_duration}→{new_duration}"
+            )
+
+    log_scheduler.info(f"Program {program_id}: adaptation finished")
+
+def apply_irrigation_to_zone(entry):
+    zone_id = entry.get("zone_id")
+    zone = _zones.get(zone_id)
+
+    if not zone:
+        return
+
+    start = entry.get("actual_start")
+    end = entry.get("actual_end")
+
+    if not start or not end:
+        return
+
+    runtime_seconds = (end - start).total_seconds()
+
+    mm_per_hour = zone.get("precipitation_rate_mm_per_hour")
+    if not mm_per_hour:
+        log_soil.warning(f"No precipitation rate for {zone_id}")
+        return
+
+    irrigation_mm = (runtime_seconds / 3600) * mm_per_hour
+
+    soil_entity = f"{STATE_PREFIX}_{zone_id:02d}_soil_water_mm"
+
+    soil = float(state.get(soil_entity) or 0)
+
+    capacity = float(state.get("input_number.soil_capacity_mm") or 30)
+
+    new_soil = min(capacity, soil + irrigation_mm)
+
+    state.set(soil_entity, round(new_soil, 2))
+
+    update_zone_deficit(zone_id)
+
+    log_soil.info(
+        f"[IRRIGATION] {zone_id} +{irrigation_mm:.2f}mm "
+        f"(soil {soil:.2f} → {new_soil:.2f})"
+    )
+    
+def create_idle_qe_for_zone(zone_id):
+    zone = _zones[zone_id]
+
+    if zone:
+        entry = {
+            "qe_id": zone_id,
+            "program_id": None,
+            "program_name": None,
+            "program_zone_index": 0,
+
+            "zone_id": zone_id,
+            "zone_name": zone["name"],
+            "switch": zone["switch"],
+            "enabled": zone.get("enabled", True),
+
+            "status": "idle",
+            "policy": "floating",
+            "load": zone.get("load", 1),
+
+            "planned_start": None,
+            "planned_end": None,
+            "planned_duration": zone["default_duration"],
+
+            "scheduled_start": None,
+            "scheduled_end": None,
+            "scheduled_duration": zone["default_duration"],
+            "slot": 0,
+
+            "actual_start": None,
+            "actual_end": None,
+            "remaining": zone["default_duration"],
+
+            "source": ""
+        }
+    return entry
+
+def init_idle_queue():
+    """
+    Initialisiert die Idle-Queue mit genau einem Queue-Entry pro Zone.
+    Wird nach load_zones() aufgerufen.
+    """
+    global idle_queue
+
+    idle_queue = []
+
+    for zone_id, zone in _zones.items():
+        #if zone.get("enabled") is not True:
+        #    continue
+
+        entry = create_idle_qe_for_zone(zone_id)
+
+        ensure_zone_states(entry)
+        # write_zone_runtime_state(entry)
+
+        idle_queue.append(entry)
+
+    log_zones.info(
+        f"Off-Queue initialisiert mit {len(idle_queue)} Einträgen: "
+    )
+
+def format_start_time(dt: datetime.datetime) -> str:
+    if not dt:
+        return ""
+
+    now = datetime.datetime.now()
+    today = now.date()
+    tomorrow = today + datetime.timedelta(days=1)
+
+    time_part = dt.strftime("%H:%M")
+
+    if dt.date() == today:
+        return time_part
+
+    if dt.date() == tomorrow:
+        return f"Morgen {time_part}"
+
+    return dt.strftime("%d.%m. %H:%M")
+
+def running_program_ids():
+    """
+    Liefert die Menge aller program_ids,
+    die aktuell mindestens eine running Zone haben.
+    """
+    return {
+        e["program_id"]
+        for e in active_queue
+        if e.get("status") == "running"
+        and e.get("source", "").startswith("program:")
+        and e.get("program_id") is not None
+    }
+
+def visible_active_entries():
+    """
+    Liefert die Active-Entries, die in der UI angezeigt werden sollen.
+    """
+    running_programs = running_program_ids()
+
+    visible = []
+
+    for e in active_queue:
+        policy = e.get("policy")
+        status = e.get("status")
+
+        # Floating immer sichtbar
+        if policy == "floating":
+            visible.append(e)
+            continue
+
+        # Strict nur, wenn Programm läuft
+        if policy == "strict":
+            if e.get("program_id") in running_programs:
+                visible.append(e)
+
+    return visible
+
+def publish_ui_state():
+    state.set(f"sensor.sprinkler_used", used,
+              attributes={
+                  "friendly_name": "Last"
+              }
+            )
+
+def qe_end(entry):
+    start = normalize_dt(entry.get("actual_start") or entry.get("scheduled_start"))
+
+    if not start:
+        return None
+    return start + datetime.timedelta(seconds=entry.get("scheduled_duration", 0))
+            
+def entry_start_zone(entry):
+    now = datetime.datetime.now()
+
+    entry["status"] = "running"
+    write_zone_runtime_state(entry)
+    if entry.get("program_id"):
+        refresh_program_zone_states(entry["program_id"])
+        
+    entry["actual_start"] = now
+    if entry["scheduled_start"] is None:
+        entry["scheduled_start"] = now
+    # entry["_last_tick"] = now
+    entry["scheduled_end"] = now + datetime.timedelta(seconds = entry["scheduled_duration"])
+
+    # Ventil schalten
+    hw_switch_on(entry["switch"])
+
+    log_zones.info(
+        f"Started QE {entry['qe_id']} ({entry['zone_name']} {now })"
+    )
+
+def enqueue_strict_entry(entry, delta=datetime.timedelta(0)):
+    global active_queue
+
+    if delta:
+        entry["planned_start"] = entry["planned_start"] + delta
+
+    entry["status"] = "queued"
+    entry["qe_id"] = next_qe_id()
+    write_zone_runtime_state(entry)
+
+    active_queue.append(entry)
+
+    log_scheduler.info(
+        f"[strict-enqueue] QE {entry['qe_id']} queued at "
+        f"{entry['planned_start'].strftime('%H:%M:%S')}"
+    )
+
+
+def entry_enqueue_zone(entry):
+
+    log_zones.info(
+        f"Enqueue {entry['qe_id']} ({entry['zone_name']})"
+    )
+    # Umhängen
+    idle_queue.remove(entry)
+
+    entry["status"] = "queued"
+    write_zone_runtime_state(entry)
+
+    entry["scheduled_start"] = None
+    active_queue.append(entry)
+
+    log_zones.info(
+        f"Queued QE {entry['qe_id']} ({entry['zone_name']})"
+    )
+
+
+def entry_stop_zone(entry):
+    global active_queue, idle_queue, done_queue
+
+    # Ventil schalten
+    hw_switch_off(entry["switch"])
+
+    reason = entry["status"]
+    runtime = 0
+
+    if reason == "skip":
+        entry["status"] = "skipped"
+
+        entry["actual_start"] = entry.get("scheduled_start")
+        entry["actual_end"] = entry.get("scheduled_end")
+        log_zones.info(
+            f"setze entry auf skipped "
+            f"{entry['actual_start']} {entry['actual_end']}"
+        )
+
+    elif reason == "finish":
+        entry["actual_end"] = datetime.datetime.now()
+        entry["status"] = "done"
+
+        runtime = (entry["actual_end"] - entry["actual_start"]).total_seconds()
+
+    else:
+        entry["actual_end"] = datetime.datetime.now()
+        entry["status"] = "cancelled"
+        if entry["status"] == "running":
+            runtime = (entry["actual_end"] - entry["actual_start"]).total_seconds()
+        else: 
+            runtime = 0
+            
+    write_zone_runtime_state(entry)
+    if runtime > 0:
+        apply_irrigation_to_zone(entry)
+
+    # Historie: Kopie!
+    snapshot = entry.copy()
+
+    done_queue.append(snapshot)
+    persist_done_entry(snapshot)       # -> Write to Json
+
+    # Aushängen
+
+    active_queue.remove(entry)
+    
+    # -------------------------
+    # NUR manuelle Entries zurück in idle_queue
+    # -------------------------
+    source = entry.get("source", "")
+    log_zones.info(f"Stop QE  {entry['qe_id']} {entry['source']} {source}")
+
+    if not source.startswith("program:"):
+        log_zones.info(f"Startswith QE {entry['qe_id']} {entry['source']}")
+        # Reset Entry
+        entry["status"] = "idle"
+        write_zone_runtime_state(entry)
+
+        entry["scheduled_start"] = ""
+        entry["scheduled_end"] = ""
+        entry["remaining"] = entry["planned_duration"]
+        write_zone_remaining(entry)
+        
+        entry["actual_start"] = None
+        entry["actual_end"] = None
+        entry["_last_tick"] = None
+        entry["source"] = ""
+        idle_queue.append(entry)
+        # Sortierung stabil halten
+        idle_queue.sort(key=lambda e: e["qe_id"])
+    else:
+        log_zones.info(
+            f"Stopped QE {entry['qe_id']} ({entry['zone_name']}) reason={reason}"
+        )
+        program_id = program_id_from_source(source)
+
+        if program_id and not program_has_active_entries(program_id):
+            log_programs.info(
+                f"[program] program finished → reschedule {program_id}"
+            )
+            reschedule_single_program(program_id)
+
+@service
+def sprinkler_set_qe_duration(qe_id, source="manual"):
+    """
+    Setzt die Laufzeit eines Off-Queue-Entries.
+    duration: String HH:MM:SS
+    """
+    duration = state.get("input_text.sprinkler_entry_duration")
+
+    if not duration:
+        log.warning("No duration set")
+        return
+    
+    log.warning(f"Set duration {qe_id}: '{duration}'")
+    # 1. Entry in idle_queue finden
+    entry = None
+    for e in idle_queue:
+        if e["qe_id"] == qe_id:
+            entry = e
+            break
+
+    if not entry:
+        log.warning(f"set_duration: qe_id {qe_id} not found")
+        return
+
+    if entry["status"] != "idle":
+        log.info(f"set_duration ignored (status={entry['status']})")
+        return
+
+    try:
+        secs = duration_to_seconds(duration)
+    except Exception as e:
+        log.warning(f"invalid duration '{duration}': {e}")
+        return
+
+    entry["planned_duration"] = secs
+    entry["remaining"] = secs
+    write_zone_remaining(entry)
+    entry["source"] = source
+
+    log.info(f"QE {qe_id}: duration set to {secs}s")
+    
+# -------------------------
+# Service: clear active_queue
+# -------------------------
+@service
+def sprinkler_active_queue_clear():
+    global active_queue
+
+    if not active_queue:
+        log.info("Active Queue clear requested, but active_queue is empty")
+        return
+
+    for entry in active_queue:
+        if entry["status"] in ("queued", "running"):
+            entry["status"] = "cancelled"
+            write_zone_runtime_state(entry)
+
+    log.info(f"Active Queue clear requested: marked {len(active_queue)} entries as cancelled")
+    
+    if not done_queue:
+        log.info("Done-Queue clear requested, but queue is empty")
+        return
+
+    for entry in done_queue:
+        entry["status"] = "clear"
+        write_zone_runtime_state(entry)
+
+# -------------------------
+# Service: Start Zone (Manuell, Floating)
+# -------------------------
+@service
+def sprinkler_ui_start_zone(zone_id: int, duration: int = None, request_id: str = None, context=None):
+    global idle_queue
+
+    # 1. Entry in idle_queue finden
+    entry = None
+    for e in idle_queue:
+        if e["zone_id"] == zone_id:
+            entry = e
+            break
+    
+    if not entry:
+        ui_error(
+            context,
+            action="start_zone",
+            code=UI_CODE.ZONE_NOT_FOUND,
+            entity_type="zone",
+            entity_id=zone_id,
+            request_id=request_id
+        )
+        log_queue.warning(f"start_zone: zone_id {zone_id} not found in idle_queue")
+        return
+
+    # 2. Initialisieren
+
+    entry["status"] = "enqueue"
+    write_zone_runtime_state(entry)
+    entry["source"] = "manual"
+    entry["planned_duration"] = duration_to_seconds(duration, entry["planned_duration"])
+    entry["scheduled_duration"] = entry["planned_duration"]
+    entry["remaining"] = entry["planned_duration"]
+    write_zone_remaining(entry)
+    entry["actual_start"] = None
+    entry["actual_end"] = None
+    entry["_last_tick"] = None
+    entry["program_id"] = ""
+    entry["program_name"] = ""
+
+    ui_success(
+        context,
+        action="start_zone",
+        code=UI_CODE.ZONE_STARTED,
+        entity_type="zone",
+        entity_id=zone_id,
+        request_id=request_id,
+        duration=entry["planned_duration"]
+    )
+    log_queue.info(
+        f"QE {zone_id} marked as to enqueue (status was {entry['status']}) ({entry['zone_name']}) duration={entry['planned_duration']}"
+    )
+
+# -------------------------
+# Service: Extend Zone (Manuell, Floating)
+# -------------------------
+@service
+def sprinkler_ui_extend_zone(zone_id: int, duration: int = None, request_id: str = None, context=None):
+    global idle_queue
+    
+    log_queue.warning(f"extend_zone: zone_id {zone_id} {duration}")
+    # 1. Entry in idle_queue finden
+    entry = None
+    for e in active_queue:
+        if e["zone_id"] == zone_id:
+            entry = e
+            break
+    
+    if not entry:
+        ui_error(
+            context,
+            action="extend_zone",
+            code=UI_CODE.ZONE_NOT_FOUND,
+            entity_type="zone",
+            entity_id=zone_id,
+            request_id=request_id
+        )
+        log_queue.warning(f"extend_zone: zone_id {zone_id} not found in active_queue")
+        return
+
+    if entry["status"] == "running" or entry["status"] == "queued":
+        # Laufzeit ändern
+        entry["scheduled_end"] = datetime.datetime.now() + datetime.timedelta(seconds=duration)
+        entry["remaining"] = duration
+        write_zone_remaining(entry)
+        ui_success(
+            context,
+            action="extend_zone",
+            code=UI_CODE.ZONE_EXTENDED,
+            entity_type="zone",
+            entity_id=zone_id,
+            request_id=request_id,
+            duration=duration
+        )
+        log_queue.info(
+            f"QE {zone_id} changed remaining {entry['status']}) ({entry['zone_name']}) duration={entry['planned_duration']}"
+        )
+
+# -------------------------
+# Service: Cancel Zone (Manuell, Floating)
+# -------------------------
+@service
+def sprinkler_ui_cancel_zone(zone_id: int, request_id: str = None, context=None):
+    global active_queue
+
+    # 1. Entry in active_queue finden
+    entry = None
+    for e in active_queue:
+        if e["zone_id"] == zone_id:
+            entry = e
+            break
+
+    if not entry:
+        ui_error(
+            context,
+            action="cancel_zone",
+            code=UI_CODE.ZONE_NOT_FOUND,
+            entity_type="zone",
+            entity_id=zone_id,
+            request_id=request_id
+        )
+        log_queue.warning(f"cancel_zone: zone_id {zone_id} not found in active_queue")
+        return
+
+    if entry["status"] not in ("queued", "running"):
+        ui_error(
+            context,
+            action="cancel_zone",
+            code=UI_CODE.ZONE_IGNORED,
+            entity_type="zone",
+            entity_id=zone_id,
+            request_id=request_id
+        )
+        log_queue.info(
+            f"cancel_zone: zone_id {zone_id} ignored (status={entry['status']})"
+        )
+        return
+
+    entry["status"] = "cancel"
+    write_zone_runtime_state(entry)
+    ui_success(
+        context,
+        action="cancel_zone",
+        code=UI_CODE.ZONE_CANCELLED,
+        entity_type="zone",
+        entity_id=zone_id,
+        request_id=request_id
+    )
+
+    log_queue.info(
+        f"QE {zone_id} marked as to cancel (status was {entry['status']})"
+    )
+
+# -------------------------
+# Service: Zone update nach Bearbeitung im UI
+# -------------------------
+@service
+def sprinkler_ui_update_zone(zone: dict = None, request_id: str = None, context=None):
+    global _zones
+    global idle_zone
+    global active_queue
+
+    user_id = context.user_id if context else None
+
+    log_ui.info(f"[UI] user {user_id} requested Zone update received: {zone}")
+
+    if not isAdmin(user_id):
+        ui_error(
+            context,
+            action="update_zone",
+            code=UI_CODE.USER_NOT_ADMIN,
+            entity_type="user",
+            entity_id=user_id,
+            request_id=request_id
+        )
+        log_ui.warning("Not allowed")
+        return
+
+    global _zones
+
+    if not zone:
+        ui_error(
+            context,
+            action="update_zone",
+            code=UI_CODE.ZONE_INVALID_PAYLOAD,
+            entity_type="zone",
+            entity_id="",
+            request_id=request_id
+        )
+        log_ui.error("No zone payload")
+        return
+
+    zone_id = zone.get("zone_id")
+
+    if zone_id not in _zones:
+        ui_error(
+            context,
+            action="update_zone",
+            code=UI_CODE.ZONE_NOT_FOUND,
+            entity_type="zone",
+            entity_id=zone_id,
+            request_id=request_id
+        )
+        log_ui.error(f"Zone {zone_id} not found")
+        return
+
+    # Update im RAM
+    _zones[zone_id].update(zone)
+    # Persistieren
+    persist_zones_atomic(_zones)
+
+    for qe in idle_queue:
+        if qe["zone_id"] == zone_id:
+            qe.update({
+                "name": zone["name"],
+                "switch": zone["switch"],
+                "default_duration": zone["default_duration"],
+                "load": zone["load"],
+                "zone_factor": zone["zone_factor"],
+                "precipitation_rate_mm_per_hour": zone["precipitation_rate_mm_per_hour"],
+                "enabled": zone["enabled"],
+            })
+            qe["planned_duration"] = zone.get("default_duration")
+            qe["remaining"] = zone.get("default_duration")
+            qe["zone_name"] = zone.get("name")
+            qe["switch"] = zone.get("switch")
+            qe["enabled"] = zone.get("enabled")
+            qe["load"] = zone.get("load", 1)
+
+            write_zone_runtime_state(qe)
+            write_zone_remaining(qe)
+
+    for qe in active_queue:
+        if qe["zone_id"] == zone_id:
+            qe["name"] = zone["name"]
+            qe["switch"] = zone["switch"]
+
+    ui_success(
+        context,
+        action="update_zone",
+        code=UI_CODE.ZONE_UPDATED,
+        entity_type="zone",
+        entity_id=zone_id,
+        request_id=request_id
+    )
+
+@service
+def sprinkler_ui_add_zone(zone=None, request_id: str = None, context=None):
+
+    global _zones
+
+    if not zone:
+        ui_error(
+            context,
+            action="add_zone",
+            code=UI_CODE.ZONE_INVALID_PAYLOAD,
+            entity_type="zone",
+            entity_id="",
+            request_id=request_id
+        )
+        
+        log_ui.error("No zone payload")
+        return
+
+    new_id = get_next_zone_id()
+
+    zone["zone_id"] = new_id
+
+    _zones[new_id] = zone
+
+    # Persistieren
+    persist_zones_atomic(_zones)
+
+    # Qe erzeugen:
+    entry = create_idle_qe_for_zone(new_id)
+
+    if not entry:
+        ui_error(
+            context,
+            action="add_zone",
+            code=UI_CODE.ZONE_NOT_ADDED,
+            entity_type="zone",
+            entity_id=new_id,
+            request_id=request_id
+        )
+    else:
+        ensure_zone_states(entry)
+        
+        idle_queue.append(entry)
+
+        ui_success(
+            context,
+            action="add_zone",
+            code=UI_CODE.ZONE_ADDED,
+            entity_type="zone",
+            entity_id=new_id,
+            request_id=request_id
+        )
+        log_ui.info(f"Zone {new_id} added.")
+
+@service
+def sprinkler_ui_delete_zone(zone_id: int = None, request_id: str = None, context=None):
+    global _zones
+    global idle_queue
+
+    user_id = context.user_id if context else None
+
+    log_ui.info(f"[UI] user {user_id} requested Zone delete: {zone_id}")
+
+    if not isAdmin(user_id):
+        ui_error(
+            context,
+            action="delete_zone",
+            code=UI_CODE.USER_NOT_ADMIN,
+            entity_type="user",
+            entity_id=user_id,
+            request_id=request_id
+        )
+        log_ui.warning("Not allowed")
+        return
+
+    if zone_id not in _zones:
+        ui_error(
+            context,
+            action="delete_zone",
+            code=UI_CODE.ZONE_NOT_FOUND,
+            entity_type="zone",
+            entity_id=zone_id,
+            request_id=request_id
+        )
+        log_ui.error(f"Zone {zone_id} not found")
+        return
+    
+    # -----------------------------
+    # TECHNISCHE PRÜFUNGEN
+    # -----------------------------
+
+    # 1) Läuft die Zone aktuell?
+    for qe in active_queue:
+        if qe["zone_id"] == zone_id:
+            ui_error(
+                context,
+                action="delete_zone",
+                code=UI_CODE.ZONE_ACTIVE,
+                entity_type="zone",
+                entity_id=zone_id,
+                request_id=request_id
+            )
+            log_ui.warning(f"Zone {zone_id} is active – cannot delete")
+            return
+        
+    # -----------------------------
+    # 2) PROGRAM CHECK
+    # -----------------------------
+
+    for program in program_queue:
+        entries = program.get("entries")
+
+        for qe in entries:
+            if zone_id == qe["zone_id"]:
+                ui_error(
+                    context,
+                    action="delete_zone",
+                    code=UI_CODE.ZONE_IN_PROGRAM,
+                    entity_type="zone",
+                    entity_id=zone_id,
+                    request_id=request_id
+                )
+                log_ui.warning(f"Zone {zone_id} part of program {qe["program_id"]}")
+                return
+    # -----------------------------
+    # DELETE
+    # -----------------------------
+
+    try:
+        _zones.pop(zone_id, None)
+        before = len(idle_queue)
+
+        after = []
+
+        for qe in idle_queue:
+            if qe.get("zone_id") != zone_id:
+                after.append(qe)
+
+        idle_queue = after
+        
+        after = len(idle_queue)
+
+    except Exception as e:
+        log_ui.error(f"Delete zone {zone_id} failed: {e}")
+
+        ui_error(
+            context,
+            action="delete_zone",
+            code=UI_CODE.INTERNAL_ERROR,
+            entity_type="zone",
+            entity_id=zone_id,
+            request_id=request_id
+        )
+
+
+
+    log_ui.info(f"Idle queue cleanup: {before-after} entries removed")
+
+    persist_zones_atomic(_zones)
+
+    remove_zone_states(zone_id)
+
+    ui_success(
+        context,
+        action="delete_zone",
+        code=UI_CODE.ZONE_DELETED,
+        entity_type="zone",
+        entity_id=zone_id,
+        request_id=request_id
+    )
+
+    log_ui.info(f"Zone {zone_id} deleted successfully")
+
+
+def sprinkler_is_active():
+    val = state.get("input_boolean.sprinkler_scheduler_aktiv")
+    if val is None:
+        return False
+    return str(val).lower() == "on"
+
+def get_capacity():
+    try:
+        val = state.get("input_number.sprinkler_capacity")
+        if val is None:
+            return 1
+        return int(float(val))
+    except Exception as e:
+        log_scheduler.warning(f"Invalid capacity value: {val} ({e})")
+        return 1
+
+def compute_occupied_slots():
+    occupied = set()
+
+    for e in active_queue:
+        if e["status"] != "running":
+            continue
+
+        slot = e.get("slot", 0)
+        load = e.get("load", 1)
+
+        for s in range(slot, slot + load):
+            occupied.add(s)
+
+    return occupied
+
+def find_free_slot(load, capacity):
+    occupied = compute_occupied_slots()
+
+    for base in range(0, capacity):
+        fits = True
+        for s in range(base, base + load):
+            if s >= capacity or s in occupied:
+                fits = False
+                break
+
+        if fits:
+            return base
+
+    return None
+
+def current_load(active_queue):
+    load = 0
+    for entry in active_queue:
+        if entry["status"] == "running":
+            load += entry.get("load", 1)
+    return load
+
+
+def next_strict_start_after(now):
+    global active_queue
+    starts = []
+
+    for e in active_queue:
+        if e["status"] != "queued":
+            continue
+        if e["policy"] != "strict":
+            continue
+        start = normalize_dt(e["scheduled_start"])
+        if start and start > now:
+            starts.append(start)
+
+    if not starts:
+        return None
+
+    return min(starts)
+
+def is_program_start(entry):
+    return entry.get("program_zone_index") == 1
+
+# -------------------------
+# Scheduler-Loop (Task)
+# -------------------------
+#@time_trigger("startup")
+def sprinkler_scheduler_startup():
+    global active_queue, done_queue, sprinkler_scheduler_running
+
+    task.sleep(15)
+    log_scheduler.info("Scheduler startup / reload")
+
+    # -------------------------
+    # 1) laufenden Scheduler stoppen
+    # -------------------------
+    sprinkler_scheduler_running = False
+
+    # -------------------------
+    # 2) Queues hart zurücksetzen
+    # -------------------------
+    idle_queue = []
+    active_queue = []
+    done_queue = []
+
+    # -------------------------
+    # 3) Zonen neu laden
+    # -------------------------
+    log_scheduler.info("Lade Zonen aus JSON")
+    load_zones()
+
+    if not _zones:
+        log_scheduler.warning("Keine Zonen geladen – Queue bleibt leer")
+
+    # -------------------------
+    # 4) Off-Queue initialisieren
+    # -------------------------
+    init_idle_queue()
+
+    load_programs()
+
+    for program in programs:
+        schedule_next_run_for_program(program)
+
+    sort_active_queue()
+    publish_ui_state()
+    # publish_timeline_debug()
+
+    load_done_queue()
+
+    # -------------------------
+    # 5) Scheduler starten (nur einmal!)
+    # -------------------------
+    start_sprinkler_scheduler()
+
+# @service
+def sprinkler_scheduler_start():
+    global scheduler_task
+
+    if sprinkler_scheduler_task and not sprinkler_scheduler_task.done():
+        log_scheduler.warning("Scheduler already running")
+        return
+
+    sprinkler_scheduler_task = task.create(sprinkler_scheduler_loop())
+    log_scheduler.info("Scheduler task created")
+
+@service
+def sprinkler_scheduler_stop():
+    global sprinkler_scheduler_running, sprinkler_scheduler_task
+
+    if not sprinkler_scheduler_task:
+        return
+
+    sprinkler_scheduler_running = False
+    log_scheduler.info("Stopping scheduler")
+
+def dump_scheduler_state():
+    log_scheduler.info(
+        f"running={sprinkler_scheduler_running} "
+        f"active_queue={[ (q['qe_id'], q['zone_id'], q['status']) for q in active_queue ]} "
+        f"done_queue={[ (q['qe_id'], q['zone_id'], q['status']) for q in done_queue ]}"
+    )
+    
+async def sprinkler_scheduler_loop():
+    global sprinkler_scheduler_running
+
+    log_scheduler.info("Scheduler started")
+    sprinkler_scheduler_running = True
+
+    try:
+        while sprinkler_scheduler_running:
+            sprinkler_scheduler_tick()
+#            dump_scheduler_state()
+            await task.sleep(1)
+    finally:
+        sprinkler_scheduler_running = False
+        log.info("Scheduler stopped")
+
+def start_sprinkler_scheduler():
+    global sprinkler_scheduler_task, sprinkler_scheduler_running
+
+    if sprinkler_scheduler_task and not sprinkler_scheduler_task.done():
+        log_scheduler.warning("Scheduler läuft bereits")
+        return
+
+    sprinkler_scheduler_running = True
+    sprinkler_scheduler_task = task.create(sprinkler_scheduler_loop())
+
+    log_scheduler.info("Scheduler task gestartet")
+
+
+def sprinkler_scheduler_tick():
+    try:
+        _sprinkler_scheduler_tick_impl()
+    except Exception as e:
+        log_scheduler.exception("Scheduler tick crashed")
+        
+def _sprinkler_scheduler_tick_impl():
+    global sprinkler_scheduler_running
+    global active_queue, done_queue
+    global used
+    """
+    Scheduler-Loop für die Bewässerungs-Queue
+    - JSON-Zonen
+    - Prüft input_boolean.sprinkler_scheduler_aktiv
+    - Startet nur eine Zone gleichzeitig
+    """
+    
+    # log_scheduler.info("Scheduler startet...")
+    # -------------------------
+    # 0) Aufräumen: Done-Queue - Retention
+    # -------------------------
+    cleanup_done_queue()
+    # -------------------------
+    # 1) Aufräumen: cancelled Elemente beenden / entfernen
+    # -------------------------
+    to_cancel = []
+    # log_scheduler.info("Scheduler, check for cancelled")
+    for entry in active_queue:
+        if entry["status"] == "cancel":
+            log_scheduler.info(f"Stopping physically zone {entry['zone_id']} (cancelled)")
+            to_cancel.append(entry)
+        # skip erst wegräumen (lassen), wenn Zeit abgelaufen ist, damit dann sauber neu geplant werden kann
+        # notwendig für strict-backward, schadet aber auch bei forward nicht
+        if entry["status"] == "skip" and entry["scheduled_end"] <= normalize_dt(datetime.datetime.now()):
+            log_scheduler.info(f"Skipping zone {entry['zone_id']} (skip) End: {entry['scheduled_end']}")
+            to_cancel.append(entry)
+
+    for entry in to_cancel:
+        entry_stop_zone(entry)
+    to_cancel.clear()
+
+    # -------------------------
+    # 2) Enqueue
+    # -------------------------
+
+    # --- 2a) Programme enqueuen (blockweise!) ---
+
+    for program_block in list(program_queue):
+        enqueue_program_block(program_block)
+
+    # --- 2b) Zonene aus der Off-Queue enqueuen (zonenweise) ---
+    to_enqueue = []
+    # log_scheduler.info("Scheduler, check for enqueue")
+    for entry in idle_queue:
+        if entry["status"] == "enqueue":
+            log_scheduler.info(f"Enqueue zone {entry['zone_id']}")
+            to_enqueue.append(entry)
+
+    for entry in to_enqueue:
+        entry_enqueue_zone(entry)
+    to_enqueue.clear()
+
+    # -------------------------
+    # 3) running Elemente prüfen: Ende nach duration
+    # -------------------------
+    now = normalize_dt(datetime.datetime.now())
+    to_stop = []
+    for entry in active_queue:
+        if entry["status"] == "running" and entry["actual_start"] is not None:
+            scheduled_end = entry.get("scheduled_end")
+            remaining = int((scheduled_end - now).total_seconds())
+            entry["remaining"] = int(max(0, remaining))
+            write_zone_remaining(entry)
+            if scheduled_end and now >= scheduled_end:
+                entry["status"] = "finish"
+                write_zone_runtime_state(entry)
+                to_stop.append(entry)
+
+    for entry in to_stop:
+        # log_scheduler.info("stop zone and remove entry from Active Queue")
+        entry_stop_zone(entry)
+    to_stop.clear()
+
+    sort_active_queue()
+
+    #for entry in active_queue:
+    #    log_scheduler.info( 
+    #        f"[DEBUG-QUEUE] qe={entry['qe_id']} "
+    #        f"status={entry['status']} "
+    #        f"scheduled_start={entry['scheduled_start']} "
+    #        f"load={entry['load']}"
+    #    )
+
+    # 4.0 Globaler Scheduler-Schalter
+    
+    if not sprinkler_is_active():
+        publish_ui_state()
+        return
+    # -------------------------
+    # 4.1) queued Elemente starten, nur wenn keine running
+    # -------------------------
+    now = normalize_dt(datetime.datetime.now())
+
+    capacity = get_capacity()
+    used = current_load(active_queue)
+    # log_scheduler.info(f"Capacity: {capacity} , Current Load: {used}")
+    for entry in active_queue:
+        if entry["status"] != "queued":
+            continue
+
+        load = entry["load"]
+
+    #    log_scheduler.info(
+    #        f"check entry qe={entry['qe_id']} "
+    #        f"policy={entry['policy']} "
+    #        f"used={used}/{capacity}"
+    #    )
+        
+        start = normalize_dt(entry["scheduled_start"])
+        program_id = entry.get("program_id")
+
+        # -------------------------
+        # STRICT
+        # -------------------------
+    #    log_scheduler.info("check for strict")
+        if entry["policy"] == "strict":
+            # log_scheduler.info("strict")
+            # Startzeit noch nicht erreicht
+            if start and start > now:
+                continue
+    #        log_scheduler.info("check capa")
+
+            if used + load <= capacity:
+                # 👇 Nur beim ersten Start eines Programms anpassen
+                if is_program_start(entry) and program_weather_enabled(program_id):
+    #                log_scheduler.info(
+    #                    f"Weather enabled for program {program_id} → recalc durations"
+    #                )
+
+                    adapt_program_durations(
+                        program_id,
+                        recalc_durations=True
+                    )
+
+                # 🔥 0-Minuten Sonderfall
+                if entry.get("scheduled_duration", 0) <= 0:
+                    log_scheduler.info(
+                        f"Skipping QE {entry['qe_id']} "
+                        f"(Zone {entry['zone_id']}) – duration=0"
+                    )
+                    continue
+            
+
+                # ✅ Normales Starten
+                entry_start_zone(entry)
+                used += load
+            else:
+                break   # strict blockiert alles dahinter
+            
+        # -------------------------
+        # FLOATING
+        # -------------------------
+        else:
+            # Zeitfenster bis zum nächsten Strict
+            SAFETY_MARGIN = datetime.timedelta(seconds=10)
+
+            latest_end = now + datetime.timedelta(seconds=entry["planned_duration"]) + SAFETY_MARGIN
+            next_strict = next_strict_start_after(now)
+
+    #        log_scheduler.warning(
+    #            "[FLOATING-DEBUG] "
+    #            f"latest_end={latest_end!r} "
+    #            f"type(latest_end)={type(latest_end)} | "
+    #            f"next_strict={next_strict!r} "
+    #            f"type(next_strict)={type(next_strict)} | "
+    #            f"now={now!r} "
+    #            f"type(now)={type(now)}"
+    #        )
+            if next_strict is None or latest_end < next_strict:
+
+                slot = find_free_slot(load, capacity)
+
+                if slot is not None:
+    #                log_scheduler.info(f"Slot for Zone {entry["zone_name"]} {slot}")
+                    entry["slot"] = slot
+                    entry_start_zone(entry)
+                    used += load
+
+#                if used + load <= capacity:
+#                    entry_start_zone(entry)
+#                    used += load
+                # kein else → nächstes Floating darf evtl. noch passen
+            else:
+                # passt zeitlich nicht mehr vor nächsten Strict
+                continue
+
+    publish_ui_state()
+    publish_sprinkler_timeline()
+    # publish_timeline_debug()
+
+def serialize_entry(entry: dict) -> dict:
+    out = {}
+    for k, v in entry.items():
+        if isinstance(v, datetime.datetime):
+            out[k] = v.isoformat()
+        else:
+            out[k] = v
+    return out
+
+def deserialize_entry(data: dict) -> dict:
+    out = {}
+    for k, v in data.items():
+        if isinstance(v, str):
+            try:
+                # nur ISO-Datetimes werden zurückverwandelt
+                out[k] = datetime.datetime.fromisoformat(v)
+                continue
+            except ValueError:
+                pass
+        out[k] = v
+    return out
+
+def persist_done_entry(entry: dict):
+    log_persist.info("Write entry")
+
+    try:
+        # 1) Entry serialisieren → JSON-String
+        json_str = json.dumps(serialize_entry(entry), default=str)
+
+        # 2) Zeilenumbruch anhängen
+        json_str += "\n"
+
+        # 3) Datei öffnen (append)
+        fd = os.open(
+            DONE_QUEUE_FILE,
+            os.O_WRONLY | os.O_CREAT | os.O_APPEND,
+            0o644,
+        )
+
+        # 4) Schreiben (bytes!)
+        os.write(fd, json_str.encode("utf-8"))
+
+        # 5) Schließen
+        os.close(fd)
+
+        log_persist.info("Write entry done")
+
+    except Exception as e:
+        log_persist.error(f"Failed to persist done entry: {e}")
+
+def load_done_queue():
+    global done_queue
+
+    if not os.path.exists(DONE_QUEUE_FILE):
+        log_persist.info("No done-queue file found")
+        return
+
+    fd = os.open(DONE_QUEUE_FILE, os.O_RDONLY)
+    size = os.path.getsize(DONE_QUEUE_FILE)
+
+    if size == 0:
+        os.close(fd)
+        return
+
+    data = os.read(fd, size).decode("utf-8")
+    os.close(fd)
+
+    for line in data.splitlines():
+        try:
+            done_queue.append(json.loads(line))
+        except Exception as e:
+            log_persist.error(f"Invalid done entry: {e}")
+
+def cleanup_done_queue():
+    global done_queue, _last_retention_run
+
+    now = datetime.datetime.now()
+
+    # Nur einmal pro Tag laufen lassen
+    if _last_retention_run and _last_retention_run.date() == now.date():
+        return
+
+    cutoff = now - datetime.timedelta(days=DONE_RETENTION_DAYS)
+
+    new_queue = []
+    removed = 0
+
+    for entry in done_queue:
+        end = ensure_dt(
+            entry.get("actual_end") or entry.get("scheduled_end")
+        )
+
+        if not end:
+            continue
+
+        if end >= cutoff:
+            new_queue.append(entry)
+        else:
+            removed += 1
+
+    if removed > 0:
+        log_persist.info(f"[RETENTION] Removing {removed} old done entries")
+
+        done_queue = new_queue
+
+        # Datei neu schreiben
+        try:
+            fd = os.open(
+                DONE_QUEUE_FILE,
+                os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
+                0o644,
+            )
+
+            for entry in done_queue:
+                json_str = json.dumps(serialize_entry(entry), default=str) + "\n"
+                os.write(fd, json_str.encode("utf-8"))
+
+            os.close(fd)
+
+            log_persist.info("[RETENTION] Done queue file rewritten")
+
+        except Exception as e:
+            log_persist.error(f"[RETENTION] Failed to rewrite file: {e}")
+
+    _last_retention_run = now
+
+def ensure_dt(val):
+    if val is None:
+        return None
+    if isinstance(val, datetime.datetime):
+        return val
+    if isinstance(val, str):
+        try:
+            return datetime.datetime.fromisoformat(val)
+        except Exception:
+            return None
+    return None
+
+
+def entry_to_timeline_event(entry):
+    start = None
+    end = None
+
+    status = entry.get("status")
+    
+    if status == "skipped" or status == "skip":
+        start = ensure_dt(entry.get("planned_start"))
+        end = ensure_dt(entry.get("planned_end"))
+    elif status == "done":
+        start = ensure_dt(entry.get("actual_start"))
+        end = ensure_dt(entry.get("actual_end"))
+    elif status == "queued":
+        start = ensure_dt(entry.get("scheduled_start"))
+        end = ensure_dt(entry.get("scheduled_end"))
+    elif status == "running":
+        start = ensure_dt(entry.get("actual_start"))
+        end = ensure_dt(entry.get("scheduled_end"))
+    elif status == "cancelled" or status == "cancel":
+        start = ensure_dt(entry.get("actual_start"))
+        if not start:
+            start = ensure_dt(entry.get("scheduled_start"))
+
+        end = ensure_dt(entry.get("actual_end"))
+        if not end:
+            end = ensure_dt(entry.get("scheduled_end"))
+
+    if not start or not end:
+        return
+    
+    program = None
+    if entry.get("program_id"):
+        program = {
+            "id": entry["program_id"],
+            "name": entry.get("program_name", entry["program_id"]),
+        }
+
+    return {
+        "zone": {
+            "id": entry["zone_id"],
+            "name": entry["zone_name"],
+            "program_zone_index": entry["program_zone_index"],
+        },
+        "program": program,
+        "policy": entry.get("policy"),
+        "state": status,
+        "start": start.isoformat() if start else None,
+        "slot": entry.get("slot"),
+        "end": end.isoformat() if end else None,
+    }
+
+def build_timeline_events():
+    events = []
+
+    for e in active_queue:
+        ev = entry_to_timeline_event(e)
+        if ev is not None:
+            events.append(ev)
+
+    for e in done_queue:
+        ev = entry_to_timeline_event(e)
+        if ev is not None:
+            events.append(ev)
+
+    return events
+
+def publish_sprinkler_timeline():
+    events = build_timeline_events()
+
+    state.set(
+        "sensor.sprinkler_timeline",
+        len(events),
+        {
+            "events": events,
+            "updated_at": datetime.datetime.now().isoformat(),
+        }
+    )
+
+#@time_trigger("cron(01 00 * * * *)")
+def update_all_zones_daily_balance():
+    eto = float(state.get("sensor.irrigation_eto_raw_local") or 0)
+    rain = float(state.get("sensor.soil_rain_mm_today") or 0)
+
+    log_soil.info(f"Daily balance: ETo={eto:.2f} Rain={rain:.2f}")
+
+    for zone_id in _zones:
+
+        soil_entity = f"{STATE_PREFIX}_{zone_id:02d}_soil_water_mm"
+
+        soil = float(state.get(soil_entity) or 0)
+
+        new_soil = soil - eto + rain
+
+        # Clamp gegen Überlauf
+        capacity = float(state.get("input_number.soil_capacity_mm") or 30)
+        new_soil = max(0, min(capacity, new_soil))
+
+        state.set(soil_entity, round(new_soil, 2))
+
+        update_zone_deficit(zone_id)
+
+        log_soil.info(
+            f"Zone {zone_id}: soil {soil:.2f} → {new_soil:.2f}"
+        )
+
+def update_zone_deficit(zone_id):
+    soil_entity = f"{STATE_PREFIX}_{zone_id:02d}_soil_water_mm"
+    deficit_entity = f"{STATE_PREFIX}_{zone_id:02d}_soil_deficit_mm"
+
+    optimal = float(state.get("input_number.soil_optimal_mm") or 0)
+    soil = float(state.get(soil_entity) or 0)
+
+    deficit = max(0, optimal - soil)
+
+    state.set(deficit_entity, round(deficit, 2))
+
+
+def persist_zones_atomic(zones: dict):
+    directory = os.path.dirname(ZONES_FILE)
+
+    # 📁 Verzeichnis sicherstellen
+    if directory and not os.path.exists(directory):
+        os.makedirs(directory, exist_ok=True)
+
+    tmp_file = ZONES_FILE + ".tmp"
+
+    # 1️⃣ JSON serialisieren
+    json_str = json.dumps(zones, indent=2)
+
+    # 2️⃣ Datei neu schreiben (nicht append!)
+    fd = os.open(
+        tmp_file,
+        os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
+        0o644,
+    )
+
+    try:
+        os.write(fd, json_str.encode("utf-8"))
+        os.fsync(fd)   # 🔥 wichtig
+    finally:
+        os.close(fd)
+
+    # 3️⃣ Atomar ersetzen
+    os.replace(tmp_file, ZONES_FILE)
+
+    log_persist.info("Zones persisted atomically")

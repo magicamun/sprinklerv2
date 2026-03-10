@@ -1,0 +1,29 @@
+import os
+
+CONFIG_DIR = "/config/sprinkler"
+
+SENSOR_PREFIX           = "sensor.sprinklerv2"
+SENSOR_PREFIX_PROGRAMS  = f"{SENSOR_PREFIX}_programs"
+SENSOR_PREFIX_ZONE      = f"{SENSOR_PREFIX}_zone"
+SENSOR_SOIL_KIND        = "soil"
+SENSOR_DEFICIT_KIND     = "deficit"
+SENSOR_TIMELINE         = f"{SENSOR_PREFIX}_timeline"
+MANUAL_COLOR            = "#546E7A"
+SENSOR_PROGRAMS_DEBUG   = f"{SENSOR_PREFIX}_program_queue"
+
+# Wasserbilanz
+SENSOR_ETO_YESTERDAY    = "pyscript.irrigation_eto_raw_local"
+SENSOR_RAIN_YESTERDAY   = "sensor.regen_mm_gestern"
+INPUT_SOIL_CAPACITY     = "input_number.soil_capacity_mm"
+INPUT_SOIL_OPTIMAL      = "input_number.soil_optimal_mm"
+DEFAULT_SOIL_MM         = 20.0
+DEFAULT_DEFICIT_MM      = 0.0
+
+DONE_QUEUE              = "done_queue.jsonl"
+
+def done_file():
+    return os.path.join(CONFIG_DIR, DONE_QUEUE)
+
+def ensure_config_dir():
+    import os
+    os.makedirs(CONFIG_DIR, exist_ok=True)

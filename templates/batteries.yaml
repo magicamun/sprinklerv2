@@ -1,0 +1,30 @@
+- binary_sensor:
+  - name: "Batterie Bewegungsmelder Garage"
+    unique_id: battery_au_garage_bewegungsmelder_0
+    device_class: battery
+    state: >
+      {% set state_raw = states('sensor.au_garage_bewegungsmelder_0_battery') %}
+      {{ state_raw != 'ok' }}
+    attributes:
+      batterietyp: "{{ states('input_text.batterietyp_au_garage_bewegungsmelder_0') }}"
+      anzahl: "{{ states('input_number.batterie_anzahl_au_garage_bewegungsmelder_0') }}"
+      tauschdatum: "{{ states('input_datetime.batterie_tauschdatum_au_garage_bewegungsmelder_0') }}"
+      mittlere_lebensdauer: "{{ states('sensor.batterie_mittlere_lebensdauer_au_garage_bewegungsmelder_0') }}"
+
+- sensor:
+  - name: "Batterie Mittlere Lebensdauer Garage Bewegungsmelder"
+    unique_id: batterielebensdauer_au_garage_bewegungsmelder_0
+    state: >
+      {% set alt = states('input_datetime.batterie_tauschdatum_au_garage_bewegungsmelder_0') | as_datetime %}
+      {% set jetzt = now() %}
+      {% set mittlere = states('input_number.batterie_mittlere_lebensdauer_au_garage_bewegungsmelder_0') | float %}
+      {% if alt %}
+        {% set tage = (jetzt - alt).days %}
+        {% if mittlere > 0 %}
+          {{ ((mittlere + tage) / 2) | round(1) }}
+        {% else %}
+          {{ tage }}
+        {% endif %}
+      {% else %}
+        0
+      {% endif %}

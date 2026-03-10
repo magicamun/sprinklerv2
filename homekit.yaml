@@ -1,0 +1,76 @@
+  name: Daheim
+  filter:
+    include_entities:
+# Büro
+      - cover.dg_buero_jalousie_0
+      - climate.dg_buero_heizung_0
+      - switch.dg_buero_licht_deckenlicht
+# Garage
+      - cover.garagentor
+      - switch.au_garage_schalter_ch1
+      - switch.au_garage_schalter_ch2
+# Garten
+      - cover.au_garten_tor_maehroboter
+      - switch.au_garten_schalter_ch1
+      - switch.au_garten_schalter_ch2
+      - switch.au_garten_schalter_ch3
+      - switch.au_garten_schalter_ch4
+# Terrasse
+      - light.au_terrasse_dimmer_ch1
+      - light.au_terrasse_dimmer_ch2
+# Weihnachtsbeleuchtung
+      - switch.au_weihnachten_schalter_steckdose_0
+      - switch.bat_weihnachten_schalter_0
+      - switch.tasmota01
+      - switch.tasmota02
+      - switch.au_terrasse_schalter_ch2
+# Cameras, Motion
+      - camera.reolink_garten_2
+      - binary_sensor.reolink_garten_2_person_motion
+
+  entity_config:
+# Büro 
+    cover.dg_buero_jalousie_0:
+      name: "Jalousie Büro"
+    switch.dg_buero_licht_deckenlicht:
+      name: "Deckenlicht"
+    climate.dg_buero_heizung_0:
+      name: "Heizung Büro"
+# Garage
+    cover.garage:
+      name: "Garagentor"
+    switch.au_garage_schalter_ch1:
+      name: "Lüfter Garage"
+    switch.au_garage_schalter_ch2:
+      name: "Beleuchtung Weg"
+# Garten
+    cover.au_garten_tor_maehroboter:
+      name: "Garage Greenkeeper"
+    switch.au_garten_schalter_ch1:
+      name: "Beet Buchs"
+    switch.au_garten_schalter_ch2:
+      name: "Beet links"
+    switch.au_garten_schalter_ch3:
+      name: "Beet rechts"
+    switch.au_garten_schalter_ch4:
+      name: "Mauer"
+# Terrasse
+    light.au_terrasse_dimmer_ch1:
+      name: "Licht Stütze Links"  
+    light.au_terrasse_dimmer_ch2:
+      name: "Licht Stütze Mitte,Rechts"
+# Weihnachtsbeleuchtung
+    switch.au_weihnachten_schalter_steckdose_0:
+      name: "LED's Haustür"
+    switch.bat_weihnachten_schalter_0:
+      name: "LED's Olive"
+    switch.tasmota01:
+      name: "LED's Weihnachtsbaum"
+    switch.tasmota02:
+      name: "LED's Küche"
+    switch.au_terrasse_schalter_ch2:
+      name: "LED's Buchs"
+# Camera
+    camera.reolink_garten_2:
+      name: "WebCam Garten"
+    

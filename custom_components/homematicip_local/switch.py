@@ -1,0 +1,203 @@
+"""Switch platform for Homematic(IP) Local for OpenCCU."""
+
+from __future__ import annotations
+
+import logging
+from typing import Any, Final, override
+
+from aiohomematic.const import DataPointCategory
+from aiohomematic.model.custom import CustomDpSwitch
+from aiohomematic.model.generic import DpSwitch
+from aiohomematic.model.hub import ProgramDpSwitch, SysvarDpSwitch
+from homeassistant.components.switch import SwitchEntity
+from homeassistant.const import STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from . import HomematicConfigEntry
+from .control_unit import ControlUnit, signal_new_data_point
+from .generic_entity import (
+    AioHomematicGenericProgramEntity,
+    AioHomematicGenericRestoreEntity,
+    AioHomematicGenericSysvarEntity,
+)
+from .support import handle_homematic_errors
+
+_LOGGER = logging.getLogger(__name__)
+ATTR_CHANNEL_STATE: Final = "channel_state"
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: HomematicConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up the Homematic(IP) Local for OpenCCU switch platform."""
+    control_unit: ControlUnit = entry.runtime_data
+
+    @callback
+    def async_add_switch(data_points: tuple[CustomDpSwitch | DpSwitch, ...]) -> None:
+        """Add switch from Homematic(IP) Local for OpenCCU."""
+        _LOGGER.debug("ASYNC_ADD_SWITCH: Adding %i data points", len(data_points))
+
+        if entities := [
+            AioHomematicSwitch(
+                control_unit=control_unit,
+                data_point=data_point,
+            )
+            for data_point in data_points
+        ]:
+            async_add_entities(entities)
+
+    @callback
+    def async_add_hub_switch(data_points: tuple[SysvarDpSwitch | ProgramDpSwitch, ...]) -> None:
+        """Add sysvar switch from Homematic(IP) Local for OpenCCU."""
+        _LOGGER.debug("ASYNC_ADD_HUB_SWITCH: Adding %i data points", len(data_points))
+
+        if sysvar_entities := [
+            AioHomematicSysvarSwitch(control_unit=control_unit, data_point=data_point)
+            for data_point in data_points
+            if isinstance(data_point, SysvarDpSwitch)
+        ]:
+            async_add_entities(sysvar_entities)
+
+        if program_entities := [
+            AioHomematicProgramSwitch(control_unit=control_unit, data_point=data_point)
+            for data_point in data_points
+            if isinstance(data_point, ProgramDpSwitch)
+        ]:
+            async_add_entities(program_entities)
+
+    entry.async_on_unload(
+        func=async_dispatcher_connect(
+            hass=hass,
+            signal=signal_new_data_point(entry_id=entry.entry_id, platform=DataPointCategory.SWITCH),
+            target=async_add_switch,
+        )
+    )
+    entry.async_on_unload(
+        func=async_dispatcher_connect(
+            hass=hass,
+            signal=signal_new_data_point(entry_id=entry.entry_id, platform=DataPointCategory.HUB_SWITCH),
+            target=async_add_hub_switch,
+        )
+    )
+
+    async_add_switch(
+        data_points=control_unit.get_new_data_points(
+            data_point_type=CustomDpSwitch | DpSwitch,
+        )
+    )
+
+    async_add_hub_switch(data_points=control_unit.get_new_hub_data_points(data_point_type=SysvarDpSwitch))
+    # async_add_hub_switch(data_points=control_unit.get_new_hub_data_points(data_point_type=ProgramDpSwitch))
+
+
+class AioHomematicSwitch(AioHomematicGenericRestoreEntity[CustomDpSwitch | DpSwitch], SwitchEntity):
+    """Representation of the HomematicIP switch entity."""
+
+    @property
+    @override
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the state attributes of the generic entity."""
+        attributes = super().extra_state_attributes
+        if isinstance(self._data_point, CustomDpSwitch) and (
+            self._data_point.group_value and self._data_point.value != self._data_point.group_value
+        ):
+            attributes[ATTR_CHANNEL_STATE] = self._data_point.group_value
+        return attributes
+
+    @property
+    @override
+    def is_on(self) -> bool | None:
+        """Return true if switch is on."""
+        if self._data_point.is_valid:
+            return bool(self._data_point.value)
+        if (
+            self.is_restored
+            and self._restored_state
+            and (restored_state := self._restored_state.state)
+            not in (
+                STATE_UNKNOWN,
+                STATE_UNAVAILABLE,
+            )
+        ):
+            return restored_state == STATE_ON
+        return None
+
+    @handle_homematic_errors
+    async def async_set_on_time(self, on_time: float) -> None:
+        """Set the on time of the light."""
+        if isinstance(self._data_point, CustomDpSwitch):
+            self._data_point.set_timer_on_time(on_time=on_time)
+        if isinstance(self._data_point, DpSwitch):
+            await self._data_point.set_on_time(on_time=on_time)
+
+    @override
+    @handle_homematic_errors
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn the switch off."""
+        await self._data_point.turn_off()
+
+    @override
+    @handle_homematic_errors
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn the switch on."""
+        await self._data_point.turn_on()
+
+
+class AioHomematicSysvarSwitch(AioHomematicGenericSysvarEntity[SysvarDpSwitch], SwitchEntity):
+    """Representation of the HomematicIP sysvar switch entity."""
+
+    @property
+    @override
+    def is_on(self) -> bool | None:
+        """Return true if switch is on."""
+        return bool(self._data_point.value)
+
+    @override
+    @handle_homematic_errors
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn the switch off."""
+        await self._data_point.send_variable(value=False)
+
+    @override
+    @handle_homematic_errors
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn the switch on."""
+        await self._data_point.send_variable(value=True)
+
+
+class AioHomematicProgramSwitch(AioHomematicGenericProgramEntity[ProgramDpSwitch], SwitchEntity):
+    """Representation of the HomematicIP program switch entity."""
+
+    def __init__(
+        self,
+        control_unit: ControlUnit,
+        data_point: ProgramDpSwitch,
+    ) -> None:
+        """Initialize the generic entity."""
+        super().__init__(
+            control_unit=control_unit,
+            data_point=data_point,
+        )
+        self._data_point: ProgramDpSwitch = data_point
+
+    @property
+    @override
+    def is_on(self) -> bool | None:
+        """Return true if switch is on."""
+        return self._data_point.value is True
+
+    @override
+    @handle_homematic_errors
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn the switch off."""
+        await self._data_point.turn_off()
+
+    @override
+    @handle_homematic_errors
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn the switch on."""
+        await self._data_point.turn_on()

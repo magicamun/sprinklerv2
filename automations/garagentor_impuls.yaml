@@ -1,0 +1,178 @@
+- id: garage_tor_impuls
+  alias: Garage Tor – Steuerung Impuls.3
+  mode: single
+
+  # Trigger auf Helper UND Endlagensensoren
+  trigger:
+    - platform: state
+      entity_id: input_select.garage_tor_control
+    - platform: state
+      entity_id:
+        - binary_sensor.au_garage_status_ch1
+        - binary_sensor.au_garage_status_ch2
+
+  action:
+    - variables:
+        prev: "{{ trigger.from_state.state }}"
+        current: "{{ trigger.to_state.state }}"
+
+    # =====================
+    # OPENING Logik
+    # =====================
+    - choose:
+        - conditions:
+            - condition: state
+              entity_id: input_select.garage_tor_control
+              state: opening
+          sequence:
+            - choose:
+                # prev == closed → starten hoch
+                - conditions:
+                    - condition: template
+                      value_template: "{{ prev == 'closed' }}"
+                  sequence:
+                    - service: homematicip_local.switch_set_on_time
+                      target:
+                        entity_id: switch.au_garage_tor_ch30
+                      data:
+                        on_time: 1
+                    - service: switch.turn_on
+                      target:
+                        entity_id: switch.au_garage_tor_ch30
+                    - service: input_select.select_option
+                      target:
+                        entity_id: input_select.garage_tor_control
+                      data:
+                        option: opening
+
+                # prev == closing → STOP
+                - conditions:
+                    - condition: template
+                      value_template: "{{ prev == 'closing' }}"
+                  sequence:
+                    - service: homematicip_local.switch_set_on_time
+                      target:
+                        entity_id: switch.au_garage_tor_ch38
+                      data:
+                        on_time: 1
+                    - service: switch.turn_on
+                      target:
+                        entity_id: switch.au_garage_tor_ch38
+                    - service: input_select.select_option
+                      target:
+                        entity_id: input_select.garage_tor_control
+                      data:
+                        option: stopped
+
+                # prev == stopped → weiter opening
+                - conditions:
+                    - condition: template
+                      value_template: "{{ prev == 'stopped' }}"
+                  sequence:
+                    - service: homematicip_local.switch_set_on_time
+                      target:
+                        entity_id: switch.au_garage_tor_ch30
+                      data:
+                        on_time: 1
+                    - service: switch.turn_on
+                      target:
+                        entity_id: switch.au_garage_tor_ch30
+                    - service: input_select.select_option
+                      target:
+                        entity_id: input_select.garage_tor_control
+                      data:
+                        option: opening
+
+    # =====================
+    # CLOSING Logik
+    # =====================
+        - conditions:
+            - condition: state
+              entity_id: input_select.garage_tor_control
+              state: closing
+          sequence:
+            - choose:
+                # prev == open → starten runter
+                - conditions:
+                    - condition: template
+                      value_template: "{{ prev == 'open' }}"
+                  sequence:
+                    - service: homematicip_local.switch_set_on_time
+                      target:
+                        entity_id: switch.au_garage_tor_ch38
+                      data:
+                        on_time: 1
+                    - service: switch.turn_on
+                      target:
+                        entity_id: switch.au_garage_tor_ch38
+                    - service: input_select.select_option
+                      target:
+                        entity_id: input_select.garage_tor_control
+                      data:
+                        option: closing
+
+                # prev == opening → STOP
+                - conditions:
+                    - condition: template
+                      value_template: "{{ prev == 'opening' }}"
+                  sequence:
+                    - service: homematicip_local.switch_set_on_time
+                      target:
+                        entity_id: switch.au_garage_tor_ch30
+                      data:
+                        on_time: 1
+                    - service: switch.turn_on
+                      target:
+                        entity_id: switch.au_garage_tor_ch30
+                    - service: input_select.select_option
+                      target:
+                        entity_id: input_select.garage_tor_control
+                      data:
+                        option: stopped
+
+                # prev == stopped → weiter closing
+                - conditions:
+                    - condition: template
+                      value_template: "{{ prev == 'stopped' }}"
+                  sequence:
+                    - service: homematicip_local.switch_set_on_time
+                      target:
+                        entity_id: switch.au_garage_tor_ch38
+                      data:
+                        on_time: 1
+                    - service: switch.turn_on
+                      target:
+                        entity_id: switch.au_garage_tor_ch38
+                    - service: input_select.select_option
+                      target:
+                        entity_id: input_select.garage_tor_control
+                      data:
+                        option: closing
+
+    # =====================
+    # Endlagen setzen
+    # =====================
+    - choose:
+        # Tor ist offen
+        - conditions:
+            - condition: state
+              entity_id: binary_sensor.au_garage_status_ch1
+              state: 'on'
+          sequence:
+            - service: input_select.select_option
+              target:
+                entity_id: input_select.garage_tor_control
+              data:
+                option: open
+
+        # Tor ist zu
+        - conditions:
+            - condition: state
+              entity_id: binary_sensor.au_garage_status_ch2
+              state: 'on'
+          sequence:
+            - service: input_select.select_option
+              target:
+                entity_id: input_select.garage_tor_control
+              data:
+                option: closed

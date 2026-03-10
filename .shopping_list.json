@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Eier",
+    "id": "b9d1d0641507423490d33500421f9d23",
+    "complete": true
+  },
+  {
+    "name": "Putenschnitzel",
+    "id": "4b249e472084466f9e4e0301f1d67e06",
+    "complete": true
+  },
+  {
+    "name": "Antikalk",
+    "id": "d1452efdbf8f4cadb3f24aaf4c692a2b",
+    "complete": true
+  },
+  {
+    "name": "Eier",
+    "id": "be4ba2d2cb1a4d48a7d91160a3da6db8",
+    "complete": false
+  },
+  {
+    "name": "Milch",
+    "id": "de697713b304444a9ad2d8c9b6531a8d",
+    "complete": false
+  }
+]

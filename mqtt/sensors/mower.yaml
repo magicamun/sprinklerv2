@@ -1,0 +1,555 @@
+# ------------------------
+# Gerät & Verbindung
+# ------------------------
+- name: "Robonect Seriennummer"
+  state_topic: "greenkeeper/device/serial"
+  unique_id: "robonect_serial"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Gerätename"
+  state_topic: "greenkeeper/device/name"
+  unique_id: "robonect_name"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect WLAN RSSI"
+  state_topic: "greenkeeper/wlan/rssi"
+  unique_id: "robonect_rssi"
+  device_class: signal_strength
+  unit_of_measurement: "dBm"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# ------------------------
+# Status & Betrieb
+# ------------------------
+- name: "Robonect Status Code"
+  state_topic: "greenkeeper/mower/status"
+  unique_id: "robonect_status"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Status Text"
+  state_topic: "greenkeeper/mower/status/plain"
+  unique_id: "robonect_status_text"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Status Dauer"
+  state_topic: "greenkeeper/mower/status/duration"
+  unique_id: "robonect_status_duration"
+  device_class: duration
+  unit_of_measurement: "s"
+  state_class: measurement
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Substatus"
+  state_topic: "greenkeeper/mower/substatus"
+  unique_id: "robonect_substatus"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Modus"
+  state_topic: "greenkeeper/mower/mode"
+  unique_id: "robonect_mode"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Strecke"
+  state_topic: "greenkeeper/mower/distance"
+  unique_id: "robonect_distance"
+  device_class: distance
+  unit_of_measurement: "m"
+  state_class: measurement
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Batterieladung"
+  state_topic: "greenkeeper/mower/battery/charge"
+  unique_id: "robonect_battery_charge"
+  device_class: battery
+  unit_of_measurement: "%"
+  state_class: measurement
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Betriebsstunden"
+  state_topic: "greenkeeper/mower/statistic/hours"
+  unique_id: "robonect_hours"
+  device_class: duration
+  unit_of_measurement: "h"
+  state_class: measurement
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# ------------------------
+# Timer – Nächster Lauf
+# ------------------------
+- name: "Robonect Timer Next Unix"
+  state_topic: "greenkeeper/mower/timer/next/unix"
+  unique_id: "robonect_timer_next_unix"
+  device_class: timestamp
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer Next Datum"
+  state_topic: "greenkeeper/mower/timer/next/date"
+  unique_id: "robonect_timer_next_date"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer Next Zeit"
+  state_topic: "greenkeeper/mower/timer/next/time"
+  unique_id: "robonect_timer_next_time"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# ------------------------
+# Timer Kanäle (CH0–CH13)
+# ------------------------
+# ==================================================
+# Timer Kanäle
+# ==================================================
+# --- Kanal 0 ---
+- name: "Robonect Timer CH0 Wochentage"
+  state_topic: "greenkeeper/mower/timer/ch0/weekdays"
+  unique_id: "robonect_timer_ch0_weekdays"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH0 Start"
+  state_topic: "greenkeeper/mower/timer/ch0/start"
+  unique_id: "robonect_timer_ch0_start"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH0 Ende"
+  state_topic: "greenkeeper/mower/timer/ch0/end"
+  unique_id: "robonect_timer_ch0_end"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# --- Kanal 1 ---
+- name: "Robonect Timer CH1 Wochentage"
+  state_topic: "greenkeeper/mower/timer/ch1/weekdays"
+  unique_id: "robonect_timer_ch1_weekdays"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH1 Start"
+  state_topic: "greenkeeper/mower/timer/ch1/start"
+  unique_id: "robonect_timer_ch1_start"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH1 Ende"
+  state_topic: "greenkeeper/mower/timer/ch1/end"
+  unique_id: "robonect_timer_ch1_end"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# --- Kanal 2 ---
+- name: "Robonect Timer CH2 Wochentage"
+  state_topic: "greenkeeper/mower/timer/ch2/weekdays"
+  unique_id: "robonect_timer_ch2_weekdays"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH2 Start"
+  state_topic: "greenkeeper/mower/timer/ch2/start"
+  unique_id: "robonect_timer_ch2_start"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH2 Ende"
+  state_topic: "greenkeeper/mower/timer/ch2/end"
+  unique_id: "robonect_timer_ch2_end"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# --- Kanal 3 ---
+- name: "Robonect Timer CH3 Wochentage"
+  state_topic: "greenkeeper/mower/timer/ch3/weekdays"
+  unique_id: "robonect_timer_ch3_weekdays"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH3 Start"
+  state_topic: "greenkeeper/mower/timer/ch3/start"
+  unique_id: "robonect_timer_ch3_start"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH3 Ende"
+  state_topic: "greenkeeper/mower/timer/ch3/end"
+  unique_id: "robonect_timer_ch3_end"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# --- Kanal 4 ---
+- name: "Robonect Timer CH4 Wochentage"
+  state_topic: "greenkeeper/mower/timer/ch4/weekdays"
+  unique_id: "robonect_timer_ch4_weekdays"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH4 Start"
+  state_topic: "greenkeeper/mower/timer/ch4/start"
+  unique_id: "robonect_timer_ch4_start"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH4 Ende"
+  state_topic: "greenkeeper/mower/timer/ch4/end"
+  unique_id: "robonect_timer_ch4_end"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# --- Kanal 5 ---
+- name: "Robonect Timer CH5 Wochentage"
+  state_topic: "greenkeeper/mower/timer/ch5/weekdays"
+  unique_id: "robonect_timer_ch5_weekdays"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH5 Start"
+  state_topic: "greenkeeper/mower/timer/ch5/start"
+  unique_id: "robonect_timer_ch5_start"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH5 Ende"
+  state_topic: "greenkeeper/mower/timer/ch5/end"
+  unique_id: "robonect_timer_ch5_end"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# --- Kanal 6 ---
+- name: "Robonect Timer CH6 Wochentage"
+  state_topic: "greenkeeper/mower/timer/ch6/weekdays"
+  unique_id: "robonect_timer_ch6_weekdays"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH6 Start"
+  state_topic: "greenkeeper/mower/timer/ch6/start"
+  unique_id: "robonect_timer_ch6_start"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH6 Ende"
+  state_topic: "greenkeeper/mower/timer/ch6/end"
+  unique_id: "robonect_timer_ch6_end"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# --- Kanal 7 ---
+- name: "Robonect Timer CH7 Wochentage"
+  state_topic: "greenkeeper/mower/timer/ch7/weekdays"
+  unique_id: "robonect_timer_ch7_weekdays"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH7 Start"
+  state_topic: "greenkeeper/mower/timer/ch7/start"
+  unique_id: "robonect_timer_ch7_start"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH7 Ende"
+  state_topic: "greenkeeper/mower/timer/ch7/end"
+  unique_id: "robonect_timer_ch7_end"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# --- Kanal 8 ---
+- name: "Robonect Timer CH8 Wochentage"
+  state_topic: "greenkeeper/mower/timer/ch8/weekdays"
+  unique_id: "robonect_timer_ch8_weekdays"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH8 Start"
+  state_topic: "greenkeeper/mower/timer/ch8/start"
+  unique_id: "robonect_timer_ch8_start"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH8 Ende"
+  state_topic: "greenkeeper/mower/timer/ch8/end"
+  unique_id: "robonect_timer_ch8_end"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# --- Kanal 9 ---
+- name: "Robonect Timer CH9 Wochentage"
+  state_topic: "greenkeeper/mower/timer/ch9/weekdays"
+  unique_id: "robonect_timer_ch9_weekdays"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH9 Start"
+  state_topic: "greenkeeper/mower/timer/ch9/start"
+  unique_id: "robonect_timer_ch9_start"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH9 Ende"
+  state_topic: "greenkeeper/mower/timer/ch9/end"
+  unique_id: "robonect_timer_ch9_end"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# --- Kanal 10 ---
+- name: "Robonect Timer CH10 Wochentage"
+  state_topic: "greenkeeper/mower/timer/ch10/weekdays"
+  unique_id: "robonect_timer_ch10_weekdays"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH10 Start"
+  state_topic: "greenkeeper/mower/timer/ch10/start"
+  unique_id: "robonect_timer_ch10_start"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH10 Ende"
+  state_topic: "greenkeeper/mower/timer/ch10/end"
+  unique_id: "robonect_timer_ch10_end"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# --- Kanal 11 ---
+- name: "Robonect Timer CH11 Wochentage"
+  state_topic: "greenkeeper/mower/timer/ch11/weekdays"
+  unique_id: "robonect_timer_ch11_weekdays"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH11 Start"
+  state_topic: "greenkeeper/mower/timer/ch11/start"
+  unique_id: "robonect_timer_ch11_start"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH11 Ende"
+  state_topic: "greenkeeper/mower/timer/ch11/end"
+  unique_id: "robonect_timer_ch11_end"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# --- Kanal 12 ---
+- name: "Robonect Timer CH12 Wochentage"
+  state_topic: "greenkeeper/mower/timer/ch12/weekdays"
+  unique_id: "robonect_timer_ch12_weekdays"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH12 Start"
+  state_topic: "greenkeeper/mower/timer/ch12/start"
+  unique_id: "robonect_timer_ch12_start"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH12 Ende"
+  state_topic: "greenkeeper/mower/timer/ch12/end"
+  unique_id: "robonect_timer_ch12_end"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# --- Kanal 13 ---
+- name: "Robonect Timer CH13 Wochentage"
+  state_topic: "greenkeeper/mower/timer/ch13/weekdays"
+  unique_id: "robonect_timer_ch13_weekdays"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH13 Start"
+  state_topic: "greenkeeper/mower/timer/ch13/start"
+  unique_id: "robonect_timer_ch13_start"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Timer CH13 Ende"
+  state_topic: "greenkeeper/mower/timer/ch13/end"
+  unique_id: "robonect_timer_ch13_end"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# ------------------------
+# Fehler & Wartung
+# ------------------------
+- name: "Robonect Fehlercode"
+  state_topic: "greenkeeper/mower/error/code"
+  unique_id: "robonect_error_code"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Fehlermeldung"
+  state_topic: "greenkeeper/mower/error/message"
+  unique_id: "robonect_error_message"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Messer Qualität"
+  state_topic: "greenkeeper/mower/blades/quality"
+  unique_id: "robonect_blades_quality"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Messer Tage"
+  state_topic: "greenkeeper/mower/blades/days"
+  unique_id: "robonect_blades_days"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Messer Stunden"
+  state_topic: "greenkeeper/mower/blades/hours"
+  unique_id: "robonect_blades_hours"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# ------------------------
+# Health / Klima / Spannung
+# ------------------------
+- name: "Robonect Spannung Intern 3.3V"
+  state_topic: "greenkeeper/health/voltage/int33"
+  unique_id: "robonect_voltage_int33"
+  unit_of_measurement: "V"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Spannung Extern 3.3V"
+  state_topic: "greenkeeper/health/voltage/ext33"
+  unique_id: "robonect_voltage_ext33"
+  unit_of_measurement: "V"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Batteriespannung"
+  state_topic: "greenkeeper/health/voltage/batt"
+  unique_id: "robonect_voltage_batt"
+  unit_of_measurement: "V"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Temperatur"
+  state_topic: "greenkeeper/health/climate/temperature"
+  unique_id: "robonect_temperature"
+  device_class: temperature
+  unit_of_measurement: "°C"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Luftfeuchte"
+  state_topic: "greenkeeper/health/climate/humidity"
+  unique_id: "robonect_humidity"
+  device_class: humidity
+  unit_of_measurement: "%"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+# ------------------------
+# Tür / Wetter
+# ------------------------
+
+- name: "Robonect Wetterdienst"
+  state_topic: "greenkeeper/weather/service"
+  unique_id: "robonect_weather_service"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Regen"
+  state_topic: "greenkeeper/weather/data/rain"
+  unique_id: "robonect_rain"
+  device_class: moisture
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Außentemperatur"
+  state_topic: "greenkeeper/weather/data/temperature"
+  unique_id: "robonect_outdoor_temp"
+  device_class: temperature
+  unit_of_measurement: "°C"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"
+
+- name: "Robonect Außenluftfeuchte"
+  state_topic: "greenkeeper/weather/data/humidity"
+  unique_id: "robonect_outdoor_humidity"
+  device_class: humidity
+  unit_of_measurement: "%"
+  device:
+    identifiers: ["robonect_001"]
+    name: "Robonect"

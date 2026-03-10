@@ -1,0 +1,1082 @@
+# Describes the format for available component services
+add_link:
+  fields:
+    sender_channel_address:
+      example: "0008789453:1"
+      required: true
+      selector:
+        text:
+    receiver_channel_address:
+      example: "0008789453:3"
+      required: true
+      selector:
+        text:
+    name:
+      required: false
+      selector:
+        text:
+    description:
+      required: false
+      selector:
+        text:
+
+create_central_links:
+  fields:
+    entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: homematicip_local
+    device_id:
+      required: false
+      selector:
+        device:
+          integration: homematicip_local
+
+clear_cache:
+  fields:
+    entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: homematicip_local
+
+confirm_all_delayed_devices:
+  fields:
+    entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: homematicip_local
+
+create_ccu_backup:
+  fields:
+    entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: homematicip_local
+
+copy_schedule:
+  target:
+    entity:
+      domain: climate
+      integration: homematicip_local
+  fields:
+    source_entity_id:
+      required: true
+      selector:
+        entity:
+          domain: climate
+          integration: homematicip_local
+
+copy_schedule_profile:
+  target:
+    entity:
+      domain: climate
+      integration: homematicip_local
+  fields:
+    source_entity_id:
+      required: false
+      selector:
+        entity:
+          domain: climate
+          integration: homematicip_local
+    source_profile:
+      required: true
+      example: P1
+      selector:
+        select:
+          options:
+            - "P1"
+            - "P2"
+            - "P3"
+            - "P4"
+            - "P5"
+            - "P6"
+    target_profile:
+      required: true
+      example: P1
+      selector:
+        select:
+          options:
+            - "P1"
+            - "P2"
+            - "P3"
+            - "P4"
+            - "P5"
+            - "P6"
+
+export_device_definition:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: homematicip_local
+
+fetch_system_variables:
+  fields:
+    entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: homematicip_local
+
+force_device_availability:
+  fields:
+    device_id:
+      required: false
+      selector:
+        device:
+          integration: homematicip_local
+    device_address:
+      example: "0008789453"
+      required: false
+      selector:
+        text:
+
+reload_device_config:
+  fields:
+    device_id:
+      required: false
+      selector:
+        device:
+          integration: homematicip_local
+    device_address:
+      example: "0008789453"
+      required: false
+      selector:
+        text:
+
+reload_channel_config:
+  fields:
+    device_id:
+      required: false
+      selector:
+        device:
+          integration: homematicip_local
+    device_address:
+      example: "0008789453"
+      required: false
+      selector:
+        text:
+    channel:
+      required: false
+      default: 1
+      example: 1
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+
+get_device_value:
+  fields:
+    device_id:
+      required: false
+      selector:
+        device:
+          integration: homematicip_local
+    device_address:
+      example: "0008789453"
+      required: false
+      selector:
+        text:
+    channel:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 99
+    parameter:
+      required: true
+      example: STATE
+      selector:
+        text:
+
+get_link_peers:
+  fields:
+    device_id:
+      required: false
+      selector:
+        device:
+          integration: homematicip_local
+    device_address:
+      example: "0008789453:3"
+      required: false
+      selector:
+        text:
+    channel:
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 99
+
+get_link_paramset:
+  fields:
+    sender_channel_address:
+      example: "0008789453:1"
+      required: true
+      selector:
+        text:
+    receiver_channel_address:
+      example: "0008789453:3"
+      required: true
+      selector:
+        text:
+
+get_paramset:
+  fields:
+    device_id:
+      required: false
+      selector:
+        device:
+          integration: homematicip_local
+    device_address:
+      example: "0008789453"
+      required: false
+      selector:
+        text:
+    channel:
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 99
+    paramset_key:
+      required: true
+      example: MASTER
+      selector:
+        select:
+          options:
+            - "MASTER"
+            - "VALUES"
+
+get_schedule_profile:
+  target:
+    entity:
+      domain: climate
+      integration: homematicip_local
+  fields:
+    profile:
+      required: true
+      example: P1
+      selector:
+        select:
+          options:
+            - "P1"
+            - "P2"
+            - "P3"
+            - "P4"
+            - "P5"
+            - "P6"
+
+get_schedule_weekday:
+  target:
+    entity:
+      domain: climate
+      integration: homematicip_local
+  fields:
+    profile:
+      required: true
+      example: P1
+      selector:
+        select:
+          options:
+            - "P1"
+            - "P2"
+            - "P3"
+            - "P4"
+            - "P5"
+            - "P6"
+    weekday:
+      required: true
+      example: MONDAY
+      selector:
+        select:
+          options:
+            - "MONDAY"
+            - "TUESDAY"
+            - "WEDNESDAY"
+            - "THURSDAY"
+            - "FRIDAY"
+            - "SATURDAY"
+            - "SUNDAY"
+
+get_schedule_simple_profile:
+  target:
+    entity:
+      domain: climate
+      integration: homematicip_local
+  fields:
+    profile:
+      required: true
+      example: P1
+      selector:
+        select:
+          options:
+            - "P1"
+            - "P2"
+            - "P3"
+            - "P4"
+            - "P5"
+            - "P6"
+
+get_schedule_simple_weekday:
+  target:
+    entity:
+      domain: climate
+      integration: homematicip_local
+  fields:
+    profile:
+      required: true
+      example: P1
+      selector:
+        select:
+          options:
+            - "P1"
+            - "P2"
+            - "P3"
+            - "P4"
+            - "P5"
+            - "P6"
+    weekday:
+      required: true
+      example: MONDAY
+      selector:
+        select:
+          options:
+            - "MONDAY"
+            - "TUESDAY"
+            - "WEDNESDAY"
+            - "THURSDAY"
+            - "FRIDAY"
+            - "SATURDAY"
+            - "SUNDAY"
+
+get_variable_value:
+  fields:
+    entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: homematicip_local
+    name:
+      required: true
+      example: "testvariable"
+      selector:
+        text:
+
+record_session:
+  fields:
+    entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: homematicip_local
+    on_time:
+      required: true
+      example: 20
+      selector:
+        number:
+          min: 1
+          max: 600
+    randomize_output:
+      required: true
+      default: true
+      selector:
+        boolean:
+
+remove_central_links:
+  fields:
+    entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: homematicip_local
+    device_id:
+      required: false
+      selector:
+        device:
+          integration: homematicip_local
+
+remove_link:
+  fields:
+    sender_channel_address:
+      example: "0008789453:1"
+      required: true
+      selector:
+        text:
+    receiver_channel_address:
+      example: "0008789453:3"
+      required: true
+      selector:
+        text:
+
+set_schedule_profile:
+  target:
+    entity:
+      domain: climate
+      integration: homematicip_local
+  fields:
+    profile:
+      required: true
+      example: P1
+      selector:
+        select:
+          options:
+            - "P1"
+            - "P2"
+            - "P3"
+            - "P4"
+            - "P5"
+            - "P6"
+    profile_data:
+      required: true
+      selector:
+        object:
+
+set_schedule_weekday:
+  target:
+    entity:
+      domain: climate
+      integration: homematicip_local
+  fields:
+    profile:
+      required: true
+      example: P1
+      selector:
+        select:
+          options:
+            - "P1"
+            - "P2"
+            - "P3"
+            - "P4"
+            - "P5"
+            - "P6"
+    weekday:
+      required: true
+      example: MONDAY
+      selector:
+        select:
+          options:
+            - "MONDAY"
+            - "TUESDAY"
+            - "WEDNESDAY"
+            - "THURSDAY"
+            - "FRIDAY"
+            - "SATURDAY"
+            - "SUNDAY"
+    weekday_data:
+      required: true
+      selector:
+        object:
+
+set_schedule_simple_profile:
+  target:
+    entity:
+      domain: climate
+      integration: homematicip_local
+  fields:
+    profile:
+      required: true
+      example: P1
+      selector:
+        select:
+          options:
+            - "P1"
+            - "P2"
+            - "P3"
+            - "P4"
+            - "P5"
+            - "P6"
+    simple_profile_data:
+      required: true
+      selector:
+        object:
+
+set_schedule_simple_weekday:
+  target:
+    entity:
+      domain: climate
+      integration: homematicip_local
+  fields:
+    profile:
+      required: true
+      example: P1
+      selector:
+        select:
+          options:
+            - "P1"
+            - "P2"
+            - "P3"
+            - "P4"
+            - "P5"
+            - "P6"
+    weekday:
+      required: true
+      example: MONDAY
+      selector:
+        select:
+          options:
+            - "MONDAY"
+            - "TUESDAY"
+            - "WEDNESDAY"
+            - "THURSDAY"
+            - "FRIDAY"
+            - "SATURDAY"
+            - "SUNDAY"
+    base_temperature:
+      required: true
+      default: 18.0
+      selector:
+        number:
+          min: 4.5
+          max: 30.5
+          step: 0.5
+          mode: slider
+    simple_weekday_list:
+      required: true
+      selector:
+        object:
+
+set_variable_value:
+  fields:
+    entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: homematicip_local
+    name:
+      required: true
+      example: "testvariable"
+      selector:
+        text:
+    value:
+      required: true
+      example: 1
+      selector:
+        text:
+
+set_device_value:
+  fields:
+    device_id:
+      required: false
+      selector:
+        device:
+          integration: homematicip_local
+    device_address:
+      example: "0008789453"
+      required: false
+      selector:
+        text:
+    channel:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 99
+    parameter:
+      required: true
+      example: STATE
+      selector:
+        text:
+    value:
+      required: true
+      example: 1
+      selector:
+        text:
+    value_type:
+      selector:
+        select:
+          options:
+            - "boolean"
+            - "dateTime.iso8601"
+            - "double"
+            - "int"
+            - "string"
+    wait_for_callback:
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 600
+    rx_mode:
+      example: BURST
+      selector:
+        select:
+          options:
+            - "BURST"
+            - "WAKEUP"
+
+put_link_paramset:
+  fields:
+    sender_channel_address:
+      example: "0008789453:1"
+      required: true
+      selector:
+        text:
+    receiver_channel_address:
+      example: "0008789453:3"
+      required: true
+      selector:
+        text:
+    paramset:
+      required: true
+      example: '{"SHORT_ON_TIME_FACTOR": 3}'
+      selector:
+        object:
+    rx_mode:
+      example: BURST
+      selector:
+        select:
+          options:
+            - "BURST"
+            - "WAKEUP"
+
+put_paramset:
+  fields:
+    device_id:
+      required: false
+      selector:
+        device:
+          integration: homematicip_local
+    device_address:
+      example: "0008789453"
+      required: false
+      selector:
+        text:
+    channel:
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 99
+    paramset_key:
+      required: true
+      example: MASTER
+      selector:
+        select:
+          options:
+            - "MASTER"
+            - "VALUES"
+    paramset:
+      required: true
+      example: '{"CHANNEL_OPERATION_MODE": 0}'
+      selector:
+        object:
+    wait_for_callback:
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 600
+    rx_mode:
+      example: BURST
+      selector:
+        select:
+          options:
+            - "BURST"
+            - "WAKEUP"
+
+enable_away_mode_by_calendar:
+  target:
+    entity:
+      domain: climate
+      integration: homematicip_local
+  fields:
+    start:
+      required: false
+      example: 2022-12-28 14:00
+      selector:
+        datetime:
+    end:
+      required: true
+      example: 2023-01-28 14:00
+      selector:
+        datetime:
+    away_temperature:
+      required: true
+      default: 18.0
+      selector:
+        number:
+          min: 4.5
+          max: 30.5
+          step: 0.5
+          mode: slider
+
+enable_away_mode_by_duration:
+  target:
+    entity:
+      domain: climate
+      integration: homematicip_local
+  fields:
+    hours:
+      required: true
+      default: 6
+      selector:
+        number:
+          min: 1
+          max: 999
+          step: 1
+          mode: slider
+    away_temperature:
+      required: true
+      default: 18.0
+      selector:
+        number:
+          min: 4.5
+          max: 30.5
+          step: 0.5
+          mode: slider
+
+disable_away_mode:
+  target:
+    entity:
+      domain: climate
+      integration: homematicip_local
+
+turn_on_siren:
+  target:
+    entity:
+      domain: siren
+      integration: homematicip_local
+  fields:
+    tone:
+      example: FREQUENCY_RISING
+      required: false
+      selector:
+        text:
+    light:
+      example: BLINKING_ALTERNATELY_REPEATING
+      required: false
+      selector:
+        text:
+    duration:
+      example: 60
+      required: false
+      selector:
+        text:
+
+play_sound:
+  target:
+    entity:
+      domain: siren
+      integration: homematicip_local
+  fields:
+    soundfile:
+      required: false
+      example: "SOUNDFILE_001"
+      selector:
+        text:
+    volume:
+      required: false
+      example: 0.5
+      selector:
+        number:
+          min: 0.0
+          max: 1.0
+          step: 0.1
+          mode: slider
+    on_time:
+      required: false
+      example: 10.0
+      selector:
+        number:
+          min: 0.0
+          max: 86400.0
+          step: 0.1
+          mode: box
+          unit_of_measurement: "s"
+    ramp_time:
+      required: false
+      example: 0.0
+      selector:
+        number:
+          min: 0.0
+          max: 86400.0
+          step: 0.1
+          mode: box
+          unit_of_measurement: "s"
+    repetitions:
+      required: false
+      example: 0
+      selector:
+        number:
+          min: -1
+          max: 18
+          step: 1
+          mode: box
+
+stop_sound:
+  target:
+    entity:
+      domain: siren
+      integration: homematicip_local
+
+set_sound_led:
+  target:
+    entity:
+      domain: light
+      integration: homematicip_local
+  fields:
+    color:
+      required: false
+      example: "red"
+      selector:
+        select:
+          translation_key: "fixed_color"
+          options:
+            - "black"
+            - "blue"
+            - "green"
+            - "turquoise"
+            - "red"
+            - "purple"
+            - "yellow"
+            - "white"
+    brightness:
+      required: false
+      example: 255
+      selector:
+        number:
+          min: 0
+          max: 255
+          step: 1
+          mode: slider
+    on_time:
+      required: false
+      example: 10.0
+      selector:
+        number:
+          min: 0.0
+          max: 86400.0
+          step: 0.1
+          mode: box
+          unit_of_measurement: "s"
+    ramp_time:
+      required: false
+      example: 0.0
+      selector:
+        number:
+          min: 0.0
+          max: 86400.0
+          step: 0.1
+          mode: box
+          unit_of_measurement: "s"
+    repetitions:
+      required: false
+      example: 0
+      selector:
+        number:
+          min: -1
+          max: 18
+          step: 1
+          mode: box
+    flash_time:
+      required: false
+      example: 500
+      selector:
+        number:
+          min: 0
+          max: 5000
+          step: 100
+          mode: box
+          unit_of_measurement: "ms"
+
+light_set_on_time:
+  target:
+    entity:
+      domain: light
+      integration: homematicip_local
+  fields:
+    on_time:
+      required: true
+      selector:
+        number:
+          min: -1
+          max: 8580000
+          unit_of_measurement: seconds
+          mode: box
+
+switch_set_on_time:
+  target:
+    entity:
+      domain: switch
+      integration: homematicip_local
+  fields:
+    on_time:
+      required: true
+      selector:
+        number:
+          min: -1
+          max: 8580000
+          unit_of_measurement: seconds
+          mode: box
+
+valve_set_on_time:
+  target:
+    entity:
+      domain: valve
+      integration: homematicip_local
+  fields:
+    on_time:
+      required: true
+      selector:
+        number:
+          min: -1
+          max: 8580000
+          unit_of_measurement: seconds
+          mode: box
+
+set_cover_combined_position:
+  target:
+    entity:
+      domain: cover
+      integration: homematicip_local
+      device_class: blind
+  fields:
+    position:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+    tilt_position:
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+    wait_for_callback:
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 600
+
+update_device_firmware_data:
+  fields:
+    entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: homematicip_local
+
+send_text_display:
+  target:
+    entity:
+      domain: notify
+      integration: homematicip_local
+  fields:
+    text:
+      required: true
+      example: "Hello World"
+      selector:
+        text:
+    icon:
+      required: false
+      example: "sun"
+      selector:
+        select:
+          translation_key: "display_icon"
+          options:
+            - "no_icon"
+            - "sun"
+            - "moon"
+            - "cloud"
+            - "cloud_and_sun"
+            - "cloud_and_mooon"
+            - "cloud_sun_and_rain"
+            - "rain"
+            - "raindrop"
+            - "drizzle"
+            - "snow"
+            - "snowflake"
+            - "wind"
+            - "thunderstorm"
+            - "bell"
+            - "clock"
+            - "eco"
+            - "flame"
+            - "lamp_on"
+            - "lamp_off"
+            - "padlock_open"
+            - "padlock_closed"
+            - "error"
+            - "everything_okay"
+            - "information"
+            - "new_message"
+            - "service_message"
+            - "shutters"
+            - "window_open"
+            - "external_protection"
+            - "internal_protection"
+            - "protection_deactivated"
+    background_color:
+      required: false
+      example: "white"
+      selector:
+        select:
+          translation_key: "display_color"
+          options:
+            - "white"
+            - "black"
+    text_color:
+      required: false
+      example: "black"
+      selector:
+        select:
+          translation_key: "display_color"
+          options:
+            - "white"
+            - "black"
+    alignment:
+      required: false
+      example: "center"
+      selector:
+        select:
+          translation_key: "display_alignment"
+          options:
+            - "left"
+            - "center"
+            - "right"
+    display_id:
+      required: false
+      example: 1
+      selector:
+        number:
+          min: 1
+          max: 5
+    sound:
+      required: false
+      example: "event"
+      selector:
+        select:
+          translation_key: "display_sound"
+          options:
+            - "disarmed"
+            - "externally_armed"
+            - "internally_armed"
+            - "delayed_externally_armed"
+            - "delayed_internally_armed"
+            - "event"
+            - "error"
+            - "low_battery"
+    repeat:
+      required: false
+      example: 1
+      selector:
+        number:
+          min: 0
+          max: 15
+
+clear_text_display:
+  target:
+    entity:
+      domain: notify
+      integration: homematicip_local

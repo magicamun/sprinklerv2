@@ -1,0 +1,380 @@
+############################
+# Weihnachtsbeleuchtung
+# Inputs / Helfer
+############################
+
+input_boolean:
+  weihnachtsbeleuchtung_automatik:
+    name: Weihnachtsbeleuchtung Automatik
+    icon: mdi:string-lights
+    
+##############################################################
+# Weihnachtsbeleuchtung
+# Input Uhrzeiten Morgens, Abends , (An , Aus)
+##############################################################
+input_datetime:
+  weihnachtsbeleuchtung_morgens_an_time:
+    name: Morgens an – Uhrzeit
+    has_date: false
+    has_time: true
+
+  weihnachtsbeleuchtung_morgens_aus_time:
+    name: Morgens aus – Uhrzeit.
+    has_date: false
+    has_time: true
+
+  weihnachtsbeleuchtung_abends_an_time:
+    name: Abends an – Uhrzeit
+    has_date: false
+    has_time: true
+
+  weihnachtsbeleuchtung_abends_aus_time:
+    name: Abends aus – Uhrzeit
+    has_date: false
+    has_time: true
+
+##############################################################
+# Weihnachtsbeleuchtung
+# Input Offsets zum Sonnen- auf/untergang
+##############################################################
+input_number:
+  weihnachtsbeleuchtung_morgens_an_offset:
+    name: Morgens an – Offset
+    min: -120
+    max: 120
+    step: 5
+    unit_of_measurement: min
+    mode: slider
+
+  weihnachtsbeleuchtung_morgens_aus_offset:
+    name: Morgens aus – Offset
+    min: -120
+    max: 120
+    step: 5
+    unit_of_measurement: min
+    mode: slider
+
+  weihnachtsbeleuchtung_abends_an_offset:
+    name: Abends an – Offset
+    min: -120
+    max: 120
+    step: 5
+    unit_of_measurement: min
+    mode: slider
+
+  weihnachtsbeleuchtung_abends_aus_offset:
+    name: Abends aus – Offset
+    min: -120
+    max: 120
+    step: 5
+    unit_of_measurement: min
+    mode: slider
+    
+##############################################################
+# Weihnachtsbeleuchtung
+# Auswahl Sonnenaufgang, Sonnenuntergang oder Uhrzeit
+##############################################################
+input_select:
+  weihnachtsbeleuchtung_morgens_an_type:
+    name: Morgens an – Typ
+    options:
+      - Uhrzeit
+      - Sonnenaufgang
+
+  weihnachtsbeleuchtung_morgens_aus_type:
+    name: Morgens aus – Typ
+    options:
+      - Uhrzeit
+      - Sonnenaufgang
+
+  weihnachtsbeleuchtung_abends_an_type:
+    name: Abends an – Typ
+    options:
+      - Uhrzeit
+      - Sonnenuntergang
+
+  weihnachtsbeleuchtung_abends_aus_type:
+    name: Abends aus – Typ
+    options:
+      - Uhrzeit
+      - Sonnenuntergang
+
+
+############################
+# Weihnachtsbeleuchtung
+# Berechnete Zeiten (_calc)
+############################
+
+template:
+  - switch:
+      - name: Gruppenschalter Weihnachtsbeleuchtung
+        icon: mdi:string-lights
+
+        turn_on:
+          service: switch.turn_on
+          target:
+            entity_id:
+              - switch.au_weihnachten_schalter_steckdose_0
+              - switch.tasmota01
+              - switch.tasmota02
+              - switch.au_terrasse_schalter_ch2
+
+        turn_off:
+          service: switch.turn_off
+          target:
+            entity_id:
+              - switch.au_weihnachten_schalter_steckdose_0
+              - switch.tasmota01
+              - switch.tasmota02
+              - switch.au_terrasse_schalter_ch2
+
+        state: >
+          {{ [
+            states('switch.au_weihnachten_schalter_steckdose_0'),
+            states('switch.tasmota01'),
+            states('switch.tasmota02'),
+            states('switch.au_terrasse_schalter_ch2')
+          ] | select('eq','on') | list | length > 0 }}
+          
+# N. Zeitpunkt
+  - sensor:
+      - name: Nächster Zeitpunkt
+        icon: mdi:calendar-clock
+        state: >
+          {% set dt_now = now() %}
+          {% if is_state('input_boolean.weihnachtsbeleuchtung_automatik', 'off') %}
+            Automatik aus
+          {% else %}   
+            {% set events = {
+              'Morgens an': states('sensor.weihnachtsbeleuchtung_morgens_an_berechnet'),
+              'Morgens aus': states('sensor.weihnachtsbeleuchtung_morgens_aus_berechnet'),
+              'Abends an': states('sensor.weihnachtsbeleuchtung_abends_an_berechnet'),
+              'Abends aus': states('sensor.weihnachtsbeleuchtung_abends_aus_berechnet'),
+              'Morgen früh an': states('sensor.weihnachtsbeleuchtung_morgens_an_nachster_tag')
+            } %}
+            {% set ns = namespace(next_event=none, next_time=none) %}
+               
+            {% for name, dt_str in events | dictsort(by='value') | reverse %}
+              {% if dt_str not in ['unknown','unavailable','',none] %}
+                {% set dt = dt_str | as_datetime | as_local %}
+                {% if dt > dt_now %}
+                {% set ns.next_time = dt %}
+                  {% set ns.next_event = name %}
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+            {% if ns.next_event %}
+              {{ ns.next_event }} – {{ ns.next_time.strftime("%H:%M") }}
+            {% else %}
+              Kein Event
+            {% endif %}
+          {% endif %}
+  - sensor:
+      - name: Weihnachtsbeleuchtung Morgens an (nächster Tag)
+        device_class: timestamp
+        icon: mdi:weather-sunset-up
+        state: >
+          {% set dt_today_str = states('sensor.weihnachtsbeleuchtung_morgens_an_berechnet') %}
+          {% if dt_today_str not in ['unknown','unavailable','',None] %}
+            {% set dt_today = dt_today_str | as_datetime %}
+            {% set dt_next = dt_today + timedelta(days=1) %}
+            {{ dt_next.isoformat() | as_local }}
+          {% else %}
+            {{ none }}
+          {% endif %}
+
+############################
+# Weihnachtsbeleuchtung
+# Master-Switch für alle 4 Schalter
+############################
+  - sensor:
+      - name: Weihnachtsbeleuchtung Morgens an (berechnet)
+        device_class: timestamp
+        icon: mdi:weather-sunset-up
+        state: >
+          {% set now_dt = now() %}
+          {% set today = now_dt.date() %}
+          {% set mode = states('input_select.weihnachtsbeleuchtung_morgens_an_type') %}
+          {% set offset = states('input_number.weihnachtsbeleuchtung_morgens_an_offset') | int %}
+          {% set dt_real = none %}
+    
+          {% if mode == 'Uhrzeit' %}
+            {% set t_str = states('input_datetime.weihnachtsbeleuchtung_morgens_an_time') %}
+            {% if t_str not in ['unknown','unavailable','',None] %}
+              {% set dt_real = (today ~ ' ' ~ t_str) | as_datetime | as_local %}
+            {% endif %}
+          {% elif mode == 'Sonnenaufgang' %}
+            {% set base = state_attr('sun.sun','next_rising') | as_datetime |as_local %}
+            {% set dt_tmp = base + timedelta(minutes=offset) %}
+            {# Wenn dt_tmp auf n. Tag liegt, zurück auf heute #}
+            {% if dt_tmp.date() > today %}
+              {% set dt_real = (today ~ ' ' ~ dt_tmp.strftime('%H:%M:%S')) | as_datetime | as_local %}
+            {% else %}
+              {% set dt_real = dt_tmp | as_local %}
+            {% endif %}
+          {% endif %}
+    
+          {% if dt_real is none %}
+            {{ none }}
+          {% else %}
+            {% set dt_out = dt_real %}
+            {{ dt_out | as_local }}
+          {% endif %}           
+          
+      - name: Weihnachtsbeleuchtung Morgens aus (berechnet)
+        device_class: timestamp
+        icon: mdi:weather-sunset-up
+        state: >
+          {% set now_dt = now() %}
+          {% set today = now_dt.date() %}
+          {% set mode = states('input_select.weihnachtsbeleuchtung_morgens_aus_type') %}
+          {% set offset = states('input_number.weihnachtsbeleuchtung_morgens_aus_offset') | int %}
+          {% set dt_real = none %}
+    
+          {% if mode == 'Uhrzeit' %}
+            {% set t_str = states('input_datetime.weihnachtsbeleuchtung_morgens_aus_time') %}
+            {% if t_str not in ['unknown','unavailable','',None] %}
+              {% set dt_real = (today ~ ' ' ~ t_str) | as_datetime | as_local %}
+            {% endif %}
+          {% elif mode == 'Sonnenaufgang' %}
+            {% set base = state_attr('sun.sun','next_rising') | as_datetime |as_local %}
+            {% set dt_tmp = base + timedelta(minutes=offset) %}
+            {# Wenn dt_tmp auf n. Tag liegt, zurück auf heute #}
+            {% if dt_tmp.date() > today %}
+              {% set dt_real = (today ~ ' ' ~ dt_tmp.strftime('%H:%M:%S')) | as_datetime | as_local %}
+            {% else %}
+              {% set dt_real = dt_tmp | as_local %}
+            {% endif %}
+          {% endif %}
+    
+          {% if dt_real is none %}
+            {{ none }}
+          {% else %}
+            {% set dt_out = dt_real %}
+            {{ dt_out | as_local }}
+          {% endif %}           
+      - name: Weihnachtsbeleuchtung Abends an (berechnet)
+        device_class: timestamp
+        icon: mdi:weather-sunset-down
+        state: >
+          {% set now_dt = now() %}
+          {% set today = now_dt.date() %}
+          {% set mode = states('input_select.weihnachtsbeleuchtung_abends_an_type') %}
+          {% set offset = states('input_number.weihnachtsbeleuchtung_abends_an_offset') | int %}
+          {% set dt_real = none %}
+    
+          {% if mode == 'Uhrzeit' %}
+            {% set t_str = states('input_datetime.weihnachtsbeleuchtung_abends_an_time') %}
+            {% if t_str not in ['unknown','unavailable','',None] %}
+              {% set dt_real = (today ~ ' ' ~ t_str) | as_datetime | as_local %}
+            {% endif %}
+          {% elif mode == 'Sonnenuntergang' %}
+            {% set base = state_attr('sun.sun','next_setting') | as_datetime |as_local %}
+            {% set dt_tmp = base + timedelta(minutes=offset) %}
+            {# Wenn dt_tmp auf n. Tag liegt, zurück auf heute #}
+            {% if dt_tmp.date() > today %}
+              {% set dt_real = (today ~ ' ' ~ dt_tmp.strftime('%H:%M:%S')) | as_datetime | as_local %}
+            {% else %}
+              {% set dt_real = dt_tmp | as_local %}
+            {% endif %}
+          {% endif %}
+    
+          {% if dt_real is none %}
+            {{ none }}
+          {% else %}
+            {% set dt_out = dt_real %}
+            {{ dt_out | as_local }}
+          {% endif %} 
+            
+      - name: Weihnachtsbeleuchtung Abends aus (berechnet)
+        device_class: timestamp
+        icon: mdi:weather-sunset-down
+        state: >
+          {% set now_dt = now() %}
+          {% set today = now_dt.date() %}
+          {% set mode = states('input_select.weihnachtsbeleuchtung_abends_aus_type') %}
+          {% set offset = states('input_number.weihnachtsbeleuchtung_abends_aus_offset') | int %}
+          {% set dt_real = none %}
+    
+          {% if mode == 'Uhrzeit' %}
+            {% set t_str = states('input_datetime.weihnachtsbeleuchtung_abends_aus_time') %}
+            {% if t_str not in ['unknown','unavailable','',None] %}
+              {% set dt_real = (today ~ ' ' ~ t_str) | as_datetime | as_local %}
+            {% endif %}
+          {% elif mode == 'Sonnenuntergang' %}
+            {% set base = state_attr('sun.sun','next_setting') | as_datetime |as_local %}
+            {% set dt_tmp = base + timedelta(minutes=offset) %}
+            {# Wenn dt_tmp auf n. Tag liegt, zurück auf heute #}
+            {% if dt_tmp.date() > today %}
+              {% set dt_real = (today ~ ' ' ~ dt_tmp.strftime('%H:%M:%S')) | as_datetime | as_local %}
+            {% else %}
+              {% set dt_real = dt_tmp | as_local %}
+            {% endif %}
+          {% endif %}
+    
+          {% if dt_real is none %}
+            {{ none }}
+          {% else %}
+            {% set dt_out = dt_real %}
+            {{ dt_out | as_local }}
+          {% endif %}          
+          
+############################
+# Weihnachtsbeleuchtung
+# Berechnete Zeiten (_calc)
+############################     
+automation:
+  - alias: "Weihnachtsbeleuchtung Automatik"
+    description: "Schaltet die Weihnachtsbeleuchtung nach den berechneten Zeiten"
+    mode: single
+    id: weihnachtsbeleuchtung_automatik
+
+    trigger:
+      - platform: time
+        at: sensor.weihnachtsbeleuchtung_morgens_an_berechnet
+      - platform: time
+        at: sensor.weihnachtsbeleuchtung_morgens_aus_berechnet
+      - platform: time
+        at: sensor.weihnachtsbeleuchtung_abends_an_berechnet
+      - platform: time
+        at: sensor.weihnachtsbeleuchtung_abends_aus_berechnet
+    
+    condition:
+      - condition: state
+        entity_id: input_boolean.weihnachtsbeleuchtung_automatik
+        state: "on"
+        
+    action:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ trigger.entity_id == 'sensor.weihnachtsbeleuchtung_morgens_an_berechnet' }}"
+            sequence:
+              - service: switch.turn_on
+                target:
+                  entity_id: switch.gruppenschalter_weihnachtsbeleuchtung
+    
+          - conditions:
+              - condition: template
+                value_template: "{{ trigger.entity_id == 'sensor.weihnachtsbeleuchtung_morgens_aus_berechnet' }}"
+            sequence:
+              - service: switch.turn_off
+                target:
+                  entity_id: switch.gruppenschalter_weihnachtsbeleuchtung
+    
+          - conditions:
+              - condition: template
+                value_template: "{{ trigger.entity_id == 'sensor.weihnachtsbeleuchtung_abends_an_berechnet' }}"
+            sequence:
+              - service: switch.turn_on
+                target:
+                  entity_id: switch.gruppenschalter_weihnachtsbeleuchtung
+    
+          - conditions:
+              - condition: template
+                value_template: "{{ trigger.entity_id == 'sensor.weihnachtsbeleuchtung_abends_aus_berechnet' }}"
+            sequence:
+              - service: switch.turn_off
+                target:
+                  entity_id: switch.gruppenschalter_weihnachtsbeleuchtung
+                  

@@ -1,0 +1,200 @@
+# ==================================================
+# RainControl – Sensoren (Bereich: Haus)
+# ==================================================
+
+# ------------------------
+# Allgemeine Infos / Status
+# ------------------------l"
+- name: "RainControl IsoTime"
+  state_topic: "RainControl/IsoTime"
+  unique_id: "raincontrol_time_iso"
+  device_class: timestamp
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Mode"
+  state_topic: "RainControl/Mode"
+  unique_id: "raincontrol_mode"
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Modus"
+  state_topic: "RainControl/Modus"
+  unique_id: "raincontrol_modus"
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Valve"
+  state_topic: "RainControl/Valve"
+  unique_id: "raincontrol_valve"
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Ventil"
+  state_topic: "RainControl/Ventil"
+  unique_id: "raincontrol_ventil"
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+# ------------------------
+# Füllstand / Analogwerte
+# ------------------------
+- name: "RainControl Analog"
+  state_topic: "RainControl/Analog"
+  unique_id: "raincontrol_analog"
+  unit_of_measurement: "ADC"
+  value_template: "{{ value | float }}"
+  state_class: measurement
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Liter"
+  state_topic: "RainControl/Liter"
+  unique_id: "raincontrol_liter"
+  unit_of_measurement: "L"
+  value_template: "{{ value | float }}"
+  state_class: measurement
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Limit Low"
+  state_topic: "RainControl/LimitLow"
+  unique_id: "raincontrol_limit_low"
+  unit_of_measurement: "L"
+  value_template: "{{ value | float }}"
+  state_class: measurement
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Limit High"
+  state_topic: "RainControl/LimitHigh"
+  unique_id: "raincontrol_limit_high"
+  unit_of_measurement: "L"
+  value_template: "{{ value | float }}"
+  state_class: measurement
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Liter Min"
+  state_topic: "RainControl/LiterMin"
+  unique_id: "raincontrol_liter_min"
+  unit_of_measurement: "L"
+  value_template: "{{ value | float }}"
+  device_class: volume
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Liter Max"
+  state_topic: "RainControl/LiterMax"
+  unique_id: "raincontrol_liter_max"
+  unit_of_measurement: "L"
+  value_template: "{{ value | float }}"
+  device_class: volume
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Prozent"
+  state_topic: "RainControl/Prozent"
+  unique_id: "raincontrol_prozent"
+  unit_of_measurement: "%"
+  value_template: "{{ value.replace('%','') | float }}"
+  state_class: measurement
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Uptime"
+  state_topic: "RainControl/Uptime"
+  unique_id: "raincontrol_uptime"
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Booted"
+  state_topic: "RainControl/Booted"
+  unique_id: "raincontrol_booted"
+  device_class: timestamp
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Analog Min"
+  state_topic: "RainControl/AnalogMin"
+  unique_id: "raincontrol_analog_min"
+  value_template: "{{ value | float }}"
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Analog Max"
+  state_topic: "RainControl/AnalogMax"
+  unique_id: "raincontrol_analog_max"
+  value_template: "{{ value | float }}"
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Scale"
+  state_topic: "RainControl/Scale"
+  unique_id: "raincontrol_scale"
+  value_template: "{{ value | float }}"
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Ampere"
+  state_topic: "RainControl/Ampere"
+  unique_id: "raincontrol_ampere"
+  unit_of_measurement: "A"
+  value_template: "{{ value | float }}"
+  state_class: measurement
+  device_class: current
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Power"
+  state_topic: "RainControl/Power"
+  unique_id: "raincontrol_power"
+  unit_of_measurement: "W"
+  value_template: "{{ value | float }}"
+  state_class: measurement
+  device_class: power
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl kWh"
+  state_topic: "RainControl/KWh"
+  unique_id: "raincontrol_kwh"
+  unit_of_measurement: "kWh"
+  value_template: "{{ value | float }}"
+  state_class: measurement
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Reason"
+  state_topic: "RainControl/Reason"
+  unique_id: "raincontrol_reason"
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl Reason Text"
+  state_topic: "RainControl/ReasonText"
+  unique_id: "raincontrol_reason_text"
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"

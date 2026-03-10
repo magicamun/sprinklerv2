@@ -1,0 +1,308 @@
+button_card_templates:
+  sprinkler_qe_row:
+    show_icon: false
+    show_state: false
+    show_label: true
+    name: |
+      [[[
+        return states[`sensor.sprinkler_qe_${variables.slot}_name`]?.state || 'Queue-Entry ${variables.slot}';
+      ]]]
+    label: |
+      [[[
+        return "Laufzeit: " + (states[`sensor.sprinkler_qe_${variables.slot}_remaining_time`]?.state || '00:00:00');
+      ]]]
+    tap_action:
+      action: fire-dom-event
+      browser_mod:
+        service: browser_mod.popup
+        data:
+          title: Laufzeit einstellen
+          content:
+            type: vertical-stack
+            cards:
+              - type: entities
+                entities:
+                  - input_text.sprinkler_entry_duration
+              - type: button
+                name: Übernehmen
+                icon: mdi:check
+                tap_action:
+                  action: fire-dom-event
+                  browser_mod:
+                    service: browser_mod.sequence
+                    data:
+                      sequence:
+                        - service: pyscript.sprinkler_set_qe_duration
+                          data:
+                            qe_id: |
+                              [[[
+                                return Number(
+                                  states[`sensor.sprinkler_qe_${variables.slot}_qe_id`]?.state
+                                );
+                              ]]]
+                        - service: browser_mod.close_popup
+    layout: grid
+    styles:
+      grid:
+        - grid-template-columns: 1fr auto
+        - grid-template-rows: auto auto
+        - grid-template-areas: |
+            "n b"
+            "l b"
+      card:
+        - padding: 12px
+        - border-radius: 12px
+      name:
+        - font-size: 16px
+        - font-weight: 600
+      label:
+        - font-size: 14px
+        - opacity: 0.8
+    custom_fields:
+      b:
+        card:
+          type: custom:button-card
+          show_name: false
+          show_state: false
+          size: 36px
+          icon: |
+            [[[
+              const s = states[`sensor.sprinkler_qe_${variables.slot}_status`]?.state;
+              return (s === 'off')
+                ? 'mdi:play-circle-outline'
+                : 'mdi:stop-circle-outline';
+            ]]]
+          styles:
+            card:
+              - box-shadow: none
+              - padding: 0
+            icon:
+              - color: |
+                  [[[
+                    const s = states[`sensor.sprinkler_qe_${variables.slot}_status`]?.state;
+                    if (s === 'running') return '#e53935';
+                    if (s === 'queued' || s === 'enqueue') return '#fb8c00';
+                    return '#9e9e9e';
+                  ]]]
+          tap_action:
+            action: |
+              [[[
+                const s = states[`sensor.sprinkler_qe_${variables.slot}_status`]?.state;
+                return (s === 'off')
+                  ? 'call-service'
+                  : 'fire-dom-event';
+              ]]]
+            service: pyscript.sprinkler_enqueue_qe
+            service_data:
+              qe_id: |
+                [[[
+                  return Number(
+                    states[`sensor.sprinkler_qe_${variables.slot}_qe_id`]?.state
+                  );
+                ]]]
+            browser_mod:
+              service: browser_mod.popup
+              data:
+                title: Zone stoppen?
+                dismissable: false
+                content:
+                  type: vertical-stack
+                  cards:
+                    - type: horizontal-stack
+                      cards:
+                        - type: button
+                          name: Ja
+                          tap_action:
+                            action: fire-dom-event
+                            browser_mod:
+                              service: browser_mod.sequence
+                              data:
+                                sequence:
+                                  - service: pyscript.sprinkler_cancel_qe
+                                    data:
+                                      qe_id: |
+                                        [[[
+                                          return Number(
+                                            states[`sensor.sprinkler_qe_${variables.slot}_qe_id`]?.state
+                                          );
+                                        ]]]
+                                  - service: browser_mod.close_popup
+                        - type: button
+                          name: Nein
+                          tap_action:
+                            action: fire-dom-event
+                            browser_mod:
+                              service: browser_mod.close_popup
+title: Sprinkler
+views:
+  - title: Übersicht
+    path: sprinkler
+    cards:
+      - type: entities
+        title: Sprinkler – Status
+        show_header_toggle: false
+        entities:
+          - entity: input_boolean.sprinkler_scheduler_aktiv
+            name: Scheduler aktiv
+          - entity: input_number.sprinkler_capacity
+          - entity: sensor.sprinkler_used
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.sprinkler_qe_01_enabled
+            state: 'on'
+        card:
+          type: custom:button-card
+          template: sprinkler_qe_row
+          entity: sensor.sprinkler_qe_01_status
+          variables:
+            slot: '01'
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.sprinkler_qe_02_enabled
+            state: 'on'
+        card:
+          type: custom:button-card
+          template: sprinkler_qe_row
+          entity: sensor.sprinkler_qe_02_status
+          variables:
+            slot: '02'
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.sprinkler_qe_03_enabled
+            state: 'on'
+        card:
+          type: custom:button-card
+          template: sprinkler_qe_row
+          entity: sensor.sprinkler_qe_03_status
+          variables:
+            slot: '03'
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.sprinkler_qe_04_enabled
+            state: 'on'
+        card:
+          type: custom:button-card
+          template: sprinkler_qe_row
+          entity: sensor.sprinkler_qe_04_status
+          variables:
+            slot: '04'
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.sprinkler_qe_05_enabled
+            state: 'on'
+        card:
+          type: custom:button-card
+          template: sprinkler_qe_row
+          entity: sensor.sprinkler_qe_05_status
+          variables:
+            slot: '05'
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.sprinkler_qe_06_enabled
+            state: 'on'
+        card:
+          type: custom:button-card
+          template: sprinkler_qe_row
+          entity: sensor.sprinkler_qe_06_status
+          variables:
+            slot: '06'
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.sprinkler_qe_07_enabled
+            state: 'on'
+        card:
+          type: custom:button-card
+          template: sprinkler_qe_row
+          entity: sensor.sprinkler_qe_07_status
+          variables:
+            slot: '07'
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.sprinkler_qe_08_enabled
+            state: 'on'
+        card:
+          type: custom:button-card
+          template: sprinkler_qe_row
+          entity: sensor.sprinkler_qe_08_status
+          variables:
+            slot: '08'
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.sprinkler_qe_09_enabled
+            state: 'on'
+        card:
+          type: custom:button-card
+          template: sprinkler_qe_row
+          entity: sensor.sprinkler_qe_09_status
+          variables:
+            slot: '09'
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.sprinkler_qe_10_enabled
+            state: 'on'
+        card:
+          type: custom:button-card
+          template: sprinkler_qe_row
+          entity: sensor.sprinkler_qe_10_status
+          variables:
+            slot: '10'
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.sprinkler_qe_11_enabled
+            state: 'on'
+        card:
+          type: custom:button-card
+          template: sprinkler_qe_row
+          entity: sensor.sprinkler_qe_11_status
+          variables:
+            slot: '11'
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.sprinkler_qe_12_enabled
+            state: 'on'
+        card:
+          type: custom:button-card
+          template: sprinkler_qe_row
+          entity: sensor.sprinkler_qe_12_status
+          variables:
+            slot: '12'
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.sprinkler_qe_13_enabled
+            state: 'on'
+        card:
+          type: custom:button-card
+          template: sprinkler_qe_row
+          entity: sensor.sprinkler_qe_13_status
+          variables:
+            slot: '13'
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.sprinkler_qe_14_enabled
+            state: 'on'
+        card:
+          type: custom:button-card
+          template: sprinkler_qe_row
+          entity: sensor.sprinkler_qe_14_status
+          variables:
+            slot: '14'
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.sprinkler_qe_15_enabled
+            state: 'on'
+        card:
+          type: custom:button-card
+          template: sprinkler_qe_row
+          entity: sensor.sprinkler_qe_15_status
+          variables:
+            slot: '15'
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.sprinkler_qe_16_enabled
+            state: 'on'
+        card:
+          type: custom:button-card
+          template: sprinkler_qe_row
+          entity: sensor.sprinkler_qe_16_status
+          variables:
+            slot: '16'

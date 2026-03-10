@@ -1,0 +1,4 @@
+input_boolean:
+  irrigation_active:
+    name: Bewaesseungsautomatik aktiv
+    icon: mdi:pause-cirlce

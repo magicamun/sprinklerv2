@@ -1,0 +1,14 @@
+  - id: opensprinkler_web_hook
+    alias: "opensprinkler"
+    description: "Webhook adapter for OpenSprinkler (FHEM replacement)"
+    mode: queued
+    max: 10
+    trigger:
+      - platform: webhook
+        webhook_id: os_cmd
+    action:
+      - condition: template
+        value_template: "{{ trigger.query.cmd is defined }}"
+      - service: pyscript.opensprinkler
+        data:
+          cmd: "{{ trigger.query.cmd }}"

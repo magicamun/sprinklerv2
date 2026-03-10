@@ -1,0 +1,162 @@
+{
+  "1": {
+    "zone_id": 1,
+    "name": "Rasen Vorne 2",
+    "switch": "switch.au_garten_bewaesserung_0_ch10",
+    "default_duration": 3000,
+    "enabled": true,
+    "load": 1,
+    "precipitation_rate_mm_per_hour": 12,
+    "zone_factor": 1
+  },
+  "2": {
+    "zone_id": 2,
+    "name": "Rasen Mitte",
+    "switch": "switch.au_garten_bewaesserung_0_ch14",
+    "default_duration": 2700,
+    "enabled": true,
+    "load": 1,
+    "precipitation_rate_mm_per_hour": 12,
+    "zone_factor": 1
+  },
+  "3": {
+    "zone_id": 3,
+    "name": "Rasen Hinten",
+    "switch": "switch.au_garten_bewaesserung_0_ch18",
+    "default_duration": 2700,
+    "enabled": true,
+    "load": 1,
+    "precipitation_rate_mm_per_hour": 12,
+    "zone_factor": 1
+  },
+  "4": {
+    "zone_id": 4,
+    "name": "Beet Buchs",
+    "switch": "switch.au_garten_bewaesserung_0_ch22",
+    "default_duration": 5400,
+    "enabled": true,
+    "load": 1,
+    "precipitation_rate_mm_per_hour": 12,
+    "zone_factor": 1
+  },
+  "5": {
+    "zone_id": 5,
+    "name": "Beet Links",
+    "switch": "switch.au_garten_bewaesserung_0_ch26",
+    "default_duration": 3600,
+    "enabled": true,
+    "load": 1,
+    "precipitation_rate_mm_per_hour": 12,
+    "zone_factor": 1
+  },
+  "6": {
+    "zone_id": 6,
+    "name": "Beet Rechts",
+    "switch": "switch.au_garten_bewaesserung_0_ch30",
+    "default_duration": 3600,
+    "enabled": true,
+    "load": 1,
+    "precipitation_rate_mm_per_hour": 12,
+    "zone_factor": 1
+  },
+  "7": {
+    "zone_id": 7,
+    "name": "Zone 7 (Unused)",
+    "switch": "switch.au_garten_bewaesserung_0_ch34",
+    "default_duration": 600,
+    "enabled": false,
+    "load": 1,
+    "precipitation_rate_mm_per_hour": 12,
+    "zone_factor": 1
+  },
+  "8": {
+    "zone_id": 8,
+    "name": "Zone 8 (Unused)",
+    "switch": "switch.au_garten_bewaesserung_0_ch38",
+    "default_duration": 600,
+    "enabled": false,
+    "load": 1,
+    "precipitation_rate_mm_per_hour": 12,
+    "zone_factor": 1
+  },
+  "9": {
+    "zone_id": 9,
+    "name": "Olive",
+    "switch": "switch.au_garten_bewaesserung_1_ch10",
+    "default_duration": 300,
+    "enabled": true,
+    "load": 1,
+    "precipitation_rate_mm_per_hour": 12,
+    "zone_factor": 1
+  },
+  "10": {
+    "zone_id": 10,
+    "name": "Oleander Links",
+    "switch": "switch.au_garten_bewaesserung_0_ch14",
+    "default_duration": 300,
+    "enabled": true,
+    "load": 1,
+    "precipitation_rate_mm_per_hour": 12,
+    "zone_factor": 1
+  },
+  "11": {
+    "zone_id": 11,
+    "name": "Agapanthus Links",
+    "switch": "switch.au_garten_bewaesserung_0_ch18",
+    "default_duration": 300,
+    "enabled": true,
+    "load": 1,
+    "precipitation_rate_mm_per_hour": 12,
+    "zone_factor": 1
+  },
+  "12": {
+    "zone_id": 12,
+    "name": "Oleander Mitte",
+    "switch": "switch.au_garten_bewaesserung_0_ch22",
+    "default_duration": 420,
+    "enabled": true,
+    "load": 1,
+    "precipitation_rate_mm_per_hour": 12,
+    "zone_factor": 1
+  },
+  "13": {
+    "zone_id": 13,
+    "name": "Agapanthus Rechts",
+    "switch": "switch.au_garten_bewaesserung_0_ch26",
+    "default_duration": 300,
+    "enabled": true,
+    "load": 1,
+    "precipitation_rate_mm_per_hour": 10,
+    "zone_factor": 1
+  },
+  "14": {
+    "zone_id": 14,
+    "name": "Oleander Rechts",
+    "switch": "switch.au_garten_bewaesserung_0_ch30",
+    "default_duration": 300,
+    "enabled": true,
+    "load": 1,
+    "precipitation_rate_mm_per_hour": 12,
+    "zone_factor": 1
+  },
+  "15": {
+    "zone_id": 15,
+    "name": "Orange",
+    "switch": "switch.au_garten_bewaesserung_0_ch34",
+    "default_duration": 540,
+    "enabled": true,
+    "load": 1,
+    "precipitation_rate_mm_per_hour": 12,
+    "zone_factor": 1.1
+  },
+  "16": {
+    "zone_id": 16,
+    "name": "Zone 16 (Unused)",
+    "switch": "switch.au_garten_bewaesserung_0_ch38",
+    "default_duration": 600,
+    "enabled": false,
+    "load": 1,
+    "precipitation_rate_mm_per_hour": 12,
+    "zone_factor": 1
+  }
+}

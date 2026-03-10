@@ -1,0 +1,98 @@
+"""Homematic(IP) Local for OpenCCU is a Python 3 module for Home Assistant and Homematic(IP) devices."""
+
+from __future__ import annotations
+
+from datetime import datetime
+import logging
+from typing import Any, Final, cast
+
+from aiohomematic.central import CentralUnit
+from aiohomematic.const import SYSVAR_STATE_PATH_ROOT
+from homeassistant.components.mqtt.models import ReceiveMessage
+from homeassistant.components.mqtt.subscription import (
+    EntitySubscription,
+    async_prepare_subscribe_topics,
+    async_subscribe_topics,
+    async_unsubscribe_topics,
+)
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.util.json import json_loads
+
+_LOGGER = logging.getLogger(__name__)
+
+
+class MQTTConsumer:
+    """The mqtt consumer."""
+
+    def __init__(self, hass: HomeAssistant, central: CentralUnit, mqtt_prefix: str) -> None:
+        """Init the mqtt consumer."""
+        self._hass: Final = hass
+        self._central: Final = central
+        self._mqtt_prefix: Final = f"{mqtt_prefix}/" if mqtt_prefix else ""
+        self._sub_state: dict[str, EntitySubscription] | None = None
+
+    async def subscribe(self) -> None:
+        """Subscribe to events."""
+        if not self._mqtt_is_configured():
+            return
+        if self._sub_state is None and (topics := self._get_topics()):
+            self._sub_state = async_prepare_subscribe_topics(self._hass, self._sub_state, topics)
+            await async_subscribe_topics(self._hass, self._sub_state)
+
+    def unsubscribe(self) -> None:
+        """Unsubscribe from events."""
+        if not self._mqtt_is_configured():
+            return
+        if self._sub_state:
+            async_unsubscribe_topics(self._hass, self._sub_state)
+
+    def _get_topics(self) -> dict[str, dict[str, Any]]:
+        """Return the topics for the central."""
+        topics: dict[str, dict[str, Any]] = {}
+        for state_path in self._central.get_state_paths(rpc_callback_supported=False):
+            topics[state_path.replace("/", "_")] = {
+                "topic": f"{self._mqtt_prefix}{state_path}",
+                "msg_callback": lambda msg: self._on_device_mqtt_msg_receive(msg=msg),
+                "qos": 0,
+            }
+        topics["sysvar_topics"] = {
+            "topic": f"{self._mqtt_prefix}{SYSVAR_STATE_PATH_ROOT}/+",
+            "msg_callback": lambda msg: self._on_sysvar_mqtt_msg_receive(msg=msg),
+            "qos": 0,
+        }
+
+        return topics
+
+    def _mqtt_is_configured(self) -> bool:
+        """Check if mqtt is configured."""
+        return self._hass.data.get("mqtt") is not None
+
+    @callback
+    def _on_device_mqtt_msg_receive(self, msg: ReceiveMessage) -> None:
+        """Do something on message receive."""
+        _LOGGER.debug("Device MQTT Message received: %s", msg.payload)
+        state_path = msg.topic[len(self._mqtt_prefix) :] if msg.topic.startswith(self._mqtt_prefix) else msg.topic
+        payload_dict = json_loads(msg.payload)
+        if (
+            (payload_value := cast(dict[str, Any], payload_dict).get("v")) is not None
+            and (dp := self._central.get_generic_data_point(state_path=state_path))
+            and not dp.device.client.capabilities.rpc_callback
+        ):
+            self._hass.create_task(
+                target=dp.event(value=payload_value, received_at=datetime.now()),
+                name="hmip_mqtt_event",
+            )
+
+    @callback
+    def _on_sysvar_mqtt_msg_receive(self, msg: ReceiveMessage) -> None:
+        """Do something on message receive."""
+        _LOGGER.debug("Sysvar MQTT Message received: %s", msg.payload)
+        state_path = msg.topic[len(self._mqtt_prefix) :] if msg.topic.startswith(self._mqtt_prefix) else msg.topic
+        payload_dict = json_loads(msg.payload)
+        if (payload_value := cast(dict[str, Any], payload_dict).get("v")) is not None and (
+            sv := self._central.hub_coordinator.get_sysvar_data_point(state_path=state_path)
+        ):
+            self._hass.create_task(
+                target=sv.event(value=payload_value, received_at=datetime.now()),
+                name="hmip_mqtt_event",
+            )

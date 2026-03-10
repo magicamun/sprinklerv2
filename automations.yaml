@@ -1,0 +1,34 @@
+- id: '1767273378895'
+  alias: Coming Home
+  description: ''
+  use_blueprint:
+    path: homeassistant/notify_leaving_zone.yaml
+    input:
+      person_entity: person.lutz_thielemann
+      zone_entity: zone.toroffnung
+      notify_device: 646c8ceff47e49693807a06c5b944b16
+- id: '1767284831856'
+  alias: Coming Home, Leaving
+  description: ''
+  use_blueprint:
+    path: homeassistant/notify_leaving_zone.yaml
+    input:
+      person_entity: person.lutz_thielemann
+      zone_entity: zone.toroffnung
+      notify_device: 646c8ceff47e49693807a06c5b944b16
+- id: '1767630024771'
+  alias: Neue Automation
+  description: ''
+  triggers:
+  - type: voltage
+    device_id: 6df2fa55a737552de0e9230fd35a8269
+    entity_id: 2ddd70e60d422e1880f005b5206015ef
+    domain: sensor
+    trigger: device
+    below: 230
+  conditions: []
+  actions:
+  - action: notify.pushover
+    metadata: {}
+    data: {}
+  mode: single

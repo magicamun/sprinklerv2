@@ -1,0 +1,21 @@
+# ==================================================
+# RainControl – Binary-Sensoren (Bereich: Haus)
+# ==================================================
+
+- name: "RainControl Status Sonde"
+  state_topic: "RainControl/StatusSonde"
+  unique_id: "raincontrol_status_sonde"
+  value_template: "{{ value | bool }}"
+  device_class: problem
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
+
+- name: "RainControl HyaRain"
+  state_topic: "RainControl/HyaRain"
+  unique_id: "raincontrol_hyarain"
+  device_class: problem
+  value_template: "{{ value | bool }}"
+  device:
+    identifiers: ["raincontrol_001"]
+    name: "RainControl"
