@@ -1,9 +1,9 @@
-import{r as y,c as u,i as m}from"./sprinkler-utils.js";const x=!1;console.log("ðŸš€ SPRINKLER PROGRAMS CARD");class w extends HTMLElement{constructor(){super(),this._isDev=x,this._view="list",this._selectedProgramId=null,this._validationErrors={},this._activeDialog=null}connectedCallback(){this._hass&&y(this._hass),requestAnimationFrame(()=>{const e=this.querySelector("ha-card"),t=e.getBoundingClientRect().width;e.style.maxWidth=`${t}px`}),this._hass.connection.subscribeEvents(e=>{const t=e.data;console.log("Event data:",t),console.log("Pending:",this._pendingRequestId),t&&t.request_id===this._pendingRequestId&&(t.user_id&&t.user_id!==this._hass.user?.id||(this._pendingRequestId=null,this._requestTimeout&&(clearTimeout(this._requestTimeout),this._requestTimeout=null)))},"sprinkler_ui_feedback").then(e=>{this._unsubscribe=e})}disconnectedCallback(){this._unsubscribe&&(this._unsubscribe(),this._unsubscribe=null)}setConfig(e){if(!e.entity)throw new Error("Program entity (entity) is required");this.config={...e,zones_prefix:e.zones_prefix??e.entity.replace(/_programs?.*$/i,"_zone")},this._lastHash=null}_lockWidth(){const e=this.querySelector("ha-card");if(!e)return;const t=this.parentElement;if(!t)return;const n=t.getBoundingClientRect().width;e.style.maxWidth=`${n}px`,e.style.width="100%"}_closeActiveDialog(){this._activeDialog&&(this._activeDialog.close(),this._activeDialog=null)}_getZoneEntity(e){const t=this.config?.zones_prefix;if(!t)return null;const n=`${t}_${String(e).padStart(2,"0")}`;return this._hass.states[n]||null}_formatDuration(e){e=Number(e)||0;const t=Math.floor(e/3600),n=Math.floor(e%3600/60),i=e%60;return`${t.toString().padStart(2,"0")}:${n.toString().padStart(2,"0")}:${i.toString().padStart(2,"0")}`}_formatNextRun(e){let t;if(e.runtime?.state==="running"?t=e.runtime?.planned_end:t=e.runtime?.planned_start,!t)return"";const n=new Date,i=new Date(t),a=i-n;if(a<=0)return"";const o=Math.round(a/6e4),r=new Date,s=new Date;s.setDate(r.getDate()+1);const d=i.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});return e.runtime?.state==="running"?`Â· bis ${new Date(e.runtime?.planned_end).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}`:i.toDateString()===r.toDateString()?o<60?`Â· in ${o} min`:`Â· heute ${d}`:i.toDateString()===s.toDateString()?`Â· morgen ${d}`:`Â· ${i.toLocaleDateString("de-DE",{weekday:"short"})} ${d}`}_moveZone(e,t){const n=this._workingProgram.zones,i=e+t;if(i<0||i>=n.length)return;const a=n[e];n[e]=n[i],n[i]=a,this.renderDetail()}_attachDetailEvents(){this.querySelectorAll("input[name='programMode']").forEach(i=>{i.addEventListener("change",a=>{this._workingProgram.mode=a.target.value,this.renderDetail()})}),this.querySelectorAll(".weekday-chip").forEach(i=>{i.addEventListener("click",a=>{const o=a.currentTarget.dataset.day,r=this._workingProgram.weekdays||[];r.includes(o)?this._workingProgram.weekdays=r.filter(s=>s!==o):this._workingProgram.weekdays=[...r,o],this.renderDetail()})}),this.querySelector("#backBtn")?.addEventListener("click",()=>{this._view="list",this._selectedProgramId=null,this._workingProgram=null,this._isNewProgram=!1,this._lastHash=null,this.hass=this._hass}),this.querySelector("#policySelect")?.addEventListener("change",i=>{this._workingProgram.policy=i.target.value}),this.querySelector("#colorInput")?.addEventListener("input",i=>{this._workingProgram.color=i.target.value,this.renderDetail()}),this.querySelector("#enabledSwitch")?.addEventListener("change",i=>{this._workingProgram.enabled=i.target.checked}),this.querySelector("#weatherSwitch")?.addEventListener("change",i=>{this._workingProgram.weather={...this._workingProgram.weather,enabled:i.target.checked}});const e=this.querySelector("#programNameDisplay"),t=this.querySelector("#programNameInput");e?.addEventListener("click",()=>{e.style.display="none",t.style.display="inline-block",t.focus(),t.select()});const n=()=>{const i=t.value.trim()||"Ohne Name";this._workingProgram.name=i,e.innerText=i,t.style.display="none",e.style.display="inline-block"};t?.addEventListener("keydown",i=>{i.key==="Enter"&&n()}),t?.addEventListener("blur",n),this.querySelector("#saveBtn")?.addEventListener("click",async()=>{const i=this._workingProgram;if(this._validationErrors=this._validateProgram(i),Object.keys(this._validationErrors).length>0){this.renderDetail();return}try{this._isNewProgram?u(this,"sprinkler_ui_program_add",{program:i}):u(this,"sprinkler_ui_program_update",{program:i}),this._isNewProgram=!1,this._view="list",this._selectedProgramId=null,this._lastHash=null,this.hass=this._hass}catch(a){console.error("Save failed:",a)}}),this.querySelectorAll("input[name='scheduleType']").forEach(i=>{i.addEventListener("change",a=>{const o=a.target.value;o==="fixed"?this._workingProgram.schedule={type:"fixed",time:this._workingProgram.schedule?.time||"06:00"}:this._workingProgram.schedule={type:"sun",event:o,offset_minutes:this._workingProgram.schedule?.offset_minutes||0},this.renderDetail()})}),this.querySelector("#scheduleTimeInput")?.addEventListener("change",i=>{this._workingProgram.schedule.time=i.target.value}),this.querySelector("#scheduleOffsetInput")?.addEventListener("input",i=>{const a=Number(i.target.value);this._workingProgram.schedule={...this._workingProgram.schedule,type:"sun",offset_minutes:a},this.querySelector(".offset-value").innerText=`${a} min`}),this.querySelectorAll(".zone-delete").forEach(i=>{i.addEventListener("click",a=>{const o=Number(a.currentTarget.dataset.index);this._workingProgram.zones.splice(o,1),this.renderDetail()})}),this.querySelectorAll(".zone-slider").forEach(i=>{i.addEventListener("input",a=>{const o=Number(a.target.dataset.index),r=Number(a.target.value),s=Math.min(r,120);this._workingProgram.zones[o].duration=s*60,a.target.value=s,this.querySelectorAll(".zone-duration-label")[o].innerText=`${s} min`})}),this.querySelectorAll(".zone-select").forEach(i=>{i.addEventListener("change",a=>{const o=Number(a.target.dataset.index);this._workingProgram.zones[o].zone_id=Number(a.target.value),this.renderDetail()})}),this.querySelector(".zone-add-row")?.addEventListener("click",()=>{const i=this.getAllSystemZones(),a=this._workingProgram.zones.map(r=>r.zone_id),o=i.find(r=>!a.includes(r.id));o&&(this._workingProgram.zones.push({zone_id:o.id,duration:600}),this.renderDetail())})}_validateProgram(e){const t={};(!e.zones||e.zones.length===0)&&(t.zones="Mindestens eine Zone erforderlich.");const n=e.zones.map(i=>i.zone_id);return new Set(n).size!==n.length&&(t.zones="Eine Zone darf nur einmal vorkommen."),e.zones.some(i=>!i.duration||i.duration<=0)&&(t.zones="UngÃ¼ltige Laufzeit."),(!e.weekdays||e.weekdays.length===0)&&(t.weekdays="Mindestens ein Wochentag erforderlich."),e.schedule?.type==="fixed"&&!e.schedule?.time&&(t.schedule="Uhrzeit fehlt."),t}_attachDragAndDrop(){const e=this.querySelectorAll(".zone-handle");if(!e.length)return;let t=null,n=null,i=null,a=!1;const o=6,r=()=>{const s=document.createElement("div");return s.className="zone-drop-indicator",s};e.forEach(s=>{s.addEventListener("pointerdown",d=>{d.target.closest(".zone-handle")&&(t=Number(s.closest(".zone-card").dataset.index),i=d.clientY,a=!1)}),window.addEventListener("pointermove",d=>{if(t===null)return;const h=Math.abs(d.clientY-i);if(!a){if(h<o)return;a=!0,this.querySelectorAll(".zone-card")[t].classList.add("dragging")}const p=[...this.querySelectorAll(".zone-card")],c=d.clientY;for(let l of p){const g=l.getBoundingClientRect();if(c<g.top+g.height/2){n||(n=r()),l.parentNode.insertBefore(n,l);return}}n||(n=r()),p[p.length-1].after(n)}),window.addEventListener("pointerup",()=>{if(t===null)return;if(!a){t=null;return}const d=this._workingProgram.zones,h=d.splice(t,1)[0],p=[...this.querySelectorAll(".zone-card")];let c=d.length;if(n){const l=n.nextElementSibling;c=p.indexOf(l),c<0&&(c=d.length),n.remove(),n=null}d.splice(c,0,h),t=null,a=!1,this.renderDetail()})})}_renderWeekdaySection(e){const t=["mon","tue","wed","thu","fri","sat","sun"],n={mon:"Mo",tue:"Di",wed:"Mi",thu:"Do",fri:"Fr",sat:"Sa",sun:"So"},i=e.weekdays||[];return`
+import{r as y,c as u,i as m}from"./sprinkler-utils.js";const x=!1;console.log("ðŸš€ SPRINKLER PROGRAMS CARD");class w extends HTMLElement{constructor(){super(),this._isDev=x,this._view="list",this._selectedProgramId=null,this._validationErrors={},this._activeDialog=null}connectedCallback(){this._hass&&y(this._hass),requestAnimationFrame(()=>{const e=this.querySelector("ha-card"),t=e.getBoundingClientRect().width;e.style.maxWidth=`${t}px`}),this._hass.connection.subscribeEvents(e=>{const t=e.data;console.log("Event data:",t),console.log("Pending:",this._pendingRequestId),t&&t.request_id===this._pendingRequestId&&(t.user_id&&t.user_id!==this._hass.user?.id||(this._pendingRequestId=null,this._requestTimeout&&(clearTimeout(this._requestTimeout),this._requestTimeout=null)))},"sprinkler_ui_feedback").then(e=>{this._unsubscribe=e})}disconnectedCallback(){this._unsubscribe&&(this._unsubscribe(),this._unsubscribe=null)}setConfig(e){if(!e.entity)throw new Error("Program entity (entity) is required");this.config={...e,zones_prefix:e.zones_prefix??e.entity.replace(/_programs?.*$/i,"_zone")},this._lastHash=null}_lockWidth(){const e=this.querySelector("ha-card");if(!e)return;const t=this.parentElement;if(!t)return;const n=t.getBoundingClientRect().width;e.style.maxWidth=`${n}px`,e.style.width="100%"}_closeActiveDialog(){this._activeDialog&&(this._activeDialog.open=!1,this._activeDialog.remove(),this._activeDialog=null)}_getZoneEntity(e){const t=this.config?.zones_prefix;if(!t)return null;const n=`${t}_${String(e).padStart(2,"0")}`;return this._hass.states[n]||null}_formatDuration(e){e=Number(e)||0;const t=Math.floor(e/3600),n=Math.floor(e%3600/60),i=e%60;return`${t.toString().padStart(2,"0")}:${n.toString().padStart(2,"0")}:${i.toString().padStart(2,"0")}`}_formatNextRun(e){let t;if(e.runtime?.state==="running"?t=e.runtime?.planned_end:t=e.runtime?.planned_start,!t)return"";const n=new Date,i=new Date(t),r=i-n;if(r<=0)return"";const o=Math.round(r/6e4),a=new Date,s=new Date;s.setDate(a.getDate()+1);const d=i.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});return e.runtime?.state==="running"?`Â· bis ${new Date(e.runtime?.planned_end).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}`:i.toDateString()===a.toDateString()?o<60?`Â· in ${o} min`:`Â· heute ${d}`:i.toDateString()===s.toDateString()?`Â· morgen ${d}`:`Â· ${i.toLocaleDateString("de-DE",{weekday:"short"})} ${d}`}_moveZone(e,t){const n=this._workingProgram.zones,i=e+t;if(i<0||i>=n.length)return;const r=n[e];n[e]=n[i],n[i]=r,this.renderDetail()}_attachDetailEvents(){this.querySelectorAll("input[name='programMode']").forEach(i=>{i.addEventListener("change",r=>{this._workingProgram.mode=r.target.value,this.renderDetail()})}),this.querySelectorAll(".weekday-chip").forEach(i=>{i.addEventListener("click",r=>{const o=r.currentTarget.dataset.day,a=this._workingProgram.weekdays||[];a.includes(o)?this._workingProgram.weekdays=a.filter(s=>s!==o):this._workingProgram.weekdays=[...a,o],this.renderDetail()})}),this.querySelector("#backBtn")?.addEventListener("click",()=>{this._view="list",this._selectedProgramId=null,this._workingProgram=null,this._isNewProgram=!1,this._lastHash=null,this.hass=this._hass}),this.querySelector("#policySelect")?.addEventListener("change",i=>{this._workingProgram.policy=i.target.value}),this.querySelector("#colorInput")?.addEventListener("input",i=>{this._workingProgram.color=i.target.value,this.renderDetail()}),this.querySelector("#enabledSwitch")?.addEventListener("change",i=>{this._workingProgram.enabled=i.target.checked}),this.querySelector("#weatherSwitch")?.addEventListener("change",i=>{this._workingProgram.weather={...this._workingProgram.weather,enabled:i.target.checked}}),this.querySelector("#repeatInput")?.addEventListener("change",i=>{const r=Math.max(0,Number(i.target.value)||0);this._workingProgram.repeat=r,r===0&&(this._workingProgram.pause_minutes=0)}),this.querySelector("#pauseInput")?.addEventListener("change",i=>{const r=Math.max(0,Number(i.target.value)||0);this._workingProgram.pause_minutes=r});const e=this.querySelector("#programNameDisplay"),t=this.querySelector("#programNameInput");e?.addEventListener("click",()=>{e.style.display="none",t.style.display="inline-block",t.focus(),t.select()});const n=()=>{const i=t.value.trim()||"Ohne Name";this._workingProgram.name=i,e.innerText=i,t.style.display="none",e.style.display="inline-block"};t?.addEventListener("keydown",i=>{i.key==="Enter"&&n()}),t?.addEventListener("blur",n),this.querySelector("#saveBtn")?.addEventListener("click",async()=>{const i=this._workingProgram;if(this._validationErrors=this._validateProgram(i),Object.keys(this._validationErrors).length>0){this.renderDetail();return}try{this._isNewProgram?u(this,"sprinkler_ui_program_add",{program:i}):u(this,"sprinkler_ui_program_update",{program:i}),this._isNewProgram=!1,this._view="list",this._selectedProgramId=null,this._lastHash=null,this.hass=this._hass}catch(r){console.error("Save failed:",r)}}),this.querySelectorAll("input[name='scheduleType']").forEach(i=>{i.addEventListener("change",r=>{const o=r.target.value;o==="fixed"?this._workingProgram.schedule={type:"fixed",time:this._workingProgram.schedule?.time||"06:00"}:this._workingProgram.schedule={type:"sun",event:o,offset_minutes:this._workingProgram.schedule?.offset_minutes||0},this.renderDetail()})}),this.querySelector("#scheduleTimeInput")?.addEventListener("change",i=>{this._workingProgram.schedule.time=i.target.value}),this.querySelector("#scheduleOffsetInput")?.addEventListener("input",i=>{const r=Number(i.target.value);this._workingProgram.schedule={...this._workingProgram.schedule,type:"sun",offset_minutes:r},this.querySelector(".offset-value").innerText=`${r} min`}),this.querySelectorAll(".zone-delete").forEach(i=>{i.addEventListener("click",r=>{const o=Number(r.currentTarget.dataset.index);this._workingProgram.zones.splice(o,1),this.renderDetail()})}),this.querySelectorAll(".zone-slider").forEach(i=>{i.addEventListener("input",r=>{const o=Number(r.target.dataset.index),a=Number(r.target.value),s=Math.min(a,120);this._workingProgram.zones[o].duration=s*60,r.target.value=s,this.querySelectorAll(".zone-duration-label")[o].innerText=`${s} min`})}),this.querySelectorAll(".zone-select").forEach(i=>{i.addEventListener("change",r=>{const o=Number(r.target.dataset.index);this._workingProgram.zones[o].zone_id=Number(r.target.value),this.renderDetail()})}),this.querySelector(".zone-add-row")?.addEventListener("click",()=>{const i=this.getAllSystemZones(),r=this._workingProgram.zones.map(a=>a.zone_id),o=i.find(a=>!r.includes(a.id));o&&(this._workingProgram.zones.push({zone_id:o.id,duration:600}),this.renderDetail())})}_validateProgram(e){const t={};(!e.zones||e.zones.length===0)&&(t.zones="Mindestens eine Zone erforderlich.");const n=e.zones.map(i=>i.zone_id);return new Set(n).size!==n.length&&(t.zones="Eine Zone darf nur einmal vorkommen."),e.zones.some(i=>!i.duration||i.duration<=0)&&(t.zones="UngÃ¼ltige Laufzeit."),(!e.weekdays||e.weekdays.length===0)&&(t.weekdays="Mindestens ein Wochentag erforderlich."),e.schedule?.type==="fixed"&&!e.schedule?.time&&(t.schedule="Uhrzeit fehlt."),t}_attachDragAndDrop(){const e=this.querySelectorAll(".zone-handle");if(!e.length)return;let t=null,n=null,i=null,r=!1;const o=6,a=()=>{const s=document.createElement("div");return s.className="zone-drop-indicator",s};e.forEach(s=>{s.addEventListener("pointerdown",d=>{d.target.closest(".zone-handle")&&(t=Number(s.closest(".zone-card").dataset.index),i=d.clientY,r=!1)}),window.addEventListener("pointermove",d=>{if(t===null)return;const h=Math.abs(d.clientY-i);if(!r){if(h<o)return;r=!0,this.querySelectorAll(".zone-card")[t].classList.add("dragging")}const p=[...this.querySelectorAll(".zone-card")],c=d.clientY;for(let l of p){const g=l.getBoundingClientRect();if(c<g.top+g.height/2){n||(n=a()),l.parentNode.insertBefore(n,l);return}}n||(n=a()),p[p.length-1].after(n)}),window.addEventListener("pointerup",()=>{if(t===null)return;if(!r){t=null;return}const d=this._workingProgram.zones,h=d.splice(t,1)[0],p=[...this.querySelectorAll(".zone-card")];let c=d.length;if(n){const l=n.nextElementSibling;c=p.indexOf(l),c<0&&(c=d.length),n.remove(),n=null}d.splice(c,0,h),t=null,r=!1,this.renderDetail()})})}_renderWeekdaySection(e){const t=["mon","tue","wed","thu","fri","sat","sun"],n={mon:"Mo",tue:"Di",wed:"Mi",thu:"Do",fri:"Fr",sat:"Sa",sun:"So"},i=e.weekdays||[];return`
             <div class="weekday-row">
-            ${t.map(a=>`
-                <div class="weekday-chip ${i.includes(a)?"active":""}"
-                    data-day="${a}">
-                ${n[a]}
+            ${t.map(r=>`
+                <div class="weekday-chip ${i.includes(r)?"active":""}"
+                    data-day="${r}">
+                ${n[r]}
                 </div>
             `).join("")}
             </div>
@@ -63,7 +63,7 @@ import{r as y,c as u,i as m}from"./sprinkler-utils.js";const x=!1;console.log("ð
                 </label>
 
             </div>
-        `}_renderScheduleSection(e){const t=e.schedule||{type:"fixed",time:"06:00"},n=t.type==="fixed",i=t.type==="sun",a=t.event||"sunrise",o=t.offset_minutes||0;return`
+        `}_renderScheduleSection(e){const t=e.schedule||{type:"fixed",time:"06:00"},n=t.type==="fixed",i=t.type==="sun",r=t.event||"sunrise",o=t.offset_minutes||0;return`
         <div class="divider"></div>
 
         <div class="schedule-block">
@@ -84,20 +84,20 @@ import{r as y,c as u,i as m}from"./sprinkler-utils.js";const x=!1;console.log("ð
             </label>
 
             <!-- SUNRISE -->
-            <label class="schedule-option ${i&&a==="sunrise"?"active":""}">
+            <label class="schedule-option ${i&&r==="sunrise"?"active":""}">
                 <input type="radio"
                     name="scheduleType"
                     value="sunrise"
-                    ${i&&a==="sunrise"?"checked":""}>
+                    ${i&&r==="sunrise"?"checked":""}>
                 <span>Sonnenaufgang</span>
             </label>
 
             <!-- SUNSET -->
-            <label class="schedule-option ${i&&a==="sunset"?"active":""}">
+            <label class="schedule-option ${i&&r==="sunset"?"active":""}">
                 <input type="radio"
                     name="scheduleType"
                     value="sunset"
-                    ${i&&a==="sunset"?"checked":""}>
+                    ${i&&r==="sunset"?"checked":""}>
                 <span>Sonnenuntergang</span>
             </label>
 
@@ -273,6 +273,7 @@ import{r as y,c as u,i as m}from"./sprinkler-utils.js";const x=!1;console.log("ð
             .program-delete ha-icon {
                 --mdc-icon-size: 28px;
                 color: var(--secondary-text-color);
+                opacity: 1;
             }
 
             .program-action ha-icon {
@@ -754,12 +755,12 @@ import{r as y,c as u,i as m}from"./sprinkler-utils.js";const x=!1;console.log("ð
                 to   { opacity: 1; transform: translateY(0); }
             }
         </style>
-    `}set hass(e){this._hass=e;const t=this.config?.entity,n=t?e.states[t]:null;if(!n)return;const i=n?.attributes?.programs??[],a=i.map(r=>({id:r.id,name:r.name,enabled:r.enabled,color:r.color,mode:r.mode,weekdays:r.weekdays,zoneCount:(r.zones||[]).length,runtime_state:r.runtime?.state,runtime_start:r.runtime?.planned_start,planned_end:r.runtime?.planned_end})),o=JSON.stringify({view:this._view,selected:this._selectedProgramId,data:a});o!==this._lastHash&&(this._lastHash=o,this._view==="detail"?this.renderDetail():(this.renderList(),this.update(i)))}render(){if(this._view==="detail"){this.renderDetail();return}this.renderList()}_row(e,t){return`
+    `}set hass(e){this._hass=e;const t=this.config?.entity,n=t?e.states[t]:null;if(!n)return;const i=n?.attributes?.programs??[],r=i.map(a=>({id:a.id,name:a.name,enabled:a.enabled,color:a.color,mode:a.mode,weekdays:a.weekdays,zoneCount:(a.zones||[]).length,runtime_state:a.runtime?.state,runtime_start:a.runtime?.planned_start,planned_end:a.runtime?.planned_end})),o=JSON.stringify({view:this._view,selected:this._selectedProgramId,data:r});o!==this._lastHash&&(this._lastHash=o,this._view==="detail"?this.renderDetail():(this.renderList(),this.update(i)))}render(){if(this._view==="detail"){this.renderDetail();return}this.renderList()}_row(e,t){return`
             <div class="detail-row">
             <div class="label">${e}</div>
             <div class="value">${t}</div>
             </div>
-        `}_getAdminTooltip(e){return e==="edit"?"Programm bearbeiten":e==="delete"?"Programm lÃ¶schen":""}_getActionTooltip(e){const t=e.runtime?.state;return t==="running"?"Programm stoppen":t==="queued"||t==="skipped"?"Jetzt starten":e.enabled?"":"Programm starten"}_renderProgramAction(e){const t=e.runtime?.state;return t==="running"?'<ha-icon icon="mdi:stop-circle-outline"></ha-icon>':t==="queued"?'<ha-icon icon="mdi:play-circle-outline"></ha-icon>':t==="skipped"?'<ha-icon icon="mdi:skip-forward"></ha-icon>':e.enabled?'<ha-icon icon="mdi:play-circle-outline"></ha-icon>':'<ha-icon icon="mdi:play-circle"></ha-icon>'}renderProgramZoneRow(e,t,n){const i=new Set(this._workingProgram.zones.filter((r,s)=>s!==t).map(r=>r.zone_id).filter(r=>r!=null));[...n].sort((r,s)=>r.zone_name.localeCompare(s.zone_name,"de",{sensitivity:"base"}));const a=n.filter(r=>!i.has(r.id)).sort((r,s)=>r.zone_name.localeCompare(s.zone_name,"de",{sensitivity:"base"})),o=Math.round(e.duration/60);return`
+        `}_getAdminTooltip(e){return e==="edit"?"Programm bearbeiten":e==="delete"?"Programm lÃ¶schen":""}_getActionTooltip(e){const t=e.runtime?.state;return t==="running"?"Programm stoppen":t==="queued"||t==="skipped"?"Jetzt starten":e.enabled?"":"Programm starten"}_renderProgramAction(e){const t=e.runtime?.state;return t==="running"?'<ha-icon icon="mdi:stop-circle-outline"></ha-icon>':t==="queued"?'<ha-icon icon="mdi:play-circle-outline"></ha-icon>':t==="skipped"?'<ha-icon icon="mdi:skip-forward"></ha-icon>':e.enabled?'<ha-icon icon="mdi:play-circle-outline"></ha-icon>':'<ha-icon icon="mdi:play-circle"></ha-icon>'}renderProgramZoneRow(e,t,n){const i=new Set(this._workingProgram.zones.filter((a,s)=>s!==t).map(a=>a.zone_id).filter(a=>a!=null));[...n].sort((a,s)=>a.zone_name.localeCompare(s.zone_name,"de",{sensitivity:"base"}));const r=n.filter(a=>!i.has(a.id)).sort((a,s)=>a.zone_name.localeCompare(s.zone_name,"de",{sensitivity:"base"})),o=Math.round(e.duration/60);return`
         <div class="zone-card" data-index="${t}">
 
             <div class="zone-handle">
@@ -767,10 +768,10 @@ import{r as y,c as u,i as m}from"./sprinkler-utils.js";const x=!1;console.log("ð
             </div>
 
             <select class="zone-select" data-index="${t}">
-                ${a.map(r=>`
-                    <option value="${r.id}"
-                        ${r.id===e.zone_id?"selected":""}>
-                        ${r.zone_name}
+                ${r.map(a=>`
+                    <option value="${a.id}"
+                        ${a.id===e.zone_id?"selected":""}>
+                        ${a.zone_name}
                     </option>
                 `).join("")}
             </select>
@@ -792,11 +793,11 @@ import{r as y,c as u,i as m}from"./sprinkler-utils.js";const x=!1;console.log("ð
                     data-index="${t}"></ha-icon>
 
         </div>
-        `}getAllSystemZones(){return Object.values(this._hass.states).filter(e=>{const t=this.config?.zones_prefix;if(!t||!e.entity_id.startsWith(t+"_"))return!1;const n=e.attributes||{};return!(n.enabled!==!0||!n.zone_name)}).map(e=>({id:Number(e.entity_id.split("_").pop()),zone_name:e.attributes.zone_name})).sort((e,t)=>e.id-t.id)}renderProgramZones(e){const t=this.getAllSystemZones();let n=e.zones.map((i,a)=>this.renderProgramZoneRow(i,a,t)).join("");return e.zones.length<t.length&&(n+=`
+        `}getAllSystemZones(){return Object.values(this._hass.states).filter(e=>{const t=this.config?.zones_prefix;if(!t||!e.entity_id.startsWith(t+"_"))return!1;const n=e.attributes||{};return!(n.enabled!==!0||!n.zone_name)}).map(e=>({id:Number(e.entity_id.split("_").pop()),zone_name:e.attributes.zone_name})).sort((e,t)=>e.id-t.id)}renderProgramZones(e){const t=this.getAllSystemZones();let n=e.zones.map((i,r)=>this.renderProgramZoneRow(i,r,t)).join("");return e.zones.length<t.length&&(n+=`
             <div class="zone-add-row">
                 + Zone hinzufÃ¼gen
             </div>
-            `),`<div class="zone-container">${n}</div>`}renderDetail(){const e=this.config?.entity,t=e?this._hass.states[e]:null;if(!t)return;let n;if(this._isNewProgram)n=this._workingProgram;else{if(n=(t.attributes.programs||[]).find(a=>a.id===this._selectedProgramId),!n)return;(!this._workingProgram||this._workingProgram.id!==n.id)&&(this._workingProgram=JSON.parse(JSON.stringify(n)))}(!this._workingProgram||this._workingProgram.id!==n.id)&&(this._workingProgram=JSON.parse(JSON.stringify(n))),this._workingProgram&&(this._workingProgram.policy||(this._workingProgram.policy="strict"),this._workingProgram.name,this.innerHTML=`
+            `),`<div class="zone-container">${n}</div>`}renderDetail(){const e=this.config?.entity,t=e?this._hass.states[e]:null;if(!t)return;let n;if(this._isNewProgram)n=this._workingProgram;else{if(n=(t.attributes.programs||[]).find(r=>r.id===this._selectedProgramId),!n)return;(!this._workingProgram||this._workingProgram.id!==n.id)&&(this._workingProgram=JSON.parse(JSON.stringify(n)))}(!this._workingProgram||this._workingProgram.id!==n.id)&&(this._workingProgram=JSON.parse(JSON.stringify(n))),this._workingProgram&&(this._workingProgram.policy||(this._workingProgram.policy="strict"),this._workingProgram.name,this.innerHTML=`
         <ha-card>
             ${this.styles()}
 
@@ -845,7 +846,7 @@ import{r as y,c as u,i as m}from"./sprinkler-utils.js";const x=!1;console.log("ð
             </div>
 
         </ha-card>
-        `,this._attachDetailEvents(),this._attachDragAndDrop())}renderList(){const e=m(this._hass),t=this.config?.entity,i=(t?this._hass.states[t]:null)?.attributes?.friendly_name,a=this.config?.title||i||"Programme",o=this._isDev?`${a} (DEV)`:a;this.innerHTML=`
+        `,this._attachDetailEvents(),this._attachDragAndDrop())}renderList(){const e=m(this._hass),t=this.config?.entity,i=(t?this._hass.states[t]:null)?.attributes?.friendly_name,r=this.config?.title||i||"Programme",o=this._isDev?`${r} (DEV)`:r;this.innerHTML=`
             <ha-card>
             ${this.styles()}
 
@@ -861,7 +862,7 @@ import{r as y,c as u,i as m}from"./sprinkler-utils.js";const x=!1;console.log("ð
 
             <div class="programs"></div>
             </ha-card>
-        `,this._container=this.querySelector(".programs");const r=this.querySelector("#addProgramBtn");r&&r.addEventListener("click",()=>{this._workingProgram={name:"Neues Programm",enabled:!0,mode:"start_at",policy:"strict",weekdays:[],schedule:{type:"fixed",time:"06:00"},weather:{enabled:!1},zones:[]},this._isNewProgram=!0,this._view="detail",this._selectedProgramId=null,this._lastHash=null,this.hass=this._hass})}renderRow(e){const t=m(this._hass),n=e.color||"#9e9e9e",i=e.enabled?"":"disabled",a=e.mode==="finish_at"?"mdi:flag-checkered":"mdi:play-circle-outline";let o="",r="";const s=e.schedule||{};if(s.type==="fixed"&&(o="mdi:clock-outline",r=s.time||"--:--"),s.type==="sun"){o=s.event==="sunrise"?"mdi:weather-sunset-up":"mdi:weather-sunset-down";const l=s.offset_minutes||0;r=l===0?"":l>0?`+${l}m`:`${l}m`}const d=e.weather?.enabled===!0,h=["mon","tue","wed","thu","fri","sat","sun"],p={mon:"Mo",tue:"Di",wed:"Mi",thu:"Do",fri:"Fr",sat:"Sa",sun:"So"},c=(e.weekdays||[]).sort((l,g)=>h.indexOf(l)-h.indexOf(g)).map(l=>p[l]).join(" ");return`
+        `,this._container=this.querySelector(".programs");const a=this.querySelector("#addProgramBtn");a&&a.addEventListener("click",()=>{this._workingProgram={name:"Neues Programm",enabled:!0,mode:"start_at",policy:"strict",weekdays:[],schedule:{type:"fixed",time:"06:00"},weather:{enabled:!1},repeat:0,pause_minutes:0,zones:[]},this._isNewProgram=!0,this._view="detail",this._selectedProgramId=null,this._lastHash=null,this.hass=this._hass})}renderRow(e){const t=m(this._hass),n=e.color||"#9e9e9e",i=e.enabled?"":"disabled",r=e.mode==="finish_at"?"mdi:flag-checkered":"mdi:play-circle-outline";let o="",a="";const s=e.schedule||{};if(s.type==="fixed"&&(o="mdi:clock-outline",a=s.time||"--:--"),s.type==="sun"){o=s.event==="sunrise"?"mdi:weather-sunset-up":"mdi:weather-sunset-down";const l=s.offset_minutes||0;a=l===0?"":l>0?`+${l}m`:`${l}m`}const d=e.weather?.enabled===!0,h=["mon","tue","wed","thu","fri","sat","sun"],p={mon:"Mo",tue:"Di",wed:"Mi",thu:"Do",fri:"Fr",sat:"Sa",sun:"So"},c=(e.weekdays||[]).sort((l,g)=>h.indexOf(l)-h.indexOf(g)).map(l=>p[l]).join(" ");return`
             <div class="program-row ${i}" data-id="${e.id}">
 
                 <div class="program-left">
@@ -891,11 +892,11 @@ import{r as y,c as u,i as m}from"./sprinkler-utils.js";const x=!1;console.log("ð
                     <div class="program-meta">
 
                         <!-- Mode -->
-                        <ha-icon icon="${a}"></ha-icon>
+                        <ha-icon icon="${r}"></ha-icon>
 
                         <!-- Schedule -->
                         <ha-icon icon="${o}"></ha-icon>
-                        <span>${r}</span>
+                        <span>${a}</span>
 
                         ${d?`
                             <span class="separator">â€¢</span>
@@ -924,6 +925,33 @@ import{r as y,c as u,i as m}from"./sprinkler-utils.js";const x=!1;console.log("ð
 
                 </div>
             </div>
+        `}_renderRepeatSection(e){const t=e.repeat??0,n=e.pause_minutes??0;return`
+            <div class="divider"></div>
+
+            <div class="detail-row">
+                <div class="label">Wiederholungen</div>
+
+                <input
+                    type="number"
+                    id="repeatInput"
+                    min="0"
+                    max="10"
+                    value="${t}"
+                    style="width:70px">
+            </div>
+
+            <div class="detail-row">
+                <div class="label">Pause (min)</div>
+
+                <input
+                    type="number"
+                    id="pauseInput"
+                    min="0"
+                    max="720"
+                    value="${n}"
+                    style="width:70px">
+
+            </div>
         `}renderProgramHeader(e){return e.schedule?.type==="fixed"?`${e.schedule.time}`:`${e.schedule?.event||""}${e.schedule?.offset_minutes||0}`,`
         <div class="detail-block">
 
@@ -939,9 +967,9 @@ import{r as y,c as u,i as m}from"./sprinkler-utils.js";const x=!1;console.log("ð
             <div class="divider"></div>
             ${this._renderModeSection(e)}
             ${this._renderScheduleSection(e)}
-
+            ${this._renderRepeatSection(e)}
         </div>
-        `}update(e){this._container&&(this._container.innerHTML=e.map(t=>this.renderRow(t)).join(""),this.attachEvents())}attachEvents(){this.querySelectorAll(".program-edit").forEach(e=>{e.addEventListener("click",t=>{const n=Number(t.currentTarget.dataset.id);this._selectedProgramId=n,this._view="detail",this._lastHash=null,this.hass=this._hass})}),this.querySelectorAll(".program-action").forEach(e=>{let t=0;e.addEventListener("pointerdown",()=>{t=Date.now()}),e.addEventListener("pointerup",()=>{if(!t)return;const n=Date.now()-t,i=e.dataset.state,a=Number(e.dataset.id),o=e.dataset.run;if(n>=600){i==="queued"&&(navigator.vibrate?.(20,40,20),u(this,"sprinkler_ui_program_skip",{program_id:a}));return}if(i!=="running"){u(this,"sprinkler_ui_program_start",{program_id:a});return}o&&this._openStopDialog(o)})})}getCardSize(){return 4}_openDeleteDialog(e){const t=this.config?.entity,o=((t?this._hass.states[t]:null)?.attributes?.programs||[]).find(s=>s.id===e)?.name||`#${e}`,r=document.createElement("ha-dialog");document.body.appendChild(r),r.innerHTML=`
+        `}update(e){this._container&&(this._container.innerHTML=e.map(t=>this.renderRow(t)).join(""),this.attachEvents())}attachEvents(){this.querySelectorAll(".program-edit").forEach(e=>{e.addEventListener("click",t=>{const n=Number(t.currentTarget.dataset.id);this._selectedProgramId=n,this._view="detail",this._lastHash=null,this.hass=this._hass})}),this.querySelectorAll(".program-action").forEach(e=>{let t=null,n=!1;const i=e.querySelector("ha-icon"),r=600;e.addEventListener("pointerdown",()=>{n=!1,t=setTimeout(()=>{n=!0,i.setAttribute("icon","mdi:skip-forward"),navigator.vibrate?.(30)},r)}),e.addEventListener("pointerup",()=>{clearTimeout(t);const o=e.dataset.state,a=Number(e.dataset.id),s=e.dataset.run;if(n){o==="queued"&&u(this,"sprinkler_ui_program_skip",{program_id:a});return}if(o!=="running"){u(this,"sprinkler_ui_program_start",{program_id:a});return}s&&this._openStopDialog(s)}),e.addEventListener("pointerleave",()=>{n||i.setAttribute("icon","mdi:play-circle-outline"),clearTimeout(t)})})}getCardSize(){return 4}_openDeleteDialog(e){const t=this.config?.entity,o=((t?this._hass.states[t]:null)?.attributes?.programs||[]).find(s=>s.id===e)?.name||`#${e}`,a=document.createElement("ha-dialog");document.body.appendChild(a),a.innerHTML=`
             <style>
 
             .dialog-content {
@@ -1030,7 +1058,7 @@ import{r as y,c as u,i as m}from"./sprinkler-utils.js";const x=!1;console.log("ð
             </div>
 
             </div>
-        `,this._activeDialog=r,setTimeout(()=>r.show(),0),r.querySelector("#cancelBtn").addEventListener("click",()=>{r.close()}),r.querySelector("#confirmBtn").addEventListener("click",()=>{u(this,"sprinkler_ui_program_delete",{program_id:e},{closeDialog:!1}),r.close()}),r.addEventListener("closed",()=>{r.remove(),this._activeDialog=null})}_openStopDialog(e){const t=document.createElement("ha-dialog");document.body.appendChild(t),t.innerHTML=`
+        `,this._activeDialog=a,setTimeout(()=>a.show(),0),a.querySelector("#cancelBtn").addEventListener("click",()=>{a.open=!1}),a.querySelector("#confirmBtn").addEventListener("click",()=>{u(this,"sprinkler_ui_program_delete",{program_id:e},{closeDialog:!1}),a.close()}),a.addEventListener("closed",()=>{a.remove(),this._activeDialog=null})}_openStopDialog(e){const t=document.createElement("ha-dialog");this._closeActiveDialog(),this._activeDialog=t,document.body.appendChild(t),t.innerHTML=`
             <div style="padding:20px;min-width:260px;text-align:center">
 
                 <h3>Programm stoppen?</h3>
@@ -1049,4 +1077,4 @@ import{r as y,c as u,i as m}from"./sprinkler-utils.js";const x=!1;console.log("ð
 
                 </div>
             </div>
-        `,this._activeDialog=t,setTimeout(()=>t.show(),0),t.querySelector("#cancelBtn").onclick=()=>t.close(),t.querySelector("#stopBtn").onclick=()=>{u(this,"sprinkler_ui_program_stop",{program_run_id:e},{closeDialog:!1}),t.close()},t.addEventListener("closed",()=>{t.remove(),this._activeDialog=null})}}const f="sprinklerv2-programs-card";class _ extends w{}customElements.get(f)||customElements.define(f,_);
+        `,this._activeDialog=t,setTimeout(()=>{t.open=!0},0),t.querySelector("#cancelBtn").onclick=()=>t.close(),t.querySelector("#stopBtn").onclick=()=>{u(this,"sprinkler_ui_program_stop",{program_run_id:e},{closeDialog:!1}),t.open=!1},t.addEventListener("closed",()=>{t.remove(),this._activeDialog=null})}}const v="sprinklerv2-programs-card";class _ extends w{}customElements.get(v)||customElements.define(v,_);
