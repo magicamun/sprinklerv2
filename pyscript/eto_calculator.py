@@ -418,7 +418,7 @@ log = logging.getLogger("pyscript.soil")
 # Soil
 # -----------------------------
 def compute_soil_balance():
-    entity_id = to_pyscript_entity(f"{SENSOR_PREFIX_SOIL}_balance")
+    entity_id = to_pyscript_entity(f"{SENSOR_PREFIX_SOIL}")
 
     if state.exist(entity_id):
         soil_today = float(state.get(entity_id))
@@ -462,7 +462,7 @@ def compute_soil_balance():
 
 def compute_soil_forecast():
 
-    entity_id = to_pyscript_entity(f"{SENSOR_PREFIX_SOIL}_balance")
+    entity_id = to_pyscript_entity(f"{SENSOR_PREFIX_SOIL}")
 
     if state.exist(entity_id):
         soil_today = float(state.get(entity_id))
@@ -494,7 +494,7 @@ def compute_soil_forecast():
         soil_forecast[d] = round(soil,2)
 
     state.set(
-        f"{SENSOR_PREFIX_SOIL}_balance_forecast",
+        f"{SENSOR_PREFIX_FORECAST}_soil",
         soil_today,
         {
             "friendly_name": "Soil Balance Forecast",
