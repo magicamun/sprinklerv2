@@ -1,4 +1,4 @@
-from ..datetime_utils import aware_now
+from pyscript.modules.util.datetime_utils import aware_now
 
 class ProgramBlock:
     """

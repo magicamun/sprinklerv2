@@ -19,7 +19,7 @@ import datetime
 
 log_done_queue           = logging.getLogger("pyscript.sprinkler.queues.done_queue")
 
-from ..sprinkler_config import done_file
+from ..sprinkler.sprinkler_config import done_file
 
 from .queue_entry import QueueEntry
 

@@ -1,4 +1,4 @@
-from .queues.manual_queue import ManualQueue
+from pyscript.modules.infra.queues.manual_queue import ManualQueue
 from .zones import zone_store
 
 class ManualQueueOwner:

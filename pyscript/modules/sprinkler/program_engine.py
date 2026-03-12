@@ -15,10 +15,11 @@ import datetime
 
 from uuid import uuid4
 
-from pyscript.modules.sprinkler.queues.queue_entry import QueueEntry
+from pyscript.modules.infra.queues.program_block import ProgramBlock
+from pyscript.modules.infra.queues.queue_entry import QueueEntry
 from pyscript.modules.sprinkler.zones import zone_store
-from pyscript.modules.sprinkler.datetime_utils import normalize_dt, today_at, aware_now
-from pyscript.modules.sprinkler.queues.program_block import ProgramBlock
+from pyscript.modules.util.datetime_utils import normalize_dt, today_at, aware_now
+
 
 log_engine           = logging.getLogger("pyscript.sprinkler.program_engine")
 log_engine.warning("Scheduler Module loading...")
