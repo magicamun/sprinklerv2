@@ -216,6 +216,28 @@ sensor:
 template:
   # Beschreibung zum "warum"
   - sensor:
+      - name: irrigation_eto_markdown
+        icon: mdi:information-outline
+        state: >
+          {% set eto = states('sensor.irrigation_eto_mm') | float(0) %}
+          {% set t = states('sensor.local_temperature_avg') | float(0) %}
+          {% set rh = states('sensor.local_humidity_avg') | float(0) %}
+          {% set sun = states('sensor.local_sun_hours_today') | float(0) %}
+
+          {% if eto <= 1.2 %}
+          **Sehr geringer Wasserbedarf**
+          {% elif eto <= 3 %}
+          **Mäßiger Wasserbedarf**
+          {% else %}
+          **Hoher Wasserbedarf**
+          {% endif %}
+
+          • {% if sun > 6 %}viel Sonne{% elif sun > 2 %}etwas Sonne{% else %}kaum Sonne{% endif %}
+          • {% if t > 20 %}warm{% elif t > 10 %}mild{% else %}kühl{% endif %}
+          • {% if rh < 50 %}trockene Luft{% elif rh < 75 %}normale Luftfeuchte{% else %}hohe Luftfeuchte{% endif %}
+
+  # Beschreibung zum "warum"
+  - sensor:
       - name: irrigation_eto_explanation
         icon: mdi:information-outline
         state: >
