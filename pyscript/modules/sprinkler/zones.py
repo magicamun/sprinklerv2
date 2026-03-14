@@ -19,7 +19,7 @@ log_zones = logging.getLogger("pyscript.sprinkler.zone_v2")
 
 log_zones.warning("Module reloaded")
 
-from pyscript.modules.sprinkler.sprinkler_config import CONFIG_DIR
+from .sprinkler_config import CONFIG_DIR
 
 ZONES_FILE = f"{CONFIG_DIR}/zonesv2.json"
 
