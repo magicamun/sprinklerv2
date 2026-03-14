@@ -36,6 +36,7 @@ from pyscript.modules.sprinkler.zones import zone_store
 from pyscript.modules.sprinkler.programs import program_store
 from pyscript.modules.sprinkler.events import SprinklerEvents
 from pyscript.modules.sprinkler.scheduler import SprinklerCore, HardwareAdapter
+
 from pyscript.modules.util.datetime_utils import aware_now
 
 log_sprinkler.warning("Sprinkler: Modules loaded")

@@ -15,19 +15,20 @@ import datetime
 
 
 from pyscript.modules.util.datetime_utils import aware_now
+from pyscript.modules.infra.queues.active_queue import ActiveQueue
+from pyscript.modules.infra.queues.program_queue import ProgramQueue
 from pyscript.modules.infra.queues.done_queue import DoneQueue
-from pyscript.modules.infra.active_queue import ActiveQueue
 from pyscript.modules.infra.queues.queue_entry import QueueEntry
-from pyscript.modules.infra.program_queue import ProgramQueue
 from pyscript.modules.infra.queues.program_block import ProgramBlock
 from pyscript.modules.infra.queues.manual_queue import ManualQueue
 
-from .manual_queue_owner import ManualQueueOwner
-from .irrigations import IrrigationStore
-from .program_engine import ProgramEngine
-from .zones import zone_store
+from pyscript.modules.sprinkler.manual_queue_owner import ManualQueueOwner
+from pyscript.modules.sprinkler.irrigations import IrrigationStore
+from pyscript.modules.sprinkler.program_engine import ProgramEngine
+from pyscript.modules.sprinkler.zones import zone_store
 
-log_scheduler           = logging.getLogger("pyscript.sprinkler.scheduler")
+log_scheduler = logging.getLogger("pyscript.sprinkler.scheduler")
+
 log_scheduler.warning("Scheduler Module loading...")
 
 # =====================================================
