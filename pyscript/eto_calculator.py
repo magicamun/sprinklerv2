@@ -10,14 +10,14 @@ import urllib.request
 import json
 from pyscript.openmeteo import fetch_openmeteo
 from collections import defaultdict
+from pyscript.modules.infra.store.timeseries_store import store
 
-forecast = defaultdict(dict)
-forecast_median = defaultdict(dict)
+log = logging.getLogger("pyscript.soil")
 
-SENSOR_PREFIX_ETO = "sensor.irrigation_eto_raw"
-SENSOR_PREFIX_FORECAST = "sensor.irrigation_forecast"
-SENSOR_PREFIX_SOIL = "sensor.irrigation_soil"
-SENSOR_RAIN_TODAY = "sensor.regen_mm_heute"    # NUR wenn die Ermittlung um 23:55 läuft - sonst gestern
+SENSOR_PREFIX_ETO       = "sensor.irrigation_eto_raw"
+SENSOR_PREFIX_FORECAST  = "sensor.irrigation_forecast"
+SENSOR_PREFIX_SOIL      = "sensor.irrigation_soil"
+SENSOR_RAIN_TODAY       = "sensor.regen_mm_heute"    # NUR wenn die Ermittlung um 23:55 läuft - sonst gestern
 
 log_eto           = logging.getLogger("pyscript.eto")
 
@@ -100,25 +100,8 @@ WEATHER_SOURCES = {
     }
 }
 
-# ----------- Soil, Deficit --------------
-def to_pyscript_entity(entity_id: str) -> str:
-    """
-    Converts a sensor.* entity to a persistable pyscript.* entity.
-    Keeps everything after the first dot.
-    """
-
-    if not isinstance(entity_id, str):
-        raise ValueError("entity_id must be string")
-
-    if "." not in entity_id:
-        raise ValueError(f"Invalid entity_id format: {entity_id}")
-
-    domain, rest = entity_id.split(".", 1)
-
-    return f"pyscript.{rest}"
-
 # -----------------------------
-# Helper: normalize_date, clamp, median
+# Helper: normalize_date, clamp
 # -----------------------------
 def normalize_forecast_date(value):
 
@@ -135,23 +118,6 @@ def normalize_forecast_date(value):
 def clamp(value, min_value, max_value):
     return max(min_value, min(value, max_value))
 
-def median(values):
-
-    vals = [v for v in values if v is not None]
-
-    if not vals:
-        return None
-
-    vals.sort()
-    n = len(vals)
-
-    mid = n // 2
-
-    if n % 2:
-        return vals[mid]
-
-    return (vals[mid - 1] + vals[mid]) / 2
-
 def set_eto_state(entity_id: str, eto_mm: float, friendly_name: str, method: str, today: str):
     if not entity_id:
         return
@@ -159,10 +125,10 @@ def set_eto_state(entity_id: str, eto_mm: float, friendly_name: str, method: str
     pystate = to_pyscript_entity(entity_id)
 
     # --- Guard 0: Check if Sensor exists
-    if not state.exist(pystate):
-        state.set(pystate, 0, {"eto_date": None})
-        state.persist(pystate)
-        log_eto.info(f"ETo-Sensor {pystate} created, persisted")
+    #if not state.exist(pystate):
+    #    state.set(pystate, 0, {"eto_date": None})
+    #    state.persist(pystate)
+    #    log_eto.info(f"ETo-Sensor {pystate} created, persisted")
 
     # --- Guard 1: Already calculated today?
     attrs = state.getattr(pystate)
@@ -173,35 +139,91 @@ def set_eto_state(entity_id: str, eto_mm: float, friendly_name: str, method: str
             log_eto.info(f"Daily ETo already calculated for {entity_id} – skipping")
             return
             
-    state.set(pystate,
-        round(eto_mm, 2),
-        {
-            "friendly_name": f"ETo {friendly_name}",
-            "unit_of_measurement": "mm",
-            "state_class": "measurement",
-            "icon": "mdi:water-percent",
-            "raw_mm": eto_mm,
-            "caps_mm": [ETO_MIN_MM, ETO_MAX_MM],
-            "calculated_at": datetime.now().isoformat(),
-            "method": method,
-            "eto_date": date.today().isoformat(),
-        },
-    )
+    #state.set(pystate,
+    #    round(eto_mm, 2),
+    #    {
+    #        "friendly_name": f"ETo {friendly_name}",
+    #        "unit_of_measurement": "mm",
+    #        "state_class": "measurement",
+    #        "icon": "mdi:water-percent",
+    #        "raw_mm": eto_mm,
+    #        "caps_mm": [ETO_MIN_MM, ETO_MAX_MM],
+    #        "calculated_at": datetime.now().isoformat(),
+    #        "method": method,
+    #        "eto_date": date.today().isoformat(),
+    #    },
+    #)
 
-def project_forecast():
+def project_today_sensors():
+
+    eto = store.today_value("global", "eto", "median")
+    rain = store.today_value("global", "rain", "median")
+    soil = store.today_value("global", "soil", "median")
+
+    if eto is not None:
+
+        state.set(
+            "sensor.irrigation_eto_median",
+            round(eto,2),
+            {
+                "friendly_name": "ETo Median",
+                "unit_of_measurement": "mm",
+                "state_class": "measurement"
+            }
+        )
+
+    if rain is not None:
+
+        state.set(
+            "sensor.irrigation_rain_median",
+            round(rain,2),
+            {
+                "friendly_name": "Rain Today",
+                "unit_of_measurement": "mm",
+                "state_class": "measurement"
+            }
+        )
+
+    if soil is not None:
+
+        state.set(
+            "sensor.irrigation_soil",
+            round(soil,2),
+            {
+                "friendly_name": "Soil Balance",
+                "unit_of_measurement": "mm",
+                "state_class": "measurement"
+            }
+        )
+
+def project_forecast_sensors():
+
+    forecast = store.today.get("forecast", {})
+
     eto_attrs = {}
     rain_attrs = {}
     prob_attrs = {}
+    soil_attrs = {}
 
-    for d in sorted(forecast_median):
+    for d in sorted(forecast):
 
-        v = forecast_median[d]
+        eto = forecast[d].get("eto",{}).get("median")
+        rain = forecast[d].get("rain",{}).get("median")
+        prob = forecast[d].get("prob",{}).get("median")
+        soil = forecast[d].get("soil", {}).get("median")
 
-        key = d.isoformat()
+        if eto is not None:
+            eto_attrs[d] = round(eto,2)
 
-        eto_attrs[key] = round(v["eto"],2)
-        rain_attrs[key] = round(v["rain"],2)
-        prob_attrs[key] = round(v["prob"],0)
+        if rain is not None:
+            rain_attrs[d] = round(rain,2)
+
+        if prob is not None:
+            prob_attrs[d] = round(prob,0)
+
+        if soil is not None:
+            soil_attrs[d] = round(soil,0)
+            
 
     state.set(
         f"{SENSOR_PREFIX_FORECAST}_eto",
@@ -209,10 +231,10 @@ def project_forecast():
         {
             "friendly_name": "ETo Forecast Median",
             "unit_of_measurement": "mm",
-            "state_class": "measurement",
             **eto_attrs
         }
     )
+
     state.set(
         f"{SENSOR_PREFIX_FORECAST}_rain",
         0,
@@ -222,6 +244,7 @@ def project_forecast():
             **rain_attrs
         }
     )
+
     state.set(
         f"{SENSOR_PREFIX_FORECAST}_probability",
         0,
@@ -231,6 +254,39 @@ def project_forecast():
             **prob_attrs
         }
     )
+
+    state.set(
+        f"{SENSOR_PREFIX_FORECAST}_soil",
+        0,
+        {
+            "friendly_name": "Soil Balance Forecast",
+            "unit_of_measurement": "mm",
+            **soil_attrs
+        }
+    )
+
+def project_chart_sensor(entity_id, series, unit):
+
+    state.set(
+        entity_id,
+        0,
+        {
+            "unit_of_measurement": unit,
+            **series
+        }
+    )
+
+def project_global_chart_sensors():
+    
+    soil_max = float(state.get("input_number.soil_capacity_mm"))
+
+    eto_series = store.build_series("global","eto")
+    rain_series = store.build_series("global","rain")
+    soil_series = store.build_soil_series("global", 0, soil_max)
+
+    project_chart_sensor("sensor.irrigation_chart_eto", eto_series, "mm")
+    project_chart_sensor("sensor.irrigation_chart_rain", rain_series, "mm")
+    project_chart_sensor("sensor.irrigation_chart_soil", soil_series, "mm")
 
 # -----------------------------
 # CORE: FAO-56-Light (Stub)
@@ -408,105 +464,36 @@ def get_openmeteo_forecast(cfg: dict):
 
     return forecast
 
-
-from datetime import datetime
-import logging
-
-log = logging.getLogger("pyscript.soil")
-
 # -----------------------------
 # Soil
 # -----------------------------
 def compute_soil_balance():
-    entity_id = to_pyscript_entity(f"{SENSOR_PREFIX_SOIL}")
 
-    if state.exist(entity_id):
-        soil_today = float(state.get(entity_id))
-    else:
-        soil_today = float(state.get("input_number.soil_optimal_mm"))
-        state.set(entity_id, soil_today, {})
-        state.persist(entity_id)
+    soil = store.today_value("global","soil","median")
+
+    if soil is None:
+        soil = float(state.get("input_number.soil_optimal_mm"))
+
+    eto = store.today_value("global","eto","median")
+
+    rain = float(state.get(SENSOR_RAIN_TODAY))
+
+    store.write("global", "rain", "local", rain)
+
+    soil_new = soil + rain - eto
 
     soil_max = float(state.get("input_number.soil_capacity_mm"))
 
-    eto_today = float(state.get(to_pyscript_entity(f"{SENSOR_PREFIX_ETO}_median")))
-    rain_today = float(state.get(f"{SENSOR_RAIN_TODAY}"))
-
-    soil_new = soil_today + rain_today - eto_today
-    
     soil_new = clamp(soil_new, 0, soil_max)
 
-    # --- Guard 1: Already calculated today?
-    attrs = state.getattr(entity_id)
-    soil_date = attrs.get("soil_date")
-    today = date.today().isoformat()
+    store.write("global", "soil", "local", soil_new)
 
-    if today == soil_date:
-        log_eto.info(f"Daily ETo already calculated for {entity_id} – skipping")
-        return
-
-    state.set(entity_id,
-        round(soil_new, 2),
-        {
-            "friendly_name": f"Soil Balance",
-            "unit_of_measurement": "mm",
-            "state_class": "measurement",
-            "raw_mm": soil_new,
-            "caps_mm": [0, soil_max],
-            "calculated_at": datetime.now().isoformat(),
-            "soil_date": today,
-        },
-    )
-    state.persist(entity_id)
-
-
-def compute_soil_forecast():
-
-    entity_id = to_pyscript_entity(f"{SENSOR_PREFIX_SOIL}")
-
-    if state.exist(entity_id):
-        soil_today = float(state.get(entity_id))
-    else:
-        soil_today = float(state.get("input_number.soil_optimal_mm"))
-
-    eto_fc  = state.getattr(f"{SENSOR_PREFIX_FORECAST}_eto")
-    rain_fc = state.getattr(f"{SENSOR_PREFIX_FORECAST}_rain")
-
-    soil_forecast = {}
-
-    soil = soil_today
-
-    dates = []
-
-    for d in eto_fc.keys():
-        if d[:4].isdigit():
-            dates.append(d)
-
-    dates = sorted(dates)
-
-    for d in dates:
-
-        eto  = float(eto_fc.get(d, 0))
-        rain = float(rain_fc.get(d, 0))
-
-        soil = soil + rain - eto
-
-        soil_forecast[d] = round(soil,2)
-
-    state.set(
-        f"{SENSOR_PREFIX_FORECAST}_soil",
-        soil_today,
-        {
-            "friendly_name": "Soil Balance Forecast",
-            "unit_of_measurement": "mm",
-            **soil_forecast
-        }
-    )
+    # store.compute_soil_forecast("global", 0, soil_max)
 
 # -----------------------------
 # SERVICE
 # -----------------------------
-def calculate_eto_for_source(entity_id: str, cfg: dict):
+def calculate_eto_for_source(cfg: dict):
     """
     Manuell auslösbarer Service:
     pyscript.calculate_eto
@@ -530,7 +517,7 @@ def calculate_eto_for_source(entity_id: str, cfg: dict):
 
     eto_mm = clamp(eto_raw, ETO_MIN_MM, ETO_MAX_MM)
 
-    set_eto_state(entity_id=entity_id, eto_mm = eto_mm, friendly_name = friendly_name, method = method, today = date.today().isoformat())
+    # set_eto_state(entity_id=entity_id, eto_mm = eto_mm, friendly_name = friendly_name, method = method, today = date.today().isoformat())
 
     log_eto.info(f"ETo finished for {friendly_name}: {eto_raw:.2f} mm")
 
@@ -549,19 +536,19 @@ def calculate_eto_daily():
 
     for source, cfg in WEATHER_SOURCES.items():
 
-        entity_id = to_pyscript_entity(f"{SENSOR_PREFIX_ETO}_{source}")
+        # entity_id = to_pyscript_entity(f"{SENSOR_PREFIX_ETO}_{source}")
 
         # --- Guard 2: For LOCAL, ensure daily sensors are sane
-        if source == SOURCE_LOCAL:
-            sun_hours = state.get("sensor.local_sun_hours_today")
-            rain_today = state.get("sensor.local_rain_today_mm")
-
-            try:
-                sun_hours = float(sun_hours)
-                rain_today = float(rain_today)
-            except (TypeError, ValueError):
-                log_eto.error("Daily ETo aborted (local): daily sensors not numeric")
-                continue#
+        #if source == SOURCE_LOCAL:
+        #    sun_hours = state.get("sensor.local_sun_hours_today")
+        #    rain_today = state.get("sensor.local_rain_today_mm")
+        #
+        #    try:
+        #        sun_hours = float(sun_hours)
+        #        rain_today = float(rain_today)
+        #    except (TypeError, ValueError):
+        #        log_eto.error("Daily ETo aborted (local): daily sensors not numeric")
+        #        continue#
         
         #    if sun_hours == 0:
         #        log.warning(
@@ -569,23 +556,26 @@ def calculate_eto_daily():
         #        )
         #        continue
 
-            log.info(
-                f"Daily ETo trigger (local): sun={sun_hours:.2f}h rain={rain_today:.2f}mm"
-            )
+        #    log.info(
+        #        f"Daily ETo trigger (local): sun={sun_hours:.2f}h rain={rain_today:.2f}mm"
+        #    )
 
         # --- For OpenWeather: no daily-sensor guard needed
-        if source == SOURCE_OWD:
-            log_eto.info("Daily ETo trigger (openweather)")
+        #if source == SOURCE_OWD:
+        #    log_eto.info("Daily ETo trigger (openweather)")
 
         # --- Calculate
         try:
-            eto_values.append(calculate_eto_for_source(entity_id=entity_id, cfg=cfg))
+            eto_val = calculate_eto_for_source(cfg=cfg)
+            eto_values.append(eto_val)
+            store.write("global", "eto", source, eto_val)
         except Exception as err:
             log_eto.error(f"ETo calculation failed for {source}: {err}")
 
-    eto_raw_median = median(eto_values)
+    #eto_raw_median = median(eto_values)
 
-    set_eto_state(entity_id=f"{SENSOR_PREFIX_ETO}_median", eto_mm = eto_raw_median, friendly_name = "ETo Median", method = "", today = date.today().isoformat())
+    # set_eto_state(entity_id=f"{SENSOR_PREFIX_ETO}_median", eto_mm = eto_raw_median, friendly_name = "ETo Median", method = "", today = date.today().isoformat())
+    #store.write("global", "eto", "median", eto_raw_median)
 
 def rh_from_dewpoint(temp_c, dew_point_c):
 
@@ -619,99 +609,68 @@ def forecast_weather_to_eto_input(f):
 def get_forecast():
 
     for source, cfg in WEATHER_SOURCES.items():
-        friendly_name = cfg["friendly_name"]
-        type = cfg["type"]
 
-        if not type:
-            continue
+        if source == SOURCE_OPENMETEO:
 
-        if source == "openmeteo":
             fc = get_openmeteo_forecast(cfg)
 
             if not fc:
                 continue
 
             for f in fc:
-                forecast[f['date']][source] = {
-                    "eto": f['eto'],
-                    "rain": f['rain'],
-                    "prob": f['probability']
-                }
-                log_eto.info(
-                    f"Forecast OpenMeteo {f['date']} "
-                    f"ETo={f['eto']} Rain={f['rain']} Probability={f['probability']:.2f}"
-                )
+
+                store.write_forecast(f["date"], "eto", source, f["eto"])
+                store.write_forecast(f["date"], "rain", source, f["rain"])
+                store.write_forecast(f["date"], "prob", source, f["probability"])
+
         else:
+
             fc = get_forecast_for_source(cfg, "daily")
 
             if not fc:
                 continue
 
             for f in fc[:3]:
+
                 datum = normalize_forecast_date(f.get("datetime"))
-                log_eto.info(f"Forecast {friendly_name} - process Date {datum}")
-                # log_eto.info(f"Forecast - data: {f}")
+
                 eto_input = forecast_weather_to_eto_input(f)
-                # log_eto.info(f"Forecast {eto_input}")
+
                 eto = calculate_eto_fao56_light(eto_input, cfg["latitude"])
                 rain = float(f.get("precipitation", 0))
-                probability = float(f.get("precipitation_probability", 0))
-                forecast[datum][source] = {
-                    "eto": eto,
-                    "rain": rain,
-                    "prob": probability
-                }
-                log_eto.info(f"Forecast {friendly_name} {datum} ETo={eto:.2f} Rain={rain:.2f} Probability={probability:.2f}")
+                prob = float(f.get("precipitation_probability", 0))
 
-    day = 0
-    for d in sorted(forecast):
-
-        log_eto.info(f"Forecast {d}")
-
-        eto_vals = []
-        rain_vals = []
-        prob_vals = []
-
-        for src in forecast[d]:
-            v = forecast[d][src]
-
-            eto_vals.append(v["eto"])
-            rain_vals.append(v["rain"])
-            prob_vals.append(v["prob"])
-
-            log_eto.info(
-                f"  {src}: eto={v['eto']:.2f} rain={v['rain']} prob={v['prob']}"
-            )
-
-        eto_med = median(eto_vals)
-        rain_med = median(rain_vals)
-        prob_med = median(prob_vals)
-        log_eto.info(
-            f" Median eto={eto_med:.2f} rain={rain_med} prob={prob_med}"
-        )
-
-        forecast_median[d] = {
-            "eto": eto_med,
-            "rain": rain_med,
-            "prob": prob_med
-        }
-        day += 1
+                store.write_forecast(datum, "eto", source, eto)
+                store.write_forecast(datum, "rain", source, rain)
+                store.write_forecast(datum, "prob", source, prob)
 
 @time_trigger("cron(0 * * * *)")
 def hourly():
     get_forecast()
-    compute_soil_forecast()
-    project_forecast()
+
+    project_today_sensors()
+    project_forecast_sensors()
+    project_global_chart_sensors()
 
 @time_trigger("cron(55 23 * * *)")
 def daily():
     calculate_eto_daily()
     compute_soil_balance()
 
+    store.snapshot_today()
+    store.reset_today()
+
+    project_today_sensors()
+    project_forecast_sensors()
+    project_global_chart_sensors()
+
 @time_trigger("startup")
 def startup():
     calculate_eto_daily()
     get_forecast()
+
     compute_soil_balance()
-    compute_soil_forecast()
-    project_forecast()
+
+    project_today_sensors()
+    project_forecast_sensors()
+    project_global_chart_sensors()
