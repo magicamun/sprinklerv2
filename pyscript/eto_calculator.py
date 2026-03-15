@@ -63,9 +63,7 @@ WEATHER_SOURCES = {
         "humidity": "sensor.local_humidity_avg",
         "sun": "sensor.local_sun_hours_today",
         "wind": None,
-        "forecast_id": None,
-        "latitude": LATITUDE,
-        "longitude": LONGITUDE
+        "forecast_id": None
     },
 
     SOURCE_OWD: {
@@ -75,9 +73,7 @@ WEATHER_SOURCES = {
         "humidity": "sensor.openweather_humidity_avg",
         "sun": None,
         "wind": "sensor.openweather_wind_speed_ms",
-        "forecast_id": "weather.openweathermap",
-        "latitude": LATITUDE,
-        "longitude": LONGITUDE
+        "forecast_id": "weather.openweathermap"
     },
     SOURCE_DWD: {
         "friendly_name": "Deutscher Wetterdienst",
@@ -86,9 +82,7 @@ WEATHER_SOURCES = {
         "humidity": "sensor.dwd_humidity_avg",
         "sun": "sensor.dwd_sun_hours_today",
         "wind": "sensor.dwd_wind_speed_ms",
-        "forecast_id": "weather.donaueschingen_land",
-        "latitude": LATITUDE,
-        "longitude": LONGITUDE
+        "forecast_id": "weather.donaueschingen_land"
     },
     SOURCE_OPENMETEO: {
         "friendly_name": "OpenMeteo",
@@ -97,15 +91,16 @@ WEATHER_SOURCES = {
         "humidity": None,
         "sun": None,
         "wind": None,
-        "forecast_id": None,
-        "latitude": LATITUDE,
-        "longitude": LONGITUDE
+        "forecast_id": None
     }
 }
 
 # -----------------------------
 # Helper: normalize_date, clamp
 # -----------------------------
+def get_home_coordinates():
+    return hass.config.latitude, hass.config.longitude
+
 def normalize_forecast_date(value):
 
     if not value:
@@ -377,7 +372,8 @@ def collect_eto_data_for_source(cfg: Dict):
         return None
 
     if cfg["type"] == "direct":
-        data = task.executor(fetch_openmeteo, cfg["latitude"], cfg["longitude"])
+        lat, lon = get_home_coordinates()
+        data = task.executor(fetch_openmeteo, lat, lon)
 
         daily = data.get("daily")
         daily_units = data.get("daily_units")
@@ -433,7 +429,8 @@ def get_forecast_for_source(cfg: dict, type="daily"):
 
 def get_openmeteo_forecast(cfg: dict):
 
-    data = task.executor(fetch_openmeteo, cfg["latitude"], cfg["longitude"])
+    lat, lon = get_home_coordinates()
+    data = task.executor(fetch_openmeteo, lat, lon)
 
     if not data:
         log_eto.warning("OpenMeteo forecast fetch failed")
@@ -546,35 +543,6 @@ def calculate_eto_daily():
     eto_values = []
 
     for source, cfg in WEATHER_SOURCES.items():
-
-        # entity_id = to_pyscript_entity(f"{SENSOR_PREFIX_ETO}_{source}")
-
-        # --- Guard 2: For LOCAL, ensure daily sensors are sane
-        #if source == SOURCE_LOCAL:
-        #    sun_hours = state.get("sensor.local_sun_hours_today")
-        #    rain_today = state.get("sensor.local_rain_today_mm")
-        #
-        #    try:
-        #        sun_hours = float(sun_hours)
-        #        rain_today = float(rain_today)
-        #    except (TypeError, ValueError):
-        #        log_eto.error("Daily ETo aborted (local): daily sensors not numeric")
-        #        continue#
-        
-        #    if sun_hours == 0:
-        #        log.warning(
-        #            "Daily ETo aborted (local): sun_hours_today is 0 at 23:55"
-        #        )
-        #        continue
-
-        #    log.info(
-        #        f"Daily ETo trigger (local): sun={sun_hours:.2f}h rain={rain_today:.2f}mm"
-        #    )
-
-        # --- For OpenWeather: no daily-sensor guard needed
-        #if source == SOURCE_OWD:
-        #    log_eto.info("Daily ETo trigger (openweather)")
-
         # --- Calculate
         try:
             eto_val = calculate_eto_for_source(cfg=cfg)
@@ -618,7 +586,7 @@ def forecast_weather_to_eto_input(f):
     }
 
 def get_forecast():
-
+    lat, lon = get_home_coordinates()
     for source, cfg in WEATHER_SOURCES.items():
 
         if source == SOURCE_OPENMETEO:
@@ -647,7 +615,7 @@ def get_forecast():
 
                 eto_input = forecast_weather_to_eto_input(f)
 
-                eto = calculate_eto_fao56_light(eto_input, cfg["latitude"])
+                eto = calculate_eto_fao56_light(eto_input, lat)
                 rain = float(f.get("precipitation", 0))
                 prob = float(f.get("precipitation_probability", 0))
 
