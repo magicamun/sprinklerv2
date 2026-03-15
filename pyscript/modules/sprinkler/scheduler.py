@@ -743,7 +743,7 @@ class SprinklerCore():
         log_scheduler.info(
             f"[program-enqueue] program {block.program_id} enqueued"
         )
-    
+
     def calculate_zone_seconds(self, zone: dict, soil_deficit_mm: float) -> int:
 
         if soil_deficit_mm <= 0:
@@ -818,16 +818,18 @@ class SprinklerCore():
                     soil = TsStore.today_value(zone_key, "soil", "median")
 
                     soil_optimal = self.soil_margins.get("optimal", 20)
+                    soil_capacity = self.soil_margins.get("capacity", 30)
 
                     if soil is None:
                         soil = soil_optimal
 
-                    deficit = max(0, soil_optimal - soil)
-                    
+                    deficit = TsStore.adaption_deficit(zone_key, soil_optimal)
+                    deficit = min(deficit, soil_capacity)
+
                     new_duration = self.calculate_zone_seconds(zone, deficit)
 
                     log_scheduler.info(
-                        f"[ADAPT] Zone {zone_id} deficit = {deficit}"
+                        f"[ADAPT] Zone {zone_id} deficit = weighted Deficit {deficit} vs deficit {max(0, soil_optimal - soil)}"
                     )
 
                 # ------------------------------------------
