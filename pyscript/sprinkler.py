@@ -1106,6 +1106,40 @@ def remove_zone_states(zone_id: int):
                     }
                 )
 
+def project_all_zone_charts(zone_store):
+
+    zones = zone_store.all()
+
+    soil_min = float(state.get("input_number.soil_min_mm"))
+    soil_max = float(state.get("input_number.soil_capacity_mm"))
+
+    for zone in zones.values():
+
+        zone_id = zone["zone_id"]
+        zone_key = f"zone:{zone_id}"
+
+        soil_series = TsStore.build_soil_series(zone_key, 0, soil_max)
+
+        irrigation_series = TsStore.build_irrigation_series(zone_key)
+
+        state.set(
+            f"sensor.irrigation_chart_zone_{zone_id:02d}_soil",
+            0,
+            {
+                "unit_of_measurement": "mm",
+                **soil_series
+            }
+        )
+
+        state.set(
+            f"sensor.irrigation_chart_zone_{zone_id:02d}_irrigation",
+            0,
+            {
+                "unit_of_measurement": "mm",
+                **irrigation_series
+            }
+        )
+
 # ----------- Soil, Deficit --------------
 def to_pyscript_entity(entity_id: str) -> str:
     """
@@ -1157,23 +1191,23 @@ def apply_daily_balance_if_needed(zone_store):
         zone_id = zone["zone_id"]
         zone_key = f"zone:{zone_id}"
 
-        capacity = safe_float(INPUT_SOIL_CAPACITY, 30)
-        optimal = safe_float(INPUT_SOIL_OPTIMAL, 0)
+        soil_capacity = safe_float(INPUT_SOIL_CAPACITY, 30)
+        soil_optimal = safe_float(INPUT_SOIL_OPTIMAL, 0)
 
         soil = TsStore.yesterday_value(zone_key, "soil", "median")
         if soil is None:
-            soil = optimal
+            soil = soil_optimal
 
         irrigation = TsStore.yesterday_value(zone_key, "irrigation", "actual") or 0
 
         new_soil = soil - eto + rain + irrigation
-        new_soil = max(0, min(capacity, new_soil))
+        new_soil = max(0, min(soil_capacity, new_soil))
         
         TsStore.write(zone_key, "soil", "median", new_soil)
 
-        log_irrigation.info(f"Apply Soil (Old): {soil}, New:{new_soil}, Capa: {capacity}, Optimal: {optimal}, ETo: {eto} Rain: {rain} Irrigation: {irrigation}")
+        log_irrigation.info(f"Apply Soil (Old): {soil}, New:{new_soil}, Capa: {soil_capacity}, Optimal: {soil_optimal}, ETo: {eto} Rain: {rain} Irrigation: {irrigation}")
 
-        deficit = max(0, optimal - new_soil)
+        deficit = max(0, soil_optimal - new_soil)
 
 # ----------- Timeline -------------------
 
@@ -1279,7 +1313,8 @@ def irrigation_daily():
 def update_soil_margins():
     soil_margins = {
         "capacity": float(state.get("input_number.soil_capacity_mm") or 30),
-        "optimal": float(state.get("input_number.soil_optimal_mm") or 20)
+        "optimal": float(state.get("input_number.soil_optimal_mm") or 20),
+        "minimum": float(state.get("input_number.soil_min_mm") or 5)
     }
 
     if sprinkler_core:
@@ -1362,7 +1397,6 @@ def sprinkler_startup():
 
     sprinkler_scheduler_start() # Create the detached Task
 
-
 def sprinkler_scheduler_start():
     global sprinkler_scheduler_task, sprinkler_scheduler_running
 
@@ -1391,6 +1425,7 @@ async def sprinkler_scheduler_loop():
 
             project_sprinkler_core()
             project_all_zones(zone_store)
+            project_all_zone_charts(zone_store)
             project_all_programs(program_store, sprinkler_core)
             project_timeline()
             # Debug Sensor

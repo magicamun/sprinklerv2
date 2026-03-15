@@ -815,12 +815,14 @@ class SprinklerCore():
 
                     zone_key = f"zone:{zone_id}"
 
-                    soil = store.today_value(zone_key, "soil", "median")
+                    soil = TsStore.today_value(zone_key, "soil", "median")
+
+                    soil_optimal = self.soil_margins.get("optimal", 20)
 
                     if soil is None:
-                        soil = self.soil_margins.optimal
+                        soil = soil_optimal
 
-                    deficit = max(0, optimal - soil)
+                    deficit = max(0, soil_optimal - soil)
                     
                     new_duration = self.calculate_zone_seconds(zone, deficit)
 

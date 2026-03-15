@@ -498,6 +498,56 @@ class TimeseriesStore:
 
         return dict(sorted(series.items()))
                         
+    def build_irrigation_series(self, scope):
+
+        series = {}
+
+        # ----------------------------
+        # HISTORY
+        # ----------------------------
+
+        entries = self._read_history()
+
+        for entry in entries:
+
+            if (
+                entry["scope"] == scope
+                and entry["key"] == "irrigation"
+                and entry["source"] == "actual"
+            ):
+                series[entry["date"]] = entry["value"]
+
+        # ----------------------------
+        # TODAY
+        # ----------------------------
+
+        today_date = self.today.get("date")
+
+        today_val = (
+            self.today
+            .get(scope, {})
+            .get("irrigation", {})
+            .get("actual")
+        )
+
+        if today_val is not None:
+            series[today_date] = today_val
+
+        # ----------------------------
+        # FORECAST
+        # ----------------------------
+
+        forecast = self.today.get("forecast", {})
+
+        for d in forecast:
+
+            val = forecast[d].get("irrigation", {}).get(scope)
+
+            if val is not None:
+                series[d] = val
+
+        return dict(sorted(series.items()))
+
     def compute_today_median(self, scope, key):
 
         data = self.today.get(scope, {}).get(key, {})
