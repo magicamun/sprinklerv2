@@ -21,6 +21,9 @@ SENSOR_RAIN_TODAY       = "sensor.regen_mm_heute"    # NUR wenn die Ermittlung u
 
 log_eto           = logging.getLogger("pyscript.eto")
 
+
+SOIL_MAX = float(state.get("input_number.soil_capacity_mm"))
+
 # --- Pyscript editor hints (no runtime effect) ---
 from typing import TYPE_CHECKING, Any
 
@@ -278,11 +281,9 @@ def project_chart_sensor(entity_id, series, unit):
 
 def project_global_chart_sensors():
     
-    soil_max = float(state.get("input_number.soil_capacity_mm"))
-
     eto_series = store.build_series("global","eto")
     rain_series = store.build_series("global","rain")
-    soil_series = store.build_soil_series("global", 0, soil_max)
+    soil_series = store.build_soil_series("global", 0, SOIL_MAX)
 
     project_chart_sensor("sensor.irrigation_chart_eto", eto_series, "mm")
     project_chart_sensor("sensor.irrigation_chart_rain", rain_series, "mm")
@@ -469,30 +470,40 @@ def get_openmeteo_forecast(cfg: dict):
 # -----------------------------
 def compute_soil_balance():
 
-    soil = store.today_value("global","soil","median")
+    soil = store.yesterday_value("global","soil","median")
 
     if soil is None:
         soil = float(state.get("input_number.soil_optimal_mm"))
 
-    eto = store.today_value("global","eto","median")
+    eto = store.yesterday_value("global","eto","median") or 0
 
-    rain = float(state.get(SENSOR_RAIN_TODAY))
-
-    store.write("global", "rain", "local", rain)
+    rain = store.yesterday_value("global", "rain", "median") or 0
 
     soil_new = soil + rain - eto
 
-    soil_max = float(state.get("input_number.soil_capacity_mm"))
-
-    soil_new = clamp(soil_new, 0, soil_max)
+    soil_new = clamp(soil_new, 0, SOIL_MAX)
 
     store.write("global", "soil", "local", soil_new)
 
-    # store.compute_soil_forecast("global", 0, soil_max)
+    #store.build_soil_series("global", 0, soil_max)
 
 # -----------------------------
-# SERVICE
+# Sources
 # -----------------------------
+
+def safe_float(entity_id: str, default: float = 0.0) -> float:
+    value = state.get(entity_id)
+
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+def get_daily_rain():
+    rain = safe_float("SENSOR_RAIN_TODAY", 0)
+
+    store.write("global", "rain", "local", rain)
+
 def calculate_eto_for_source(cfg: dict):
     """
     Manuell auslösbarer Service:
@@ -647,29 +658,41 @@ def get_forecast():
 @time_trigger("cron(0 * * * *)")
 def hourly():
     get_forecast()
-
-    project_today_sensors()
+    store.compute_soil_forecast("global", 0, SOIL_MAX)
+    
     project_forecast_sensors()
     project_global_chart_sensors()
 
+
 @time_trigger("cron(55 23 * * *)")
-def daily():
+def daily_end():
     calculate_eto_daily()
-    compute_soil_balance()
+    get_daily_rain()
 
     store.snapshot_today()
     store.reset_today()
 
+
+@time_trigger("cron(05 00 * * *)")
+def daily_begin():
+    compute_soil_balance()
+    
+    get_forecast()
+
+    store.compute_soil_forecast("global", 0, SOIL_MAX)
+
     project_today_sensors()
     project_forecast_sensors()
     project_global_chart_sensors()
 
+
 @time_trigger("startup")
 def startup():
-    calculate_eto_daily()
+    # calculate_eto_daily()
     get_forecast()
-
     compute_soil_balance()
+
+    store.compute_soil_forecast("global", 0, SOIL_MAX)
 
     project_today_sensors()
     project_forecast_sensors()

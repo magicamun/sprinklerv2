@@ -1,4 +1,6 @@
+import os
 import json
+
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
@@ -13,29 +15,71 @@ class TimeseriesStore:
         self.today = {}
         self._load_today()
 
+    def _read_history(self):
+
+        if not HISTORY_FILE.exists():
+            return []
+
+        fd = os.open(str(HISTORY_FILE), os.O_RDONLY)
+
+        try:
+            data = os.read(fd, 50_000_000)
+        finally:
+            os.close(fd)
+
+        if not data:
+            return []
+
+        lines = data.decode("utf-8").splitlines()
+
+        return [json.loads(line) for line in lines if line.strip()]
+
     # ------------------------------------------------
     # LOAD TODAY STORE
     # ------------------------------------------------
 
     def _load_today(self):
 
-        if TODAY_FILE.exists():
-            with TODAY_FILE.open() as f:
-                self.today = json.load(f)
-        else:
+        if not TODAY_FILE.exists():
             self.today = {
                 "date": date.today().isoformat(),
                 "forecast": {}
             }
+            return
+
+        fd = os.open(str(TODAY_FILE), os.O_RDONLY)
+
+        try:
+            data = os.read(fd, 10_000_000)
+        finally:
+            os.close(fd)
+
+        if not data:
+            self.today = {
+                "date": date.today().isoformat(),
+                "forecast": {}
+            }
+            return
+
+        self.today = json.loads(data.decode("utf-8"))
 
     # ------------------------------------------------
     # SAVE TODAY STORE
     # ------------------------------------------------
-
     def _save_today(self):
 
-        with TODAY_FILE.open("w") as f:
-            json.dump(self.today, f, indent=2)
+        payload = json.dumps(self.today, indent=2).encode("utf-8")
+
+        fd = os.open(
+            str(TODAY_FILE),
+            os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
+            0o644
+        )
+
+        try:
+            os.write(fd, payload)
+        finally:
+            os.close(fd)
 
     def _median(self, values):
 
@@ -90,27 +134,11 @@ class TimeseriesStore:
 
         self._save_today()
     
-    def _compute_soil_projection(self, scope):
-
-        result = {}
-
-        soil = self.today_value(scope,"soil","median")
-
-        forecast = self.today.get("forecast",{})
-
-        for d in sorted(forecast):
-
-            eto = forecast[d].get("eto",{}).get("median")
-            rain = forecast[d].get("rain",{}).get("median")
-
-            if eto is None or rain is None:
-                continue
-
-            soil = soil + rain - eto
-
-            result[d] = round(soil,2)
-
-        return result
+    def save_today(self):
+        try:
+            task.executor(self._save_today)
+        except NameError:
+            self._save_today()
 
     # ------------------------------------------------
     # WRITE TODAY VALUE
@@ -166,34 +194,71 @@ class TimeseriesStore:
             .get(source)
         )
 
+    
+        # ------------------------------------------------
+    # READ TODAY VALUE
+    # ------------------------------------------------
+    def yesterday_value(self, scope, key, source="median"):
+
+        yesterday = (date.today() - timedelta(days=1)).isoformat()
+
+        entries = self._read_history()
+
+        for entry in reversed(entries):
+
+            if (
+                entry["date"] == yesterday
+                and entry["scope"] == scope
+                and entry["key"] == key
+                and entry["source"] == source
+            ):
+                return entry["value"]
+
+        return None
+
     # ------------------------------------------------
     # SNAPSHOT TODAY → HISTORY
     # ------------------------------------------------
-
     def snapshot_today(self):
 
         today_date = self.today.get("date")
 
-        with HISTORY_FILE.open("a") as f:
+        lines = []
 
-            for scope in self.today:
+        for scope in self.today:
 
-                if scope in ["date", "forecast"]:
-                    continue
+            if scope in ["date", "forecast"]:
+                continue
 
-                    for key in self.today[scope]:
+            for key in self.today[scope]:
 
-                        for source, value in self.today[scope][key].items():
-                                
-                            entry = {
-                                "date": today_date,
-                                "scope": scope,
-                                "key": key,
-                                "source": source,
-                                "value": value
-                            }
+                for source, value in self.today[scope][key].items():
 
-                            f.write(json.dumps(entry) + "\n")
+                    entry = {
+                        "date": today_date,
+                        "scope": scope,
+                        "key": key,
+                        "source": source,
+                        "value": value
+                    }
+
+                    lines.append(json.dumps(entry))
+
+        if not lines:
+            return
+
+        payload = ("\n".join(lines) + "\n").encode("utf-8")
+
+        fd = os.open(
+            str(HISTORY_FILE),
+            os.O_WRONLY | os.O_CREAT | os.O_APPEND,
+            0o644
+        )
+
+        try:
+            os.write(fd, payload)
+        finally:
+            os.close(fd)
 
         self._prune_history()
 
@@ -203,26 +268,31 @@ class TimeseriesStore:
 
     def _prune_history(self):
 
-        if not HISTORY_FILE.exists():
-            return
+        entries = self._read_history()
 
         cutoff = date.today() - timedelta(days=MAX_HISTORY_DAYS)
 
-        lines = []
+        filtered = []
 
-        with HISTORY_FILE.open() as f:
+        for entry in entries:
 
-            for line in f:
+            entry_date = datetime.fromisoformat(entry["date"]).date()
 
-                entry = json.loads(line)
+            if entry_date >= cutoff:
+                filtered.append(json.dumps(entry))
 
-                entry_date = datetime.fromisoformat(entry["date"]).date()
+        payload = ("\n".join(filtered) + "\n").encode("utf-8")
 
-                if entry_date >= cutoff:
-                    lines.append(line)
+        fd = os.open(
+            str(HISTORY_FILE),
+            os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
+            0o644
+        )
 
-        with HISTORY_FILE.open("w") as f:
-            f.writelines(lines)
+        try:
+            os.write(fd, payload)
+        finally:
+            os.close(fd)
 
     def reset_today(self):
 
@@ -268,37 +338,18 @@ class TimeseriesStore:
 
     def build_series(self, scope, metric, source="median"):
 
-        # ----------------------------
-        # SPECIAL CASE: SOIL
-        # ----------------------------
-
-        if metric == "soil":
-            return self.build_soil_series(scope, soil_max)
-
         series = {}
 
-        # ----------------------------
-        # HISTORY
-        # ----------------------------
+        entries = self._read_history()
 
-        if HISTORY_FILE.exists():
+        for entry in entries:
 
-            with HISTORY_FILE.open() as f:
-
-                for line in f:
-
-                    entry = json.loads(line)
-
-                    if (
-                        entry["scope"] == scope
-                        and entry["key"] == metric
-                        and entry["source"] == source
-                    ):
-                        series[entry["date"]] = entry["value"]
-
-        # ----------------------------
-        # TODAY
-        # ----------------------------
+            if (
+                entry["scope"] == scope
+                and entry["key"] == metric
+                and entry["source"] == source
+            ):
+                series[entry["date"]] = entry["value"]
 
         today_date = self.today.get("date")
 
@@ -311,10 +362,6 @@ class TimeseriesStore:
 
         if today_val is not None:
             series[today_date] = today_val
-
-        # ----------------------------
-        # FORECAST
-        # ----------------------------
 
         forecast = self.today.get("forecast", {})
 
@@ -329,26 +376,45 @@ class TimeseriesStore:
             if val is not None:
                 series[d] = val
 
-        # ----------------------------
-        # SORT SERIES
-        # ----------------------------
-
         return dict(sorted(series.items()))
 
     def build_soil_series(self, scope, soil_min, soil_max):
 
-        result = {}
+        series = {}
+
+        # ------------------------
+        # HISTORY
+        # ------------------------
+
+        entries = self._read_history()
+
+        for entry in entries:
+
+            if (
+                entry["scope"] == scope
+                and entry["key"] == "soil"
+                and entry["source"] == "median"
+            ):
+                series[entry["date"]] = entry["value"]
+
+        # ------------------------
+        # TODAY
+        # ------------------------
 
         today = self.today.get("date")
 
         soil_today = self.today_value(scope, "soil", "median")
 
         if soil_today is None:
-            return {}
+            return dict(sorted(series.items()))
+
+        series[today] = round(soil_today,2)
 
         soil = soil_today
 
-        result[today] = round(soil,2)
+        # ------------------------
+        # FORECAST
+        # ------------------------
 
         forecast = self.today.get("forecast",{})
 
@@ -373,10 +439,10 @@ class TimeseriesStore:
 
             soil = max(soil_min, min(soil, soil_max))
 
-            result[d] = round(soil,2)
+            series[d] = round(soil,2)
 
-        return result
-                
+        return dict(sorted(series.items()))
+                        
     def compute_today_median(self, scope, key):
 
         data = self.today.get(scope, {}).get(key, {})
@@ -409,7 +475,7 @@ class TimeseriesStore:
 
         forecast = self.today.get("forecast", {})
 
-        for d in sorted(forecast):
+        for d in sorted(forecast):#
 
             eto = forecast[d].get("eto", {}).get("median")
             rain = forecast[d].get("rain", {}).get("median")
@@ -419,8 +485,8 @@ class TimeseriesStore:
 
             soil = soil + rain - eto
 
-            # IMPORTANT
-            soil = max(minimum, min(soil, maximumn))
+#           # IMPORTANT
+            soil = max(minimum, min(soil, maximum))
 
             self.write_forecast(d, "soil", "model", round(soil, 2))
             

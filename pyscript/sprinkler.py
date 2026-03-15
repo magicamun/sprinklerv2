@@ -39,6 +39,8 @@ from pyscript.modules.sprinkler.scheduler import SprinklerCore, HardwareAdapter
 
 from pyscript.modules.util.datetime_utils import aware_now
 
+from pyscript.modules.infra.store.timeseries_store import store
+
 log_sprinkler.warning("Sprinkler: Modules loaded")
 
 sprinkler_ready = False
@@ -1005,12 +1007,19 @@ def project_qe(entry):
     # State
     # -------------------------
     zone_id = entry.zone_id
+    zone_key = f"zone:{zone_id}"
+
     entity_id = f"{SENSOR_PREFIX_ZONE}_{zone_id:02d}"
 
     attributes = entry.to_dict()
 
-    soil = sprinkler_core.irrigation_store.get_soil(zone_id)
-    deficit = sprinkler_core.irrigation_store.get_deficit(zone_id)
+    #soil = sprinkler_core.irrigation_store.get_soil(zone_id)
+    #deficit = sprinkler_core.irrigation_store.get_deficit(zone_id)
+    
+    optimal = safe_float(INPUT_SOIL_OPTIMAL, 0)
+
+    soil = store.today_value(zone_key, "soil", "median") or 0
+    deficit = max(0, optimal - soil)
 
     attributes.update({"soil_mm": round(soil, 2), "deficit_mm": round(deficit, 2)})
 
@@ -1153,7 +1162,7 @@ def project_dirty_irrigation():
         soil = data.get(SENSOR_SOIL_KIND, 0.0)
         deficit = data.get(SENSOR_DEFICIT_KIND, 0.0)
 
-        project_irrigation(zone_id, soil, deficit)
+        # project_irrigation(zone_id, soil, deficit)
 
 def project_irrigation(zone_id, new_soil, deficit):
     if not zone_id:
@@ -1250,36 +1259,47 @@ def apply_daily_balance_if_needed(zone_store, irrigation_store):
 
     today = aware_now().date()
 
-    eto = safe_float(SENSOR_ETO_YESTERDAY, 0)
-    rain = safe_float(SENSOR_RAIN_YESTERDAY, 0)
+    #eto = safe_float(SENSOR_ETO_YESTERDAY, 0)
+    #rain = safe_float(SENSOR_RAIN_YESTERDAY, 0)
+
+    eto = store.yesterday_value("global", "eto", "median")
+    rain = store.yesterday_value("global", "rain", "median")
 
     log_irrigation.info(f"Apply Daily Balance if Needed: ETo: {eto}, Rain: {rain}")
     for zone in zone_store.all().values():
 
         zone_id = zone["zone_id"]
+        zone_key = f"zone:{zone_id}"
 
-        last_update = get_soil_last_update(zone_id)
+        #last_update = get_soil_last_update(zone_id)
 
-        log_irrigation.info(f"Apply Daily, Zone {zone_id} ({zone["name"]}), Last Update: {last_update}")
-        if last_update == today:
-            continue  # bereits gerechnet
+        #log_irrigation.info(f"Apply Daily, Zone {zone_id} ({zone["name"]}), Last Update: {last_update}")
+        #if last_update == today:
+        #    continue  # bereits gerechnet
 
-        
-        soil = irrigation_store.get_soil(zone_id)
+        # soil = irrigation_store.get_soil(zone_id)
 
         capacity = safe_float(INPUT_SOIL_CAPACITY, 30)
         optimal = safe_float(INPUT_SOIL_OPTIMAL, 0)
 
-        new_soil = soil - eto + rain
+        soil = store.yesterday_value(zone_key, "soil", "median")
+        if soil is None:
+            soil = optimal
+
+        irrigation = store.yesterday_value(zone_key, "irrigation", "actual") or 0
+
+        new_soil = soil - eto + rain + irrigation
         new_soil = max(0, min(capacity, new_soil))
         
-        log_irrigation.info(f"Apply Soil (Old): {soil}, Capa: {capacity}, Optimal: {optimal}, New Soil: {new_soil}")
+        store.write(zone_key, "soil", "median", new_soil)
+
+        log_irrigation.info(f"Apply Soil (Old): {soil}, New:{new_soil}, Capa: {capacity}, Optimal: {optimal}, ETo: {eto} Rain: {rain} Irrigation: {irrigation}")
 
         deficit = max(0, optimal - new_soil)
 
-        irrigation_store.set(zone_id, new_soil, deficit)
+        # irrigation_store.set(zone_id, new_soil, deficit)
 
-        project_irrigation(zone_id, new_soil, deficit)
+        # project_irrigation(zone_id, new_soil, deficit)
 
 # ----------- Timeline -------------------
 
