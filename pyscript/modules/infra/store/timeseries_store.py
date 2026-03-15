@@ -4,8 +4,8 @@ import json
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-TODAY_FILE = Path("/config/pyscript/irrigation_today.json")
-HISTORY_FILE = Path("/config/pyscript/irrigation_history.jsonl")
+TODAY_FILE = Path("/config/sprinkler/irrigation_today.json")
+HISTORY_FILE = Path("/config/sprinkler/irrigation_history.jsonl")
 
 MAX_HISTORY_DAYS = 28
 
@@ -159,6 +159,25 @@ class TimeseriesStore:
         self._save_today()
 
     # ------------------------------------------------
+    # AAdd to TODAY VALUE
+    # ------------------------------------------------
+    def add(self, scope, key, source, value):
+
+        current = (
+            self.today
+            .get(scope, {})
+            .get(key, {})
+            .get(source)
+        )
+
+        if current is None:
+            new_val = value
+        else:
+            new_val = current + value
+
+        self.write(scope, key, source, round(new_val, 3))
+
+    # ------------------------------------------------
     # WRITE FORECAST VALUE
     # ------------------------------------------------
 
@@ -182,6 +201,41 @@ class TimeseriesStore:
         self._save_today()
 
     # ------------------------------------------------
+    # Add Irrigation FORECAST VALUE
+    # ------------------------------------------------
+    def add_forecast_irrigation(self, forecast_date, zone_key, mm):
+
+        forecast_date = str(forecast_date)
+
+        if forecast_date not in self.today["forecast"]:
+            self.today["forecast"][forecast_date] = {}
+
+        if "irrigation" not in self.today["forecast"][forecast_date]:
+            self.today["forecast"][forecast_date]["irrigation"] = {}
+
+        self.today["forecast"][forecast_date]["irrigation"][zone_key] = mm
+
+        self._save_today()
+
+    # ------------------------------------------------
+    # Clear Irrigation FORECAST
+    # ------------------------------------------------
+    def clear_forecast_irrigation(self):
+
+        forecast = self.today.get("forecast", {})
+
+        changed = False
+
+        for d in forecast:
+
+            if "irrigation" in forecast[d]:
+                del forecast[d]["irrigation"]
+                changed = True
+
+        if changed:
+            self._save_today()
+
+    # ------------------------------------------------
     # READ TODAY VALUE
     # ------------------------------------------------
 
@@ -196,6 +250,7 @@ class TimeseriesStore:
 
     
         # ------------------------------------------------
+
     # READ TODAY VALUE
     # ------------------------------------------------
     def yesterday_value(self, scope, key, source="median"):
@@ -485,7 +540,7 @@ class TimeseriesStore:
 
             soil = soil + rain - eto
 
-#           # IMPORTANT
+            # IMPORTANT
             soil = max(minimum, min(soil, maximum))
 
             self.write_forecast(d, "soil", "model", round(soil, 2))
@@ -521,4 +576,4 @@ class TimeseriesStore:
 
         self._save_today()
         
-store = TimeseriesStore()
+TsStore = TimeseriesStore()

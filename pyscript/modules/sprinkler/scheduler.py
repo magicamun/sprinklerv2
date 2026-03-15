@@ -22,10 +22,13 @@ from pyscript.modules.infra.queues.queue_entry import QueueEntry
 from pyscript.modules.infra.queues.program_block import ProgramBlock
 from pyscript.modules.infra.queues.manual_queue import ManualQueue
 
+from pyscript.modules.infra.store.timeseries_store import TsStore
+
 from pyscript.modules.sprinkler.manual_queue_owner import ManualQueueOwner
-from pyscript.modules.sprinkler.irrigations import IrrigationStore
+# from pyscript.modules.sprinkler.irrigations import IrrigationStore
 from pyscript.modules.sprinkler.program_engine import ProgramEngine
 from pyscript.modules.sprinkler.zones import zone_store
+
 
 log_scheduler = logging.getLogger("pyscript.sprinkler.scheduler")
 
@@ -60,9 +63,10 @@ class SprinklerCore():
         self.sun_times = {}
         self.program_queue = ProgramQueue()
         self.program_engine = ProgramEngine(self.program_queue)
-        self.irrigation_store = IrrigationStore()
+#        self.irrigation_store = IrrigationStore()
         self.soil_margins = {}
         self.used = 0
+        self._dirty_irrigation = True
 
     def set_sun_times(self, sun_times: dict):
         self.sun_times = sun_times
@@ -197,8 +201,6 @@ class SprinklerCore():
             else:
                 anchor = end + datetime.timedelta(minutes=pause)
 
-
-    
     def _schedule_single_program_old(self, raw_program: dict, adHoc: bool  = False):
 
         log_scheduler.info(f"Schedule Single Program {raw_program.get("name")} -> enabled = {raw_program.get("enabled")} ")
@@ -484,6 +486,7 @@ class SprinklerCore():
             entry = self.active_queue.get(qe_id)
             if entry:
                 await self._stop_zone(entry)     # <- neue Methode im Scheduler
+            self._dirty_irrigation = True
 
     async def _process_manual_enqueue(self):
         to_enqueue = []
@@ -513,6 +516,7 @@ class SprinklerCore():
             log_scheduler.info(
                 f"Queued QE {active_entry.qe_id} ({active_entry.zone_name})"
             )
+            self._dirty_irrigation = True
 
     async def _process_running(self):
         now = aware_now()
@@ -732,6 +736,7 @@ class SprinklerCore():
         for e in entries:
             log_scheduler.info(f"[program-enqueue] zone {e.qe_id, e.zone_name, e.status} ")
             self.enqueue_strict_entry(e, delta)
+            self._dirty_irrigation = True
 
         self.program_queue.remove_block(block)
 
@@ -808,8 +813,15 @@ class SprinklerCore():
 
                     zone = zone_store.get(zone_id)
 
-                    deficit = self.irrigation_store.get_deficit(zone_id)
+                    zone_key = f"zone:{zone_id}"
 
+                    soil = store.today_value(zone_key, "soil", "median")
+
+                    if soil is None:
+                        soil = self.soil_margins.optimal
+
+                    deficit = max(0, optimal - soil)
+                    
                     new_duration = self.calculate_zone_seconds(zone, deficit)
 
                     log_scheduler.info(
@@ -863,11 +875,73 @@ class SprinklerCore():
 
         log_scheduler.info(f"Program {program_run_id}: adaptation finished")
         
+    def rebuild_irrigation_forecast(self, forecast_days: int = 7):
+
+        today = datetime.date.today()
+        max_date = today + datetime.timedelta(days=forecast_days)
+
+        # --------------------------------
+        # 1. Forecast-Irrigation löschen
+        # --------------------------------
+        TsStore.clear_forecast_irrigation()
+
+        entries = self.active_queue.all()
+
+        if not entries:
+            return
+
+        # --------------------------------
+        # 2. Queue scannen
+        # --------------------------------
+        for entry in entries:
+
+            if entry.status not in ("queued", "running"):
+                continue
+
+            if not entry.scheduled_start:
+                continue
+
+            run_date = entry.scheduled_start.date()
+
+            # nur Forecast-Zeitraum
+            if run_date < today or run_date > max_date:
+                continue
+
+            zone = zone_store.get(entry.zone_id)
+
+            if not zone:
+                continue
+
+            mm_per_hour = zone.get("precipitation_rate_mm_per_hour")
+
+            if not mm_per_hour:
+                continue
+
+            duration = entry.scheduled_duration or entry.remaining or 0
+
+            if duration <= 0:
+                continue
+
+            irrigation_mm = mm_per_hour * (duration / 3600)
+
+            zone_key = f"zone:{entry.zone_id}"
+
+            # --------------------------------
+            # 3. Store schreiben
+            # --------------------------------
+            TsStore.add_forecast_irrigation(
+                run_date,
+                zone_key,
+                round(irrigation_mm, 2)
+            )
+    
     def apply_irrigation_to_zone(self, zone_id: int, runtime_seconds: float):
 
         zone = zone_store.get(zone_id)
         if not zone:
             return
+
+        zone_key = f"zone:{zone_id}"
 
         mm_per_hour = zone.get("precipitation_rate_mm_per_hour")
         if not mm_per_hour:
@@ -875,21 +949,10 @@ class SprinklerCore():
 
         irrigation_mm = mm_per_hour * (runtime_seconds / 3600)
 
-        soil = self.irrigation_store.get_soil(zone_id)
-
-        new_soil = soil + irrigation_mm
-
-        capacity = self.soil_margins.get("capacity")
-        optimal  = self.soil_margins.get("optimal")
-
-        new_soil = min(capacity, new_soil)
-        deficit = max(0, optimal - new_soil)
-
-        self.irrigation_store.set(zone_id, new_soil, deficit)
+        TsStore.add(zone_key, "irrigation", "actual", round(irrigation_mm, 2))
 
         log_scheduler.info(
-            f"[IRRIGATION] Zone {zone_id}: +{irrigation_mm:.2f}mm "
-            f"→ soil={new_soil:.2f} deficit={deficit:.2f}"
+            f"[IRRIGATION] Zone {zone_id}: +{irrigation_mm:.2f}mm irrigation"
         )
 
     def _group_entries_by_run(self, entries):
@@ -1033,12 +1096,12 @@ class SprinklerCore():
 
         return True
 
-
     # -------------------------------------------------
     # Scheduler-Tick
     # -------------------------------------------------
     async def tick(self, is_active: bool, capacity: int):
         self._capacity = capacity
+        self._dirty_planned_irrigation = False
         # MIG global sprinkler_scheduler_running
         """
         Scheduler-Loop für die Bewässerungs-Queue
@@ -1073,10 +1136,14 @@ class SprinklerCore():
         # -------------------------
         await self._process_manual_enqueue()
 
+
         # -------------------------
         # 3) Running entries prüfen (Laufzeitende)
         # -------------------------
         await self._process_running()
+
+        if self._dirty_irrigation:
+            self.rebuild_irrigation_forecast(forecast_days = 7)
 
         # sort_active_queue()
 
@@ -1092,4 +1159,5 @@ class SprinklerCore():
         await self._process_start_logic(capacity)
 
         # log_scheduler.info(f"Scheduler Tick({is_active}, {capacity}) ended...")
+
 
