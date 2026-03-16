@@ -16,8 +16,6 @@ from pyscript.openmeteo import fetch_openmeteo
 
 from pyscript.modules.infra.store.timeseries_store import TsStore
 
-log = logging.getLogger("pyscript.soil")
-
 SENSOR_PREFIX_ETO       = "sensor.irrigation_eto_raw"
 SENSOR_PREFIX_FORECAST  = "sensor.irrigation_forecast"
 SENSOR_PREFIX_SOIL      = "sensor.irrigation_soil"
