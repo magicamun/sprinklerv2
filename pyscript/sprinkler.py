@@ -10,39 +10,47 @@ if TYPE_CHECKING:
     service: Any
     time_trigger: Any
 
+# ------------------------------------------------
+# Python
+# ------------------------------------------------
 import logging
 import datetime
-from copy import deepcopy
-import uuid
-import os
-import json
+
+# ------------------------------------------------
+# Home Assistant / pyscript
+# ------------------------------------------------
 from homeassistant.util import dt as dt_util
-from datetime import timedelta
 
-log_sprinkler           = logging.getLogger("pyscript.sprinkler.sprinkler")
-log_projections         = logging.getLogger("pyscript.sprinkler.projections")
-log_ui                  = logging.getLogger("pyscript.sprinkler.ui")
-log_irrigation          = logging.getLogger("pyscript.sprinkler.irrigation")
+# ------------------------------------------------
+# Infra
+# ------------------------------------------------
+from pyscript.modules.infra.store.timeseries_store import TsStore
+from pyscript.modules.util.datetime_utils import aware_now
 
-log_sprinkler.warning("Sprinkler - Startup")
+# ------------------------------------------------
+# Sprinkler modules
+# ------------------------------------------------
+from pyscript.modules.sprinkler.zones import zone_store
+from pyscript.modules.sprinkler.programs import program_store
+from pyscript.modules.sprinkler.events import SprinklerEvents
+from pyscript.modules.sprinkler.scheduler import SprinklerCore, HardwareAdapter
 
-# from pyscript.modules.sprinkler.sprinkler_config import SENSOR_PREFIX_PROGRAMS, SENSOR_PREFIX_ZONE
+# ------------------------------------------------
+# Sprinkler Configuration
+# ------------------------------------------------
 from pyscript.modules.sprinkler.sprinkler_config import (
     SENSOR_PREFIX_PROGRAMS, SENSOR_PREFIX_ZONE, 
     SENSOR_TIMELINE, SENSOR_PROGRAMS_DEBUG,
     SENSOR_ETO_YESTERDAY, SENSOR_RAIN_YESTERDAY, SENSOR_DEFICIT_KIND, SENSOR_SOIL_KIND, DEFAULT_SOIL_MM, DEFAULT_DEFICIT_MM, INPUT_SOIL_CAPACITY, INPUT_SOIL_OPTIMAL,
     done_file
 )
-from pyscript.modules.sprinkler.zones import zone_store
-from pyscript.modules.sprinkler.programs import program_store
-from pyscript.modules.sprinkler.events import SprinklerEvents
-from pyscript.modules.sprinkler.scheduler import SprinklerCore, HardwareAdapter
 
-from pyscript.modules.util.datetime_utils import aware_now
+log_sprinkler           = logging.getLogger("pyscript.sprinkler.sprinkler")
+log_projections         = logging.getLogger("pyscript.sprinkler.projections")
+log_ui                  = logging.getLogger("pyscript.sprinkler.ui")
+log_irrigation          = logging.getLogger("pyscript.sprinkler.irrigation")
 
-from pyscript.modules.infra.store.timeseries_store import TsStore
-
-log_sprinkler.warning("Sprinkler: Modules loaded")
+log_sprinkler.debug("Sprinkler - Startup")
 
 sprinkler_ready = False
 sprinkler_scheduler_task = None
@@ -66,6 +74,7 @@ class HAHardwareAdapter(HardwareAdapter):
         switch.turn_off(entity_id=entity_id)
 
 hardware = HAHardwareAdapter()
+
 
 sprinkler_core = SprinklerCore(hardware, sprinkler_donefile)
 
@@ -1082,9 +1091,7 @@ def remove_zone_states(zone_id: int):
 
     entities = [
         base,                              # Haupt-Zone
-        f"{base}_remaining",               # Remaining
-        f"{base}_soil_water_mm",           # Soil
-        f"{base}_soil_deficit_mm",         # Deficit
+        f"{base}_remaining"                # Remaining
     ]
 
     for entity in entities:
@@ -1142,42 +1149,6 @@ def project_all_zone_charts(zone_store):
         )
 
 # ----------- Soil, Deficit --------------
-def to_pyscript_entity(entity_id: str) -> str:
-    """
-    Converts a sensor.* entity to a persistable pyscript.* entity.
-    Keeps everything after the first dot.
-    """
-
-    if not isinstance(entity_id, str):
-        raise ValueError("entity_id must be string")
-
-    if "." not in entity_id:
-        raise ValueError(f"Invalid entity_id format: {entity_id}")
-
-    domain, rest = entity_id.split(".", 1)
-
-    return f"pyscript.{rest}"
-
-def irrigation_entity(zone_id: int, kind: str) -> str:
-    """
-    kind: 'soil' | 'deficit'
-    """
-    if kind not in (SENSOR_SOIL_KIND, SENSOR_DEFICIT_KIND):
-        raise ValueError(f"Invalid irrigation kind: {kind}")
-
-    return to_pyscript_entity(f"{SENSOR_PREFIX_ZONE}_{zone_id:02d}_{kind}")
-
-def get_soil_last_update(zone_id: int) -> datetime.date | None:
-    entity = to_pyscript_entity(irrigation_entity(zone_id, SENSOR_SOIL_KIND))
-
-    if not state.exist(entity):
-        return None
-    
-    s = state.get(entity)
-    if not s:
-        return None
-
-    return s.last_updated.astimezone().date()
 
 def apply_daily_balance_if_needed(zone_store):
 

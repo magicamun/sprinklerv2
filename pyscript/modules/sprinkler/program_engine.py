@@ -12,7 +12,8 @@ if TYPE_CHECKING:
 import logging
 
 from uuid import uuid4
-
+import datetime
+from datetime import timedelta
 from pyscript.modules.infra.queues.program_block import ProgramBlock
 from pyscript.modules.infra.queues.queue_entry import QueueEntry
 from pyscript.modules.sprinkler.zones import zone_store
@@ -28,9 +29,9 @@ class ProgramEngine:
         self.program_queue = program_queue
 
     def weekday_name(self, dt):
-        return WEELDAYS[dt.weekday()]
+        return WEEKDAYS[dt.weekday()]
         
-    def compute_anchor_time(self, program: dict, day: datetime.date, sun_times: dict):
+    def compute_anchor_time(self, program: dict, day: date, sun_times: dict):
         """
         Computes anchor time for a program on a specific day.
 
@@ -72,7 +73,7 @@ class ProgramEngine:
             if t.date() != day:
                 t = datetime.datetime.combine(day, t.timetz())
 
-            t += datetime.timedelta(minutes=offset)
+            t += timedelta(minutes=offset)
 
             # optional latest_end cap
             latest = sched.get("latest_end")
@@ -190,7 +191,7 @@ class ProgramEngine:
         for e in entries:
             load = e.load or 1
             duration_seconds = e.planned_duration
-            dur = datetime.timedelta(seconds=duration_seconds)
+            dur = timedelta(seconds=duration_seconds)
 
             # fits in current wave
             if used_slots + load <= capacity:
@@ -247,7 +248,7 @@ class ProgramEngine:
         for e in reversed(entries):
             load = e.load or 1
             duration_seconds = e.planned_duration
-            dur = datetime.timedelta(seconds=duration_seconds)
+            dur = timedelta(seconds=duration_seconds)
 
             # fits in current wave
             if used_slots + load <= capacity:
@@ -308,7 +309,7 @@ class ProgramEngine:
         # today + next 7 days
         for offset in range(0, 8):
 
-            day = now.date() + datetime.timedelta(days=offset)
+            day = now.date() + timedelta(days=offset)
 
             # weekday filter
             if self.weekday_name(day) not in weekdays:
