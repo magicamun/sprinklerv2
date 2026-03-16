@@ -11,25 +11,24 @@ if TYPE_CHECKING:
 
 import logging
 
-import datetime
-
 from uuid import uuid4
 
 from pyscript.modules.infra.queues.program_block import ProgramBlock
 from pyscript.modules.infra.queues.queue_entry import QueueEntry
 from pyscript.modules.sprinkler.zones import zone_store
-from pyscript.modules.util.datetime_utils import normalize_dt, today_at, aware_now
+from pyscript.modules.util.datetime_utils import today_at, aware_now
 
+WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
 log_engine           = logging.getLogger("pyscript.sprinkler.program_engine")
-log_engine.warning("Scheduler Module loading...")
+log_engine.debug("Scheduler Module loading...")
 
 class ProgramEngine:
     def __init__(self, program_queue):
         self.program_queue = program_queue
 
     def weekday_name(self, dt):
-        return ["mon", "tue", "wed", "thu", "fri", "sat", "sun"][dt.weekday()]
+        return WEELDAYS[dt.weekday()]
         
     def compute_anchor_time(self, program: dict, day: datetime.date, sun_times: dict):
         """
@@ -67,7 +66,6 @@ class ProgramEngine:
             if not raw:
                 raise RuntimeError(f"Sun time for '{event}' not provided")
 
-            #t = normalize_dt(raw)
             t = raw
 
             # pull to requested day
@@ -120,7 +118,7 @@ class ProgramEngine:
             log_engine.info(f"expand Zone, found id {zone_id}, {idx}")
             planned_duration = z["planned_duration"]
 
-            log_engine.info(f"ZONE_DATA: {zone}")
+            log_engine.debug(f"ZONE_DATA: %s", zone)
 
             src = f"program:{program_id}:{day_str}:{idx}"
 
@@ -310,16 +308,13 @@ class ProgramEngine:
         # today + next 7 days
         for offset in range(0, 8):
 
-            candidate_date = now.date() + datetime.timedelta(days=offset)
-            # day = normalize_dt(candidate_date)
-            day = candidate_date
+            day = now.date() + datetime.timedelta(days=offset)
 
             # weekday filter
             if self.weekday_name(day) not in weekdays:
                 continue
 
             anchor = self.compute_anchor_time(program, day, sun_times)
-            # anchor = normalize_dt(anchor)
 
             # exclude past times
             if anchor <= now:
@@ -363,85 +358,6 @@ class ProgramEngine:
             entries=entries
         )
 
-        return block
-
-    def build_program_block_old(self, program: dict, now: datetime.datetime, capacity: int, sun_times: dict, force_start_now: bool = False):
-        """
-        Builds a fully planned ProgramBlock for the next execution
-        of a given program.
-
-        Returns:
-            ProgramBlock | None
-        """
-
-        day = ""
-        anchor = None
-
-        if not force_start_now:
-            # -------------------------------------------------
-            # 1️⃣ Nächsten gültigen Lauf bestimmen
-            # -------------------------------------------------
-            run = self.compute_next_program_run(program, now, sun_times)
-            log_engine.info(f"Computed Next run: {run}")
-            if not run:
-                return None
-
-            day = run["day"]
-
-            # Anchor mit Sun-Daten berechnen
-            anchor = self.compute_anchor_time(program, day, sun_times)
-
-            anchor = run["anchor"]
-
-        else:
-            anchor = aware_now()
-            day=anchor.date()
-
-
-        log_engine.info(f"Day is : {day}, anchor is: {anchor}")
-        log_engine.info(f"ANCHOR tz: {anchor.tzinfo}")
-        log_engine.info(f"NOW tz: {now.tzinfo}")
-        # Sicherheit: Vergangenheit ausschließen
-        if anchor <= now:
-            return None
-
-        # -------------------------------------------------
-        # 2️⃣ Entries erzeugen
-        # -------------------------------------------------
-        entries = self.expand_program_to_entries(program, day, force_start_now)
-
-        log_engine.info(f"Entries expanded")
-        if not entries:
-            return None
-
-        log_engine.info("plan strict")
-        # -------------------------------------------------
-        # 3️⃣ Strict-Planung
-        # -------------------------------------------------
-        policy = program.get("policy", "strict")
-        mode = program.get("mode", "start_at")
-
-        if policy != "strict":
-            raise NotImplementedError("Only strict policy supported currently")
-
-        if mode == "start_at":
-            self.plan_strict_forward(entries, anchor, capacity)
-
-        elif mode == "finish_at":
-            self.plan_strict_backward(entries, anchor, capacity)
-
-        else:
-            raise ValueError(f"Unknown program mode '{mode}'")
-
-        # -------------------------------------------------
-        # 4️⃣ Block erzeugen
-        # -------------------------------------------------
-
-        log_engine.info("create Block")
-
-        block = ProgramBlock(program=program, day=day, anchor=anchor, entries=entries)
-
-        log_engine.info(f"End of Program-Block!")
         return block
 
     def program_time_window(self, entries: list[QueueEntry]):

@@ -13,11 +13,11 @@ import os
 import json
 import tempfile
 import copy
-from typing import Dict, List
+from typing import Dict
 
 log_zones = logging.getLogger("pyscript.sprinkler.zone_v2")
 
-log_zones.warning("Module reloaded")
+log_zones.debug("Module reloaded")
 
 from .sprinkler_config import CONFIG_DIR
 
@@ -29,15 +29,6 @@ class ZoneStore:
         self._file_path = file_path
         self._zones: Dict[int, dict] = {}
         log_zones.debug("ZoneStore initialized with file %s", file_path)
-
-    # =========================================================
-    # ID GENERATION
-    # =========================================================
-
-    def _next_id(self) -> int:
-        if not self._zones:
-            return 1
-        return max(self._zones.keys()) + 1
 
     # =========================================================
     # ACCESS
@@ -123,12 +114,9 @@ class ZoneStore:
             log_zones.warning("Add rejected: zone id=%s already exists", zid)
             raise ValueError(f"Zone {zid} already exists")
 
-        ordered_zone = {
-            "zone_id": zid
-        }
-
         for key, value in zone.items():
             ordered_zone[key] = copy.deepcopy(value)
+            ordered_zone["zone_id"] = zid
 
         self._zones[zid] = ordered_zone
 
@@ -152,9 +140,7 @@ class ZoneStore:
             log_zones.warning("Update rejected: zone id=%s not found", zid)
             raise ValueError(f"Zone {zid} not found")
 
-        updated = copy.deepcopy(zone)
-
-        self._zones[zid] = updated
+        self._zones[zid] = copy.deepcopy(zone)
 
         log_zones.info(
             "Zone updated id=%s name=%s",

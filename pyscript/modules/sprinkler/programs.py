@@ -31,16 +31,14 @@ PROGRAM_COLOR_PALETTE = [
 
 log_programs           = logging.getLogger("pyscript.sprinkler.programs")
 
-log_programs.warning("Module reloaded")
+log_programs.debug("Module reloaded")
 
-from pyscript.modules.sprinkler.sprinkler_config import CONFIG_DIR
-
-PROGRAMS_FILE   = f"{CONFIG_DIR}/programs.json"
+from pyscript.modules.sprinkler.sprinkler_config import CONFIG_DIR, PROGRAM_FILE
 
 class ProgramStore:
     def __init__(self, file_path: str):
         self._file_path = file_path
-        self._programs: Dict[str, dict] = {}
+        self._programs: Dict[int, dict] = {}
         log_programs.debug("ProgramStore initialized with file %s", file_path)
     # =========================================================
     # ID GENERATION
@@ -49,7 +47,7 @@ class ProgramStore:
     def _next_id(self) -> int:
         if not self._programs:
             return 1
-        return max(self._programs.keys()) + 1
+        return max(self._programs) + 1
 
     def _next_order(self) -> int:
         if not self._programs:
@@ -59,7 +57,7 @@ class ProgramStore:
     def all(self) -> dict[int, dict]:
         return dict(self._programs)
 
-    def get(self, program_id: str) -> dict | None:
+    def get(self, program_id: int) -> dict | None:
         return self._programs.get(program_id)
 
     def exists(self, program_id: str) -> bool:
@@ -144,16 +142,13 @@ class ProgramStore:
 
         pid = self._next_id()
 
-        ordered_program = {
-            "id": pid
-        }
-        for key, value in program.items():
-            ordered_program[key] = copy.deepcopy(value)
+        ordered = copy.deepcopy(program)
+        ordered["program_id"] = pid
 
-        if not ordered_program.get("color"):
-            ordered_program["color"] = self._default_program_color()
+        if not ordered.get("color"):
+            ordered["color"] = self._default_program_color()
 
-        self._programs[pid] = ordered_program
+        self._programs[pid] = ordered
 
         log_programs.info("Program added id=%s name=%s",
                 pid,
@@ -209,5 +204,5 @@ class ProgramStore:
 
 
 # Singleton-Instanz hier erzeugen
-program_store = ProgramStore(PROGRAMS_FILE)
+program_store = ProgramStore(PROGRAM_FILE)
 program_store.load()

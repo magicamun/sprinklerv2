@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 import logging
 import datetime
 
-
+from datetime import timedelta
 from pyscript.modules.util.datetime_utils import aware_now
 from pyscript.modules.infra.queues.active_queue import ActiveQueue
 from pyscript.modules.infra.queues.program_queue import ProgramQueue
@@ -32,7 +32,7 @@ from pyscript.modules.sprinkler.zones import zone_store
 
 log_scheduler = logging.getLogger("pyscript.sprinkler.scheduler")
 
-log_scheduler.warning("Scheduler Module loading...")
+log_scheduler.debug("Scheduler Module loading...")
 
 # =====================================================
 # Hardware
@@ -110,9 +110,10 @@ class SprinklerCore():
     # -------------------------------------------------
     def _schedule_single_program(self, raw_program: dict, adHoc: bool = False):
 
-        log_scheduler.info(
-            f"Schedule Single Program {raw_program.get('name')} -> enabled = {raw_program.get('enabled')}"
-        )
+        name = raw_program.get("name")
+        enabled = raw_program.get("enabled")
+
+        log_scheduler.info(f"Schedule Single Program %s -> enabled=%s", name, enabled)
 
         if not raw_program.get("enabled"):
             return
@@ -186,8 +187,9 @@ class SprinklerCore():
 
             self.program_queue.add_block(block)
 
+            program_id = program.get("program_id")
             log_scheduler.info(
-                f"[program] block scheduled run {i} for {program.get('program_id')} Capacity: {self._capacity}"
+                f"[program] block scheduled run {i} for {program_id} Capacity: {self._capacity}"
             )
 
             start, end = self.program_engine.program_time_window(block.entries)
@@ -197,54 +199,9 @@ class SprinklerCore():
 
             mode = program.get("mode")
             if mode == "finish_at":
-                anchor = start - datetime.timedelta(minutes=pause)
+                anchor = start - timedelta(minutes=pause)
             else:
-                anchor = end + datetime.timedelta(minutes=pause)
-
-    def _schedule_single_program_old(self, raw_program: dict, adHoc: bool  = False):
-
-        log_scheduler.info(f"Schedule Single Program {raw_program.get("name")} -> enabled = {raw_program.get("enabled")} ")
-        if not raw_program.get("enabled"):
-            return
-        
-        now = aware_now()
-
-        engine_zones = []
-
-        for z in raw_program.get("zones", []):
-            engine_zones.append({
-                "zone_id": z["zone_id"],
-                "program_zone_index": z.get("program_zone_index"),
-                "planned_duration": z.get("planned_duration") or z.get("duration"),
-                "enabled": z.get("enabled", True),
-                "load": z.get("load", 1),
-            })
-
-        program = {
-            "program_id": raw_program.get("id"),
-            "program_name": raw_program.get("name"),
-            "policy": raw_program.get("policy"),
-            "mode": raw_program.get("mode"),
-            "schedule": raw_program.get("schedule"),
-            "weekdays": raw_program.get("weekdays"),
-            "zones": engine_zones,
-            "color": raw_program.get("color"),
-            "weather": raw_program.get("weather")
-        }
-
-        block = self.program_engine.build_program_block(
-            program=program,
-            now=now,
-            capacity=self._capacity,
-            sun_times=self.sun_times,
-            force_start_now=adHoc
-        )
-
-        if block:
-            self.program_queue.add_block(block)
-            log_scheduler.info(
-                f"[program] block scheduled for {program.get('id')}"
-            )
+                anchor = end + timedelta(minutes=pause)
             
     def initialize_program_queue(self, program_store, capacity: int):
         """
@@ -310,7 +267,7 @@ class SprinklerCore():
             entry.scheduled_start = now
 
         entry.scheduled_end = (
-            now + datetime.timedelta(seconds=entry.scheduled_duration)
+            now + timedelta(seconds=entry.scheduled_duration)
         )
 
         entry.remaining = entry.scheduled_duration
@@ -406,7 +363,7 @@ class SprinklerCore():
                 0 if e.status == "running"
                 else 1 if e.policy == "strict"
                 else 2,
-                e.scheduled_start or datetime.datetime.max
+                e.scheduled_start or datetime.datetime.max.replace(tzinfo=None)
             )
         )
 
@@ -608,11 +565,11 @@ class SprinklerCore():
             # FLOATING
             # =================================================
 
-            SAFETY_MARGIN = datetime.timedelta(seconds=10)
+            SAFETY_MARGIN = timedelta(seconds=10)
 
             latest_end = (
                 now
-                + datetime.timedelta(seconds=entry.planned_duration)
+                + timedelta(seconds=entry.planned_duration)
                 + SAFETY_MARGIN
             )
 
@@ -659,15 +616,15 @@ class SprinklerCore():
         and current active queue.
 
         Returns:
-            datetime.timedelta >= 0
+            timedelta >= 0
         """
 
         prog_start, prog_end = self.program_engine.program_time_window(entries)
 
         if not prog_start or not prog_end:
-            return datetime.timedelta(0)
+            return timedelta(0)
 
-        delta = datetime.timedelta(0)
+        delta = timedelta(0)
 
         for other in self.active_queue.all():
 
@@ -692,9 +649,9 @@ class SprinklerCore():
                 if shift > delta:
                     delta = shift
 
-        return max(delta, datetime.timedelta(0))
+        return max(delta, timedelta(0))
 
-    def enqueue_strict_entry(self, planned_entry: QueueEntry, delta: datetime.timedelta):
+    def enqueue_strict_entry(self, planned_entry: QueueEntry, delta: timedelta):
         """
         Injects a strict entry into active queue with optional shift delta.
         """
@@ -882,7 +839,7 @@ class SprinklerCore():
                     # erste Zone im Slot
                     previous_end = (
                         entry.scheduled_start +
-                        datetime.timedelta(seconds=new_duration)
+                        timedelta(seconds=new_duration)
                     )
                     entry.scheduled_end = previous_end
                 else:
@@ -890,7 +847,7 @@ class SprinklerCore():
                     entry.scheduled_start = previous_end
                     entry.scheduled_end = (
                         entry.scheduled_start +
-                        datetime.timedelta(seconds=new_duration)
+                        timedelta(seconds=new_duration)
                     )
                     previous_end = entry.scheduled_end
 
@@ -905,7 +862,7 @@ class SprinklerCore():
     def rebuild_irrigation_forecast(self, forecast_days: int = 7):
 
         today = datetime.date.today()
-        max_date = today + datetime.timedelta(days=forecast_days)
+        max_date = today + timedelta(days=forecast_days)
 
         # --------------------------------
         # 1. Forecast-Irrigation löschen

@@ -17,6 +17,7 @@ import uuid
 import os
 import json
 from homeassistant.util import dt as dt_util
+from datetime import timedelta
 
 log_sprinkler           = logging.getLogger("pyscript.sprinkler.sprinkler")
 log_projections         = logging.getLogger("pyscript.sprinkler.projections")
@@ -868,7 +869,7 @@ def sprinkler_ui_extend_zone(qe_id: int, duration: int = None, request_id: str =
     # RUNNING
     # -------------------------------------------------
     if entry.status == "running":
-        entry.scheduled_end = now + datetime.timedelta(seconds=duration)
+        entry.scheduled_end = now + timedelta(seconds=duration)
         entry.scheduled_duration = duration
         entry.remaining = duration
 
@@ -882,7 +883,7 @@ def sprinkler_ui_extend_zone(qe_id: int, duration: int = None, request_id: str =
         if entry.scheduled_start:
             entry.scheduled_end = (
                 entry.scheduled_start +
-                datetime.timedelta(seconds=duration)
+                timedelta(seconds=duration)
             )
 
     # Scheduler tick übernimmt Rest

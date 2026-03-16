@@ -24,7 +24,7 @@ class ManualQueueOwner:
 
         zones = zone_store.all()
 
-        for zone_id, zone in zones.items():
+        for zone in zones.items():
             qe = self.queue.create_for_zone(zone)
             self.queue.add(qe)
 
@@ -37,26 +37,32 @@ class ManualQueueOwner:
         self.queue.add(qe)
 
     def on_zone_updated(self, zone: dict):
-        zone_id = zone["zone_id"]
-        qe = self.queue.get(str(zone_id))
+        zone_id = zone.get("zone_id")
+        if zone_id is None:
+            return
+
+        qid = str(zone_id)
+        qe = self.queue.get(qid)
 
         if not qe:
             # Zone was not in queue yet (unlikely but safe)
             self.on_zone_added(zone)
             return
 
+        duration = zone["default_duration"]
         # Reflect changes
         qe.zone_name = zone["name"]
         qe.switch = zone["switch"]
-        qe.planned_duration = zone["default_duration"]
-        qe.scheduled_duration = zone["default_duration"]
-        qe.remaining = zone["default_duration"]
+        qe.planned_duration = duration
+        qe.scheduled_duration = duration
+        qe.remaining = duration
         qe.load = zone.get("load", 1)
         qe.enabled = zone.get("enabled", True)
         qe.policy = "floating"
 
     def on_zone_deleted(self, zone_id: int):
-        self.queue.remove(str(zone_id))
+        qid = str(zone_id)
+        self.queue.remove(qid)
 
     def request_start(self, zone_id: int) -> bool:
 
