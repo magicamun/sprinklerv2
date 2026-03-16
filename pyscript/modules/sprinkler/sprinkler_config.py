@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 CONFIG_DIR = "/config/sprinkler"
 
@@ -21,8 +22,10 @@ DEFAULT_DEFICIT_MM      = 0.0
 
 DONE_QUEUE              = "done_queue.jsonl"
 
+TODAY_FILE              = Path("/config/sprinkler/irrigation_today.json")
+HISTORY_FILE            = Path("/config/sprinkler/irrigation_history.jsonl")
 
-
+MAX_HISTORY_DAYS        = 28
 
 def done_file():
     return os.path.join(CONFIG_DIR, DONE_QUEUE)

@@ -1,38 +1,64 @@
+# TODO v2.1
+# unify build_series / build_soil_series
+# introduce history index for O(1) lookup
+
 import os
 import json
+import logging
 
 from datetime import date, datetime, timedelta
-from pathlib import Path
 
-TODAY_FILE = Path("/config/sprinkler/irrigation_today.json")
-HISTORY_FILE = Path("/config/sprinkler/irrigation_history.jsonl")
+from pyscript.modules.sprinkler.sprinkler_config import (
+    TODAY_FILE, HISTORY_FILE, MAX_HISTORY_DAYS
+)
 
-MAX_HISTORY_DAYS = 28
+log_store           = logging.getLogger("pyscript.sprinkler.irrigation_store")
 
 class TimeseriesStore:
 
     def __init__(self):
         self.today = {}
+        self._dirty = False
+        self._history_cache = None
         self._load_today()
 
+    def _write_file(self, path: Path, payload: bytes, flags):
+        fd = os.open(str(path), flags, 0o644)
+        try:
+            os.write(fd, payload)
+        finally:
+            os.close(fd)
+            log_store.info(f"File {path} geschrieben")
+            
     def _read_history(self):
 
-        if not HISTORY_FILE.exists():
-            return []
+        if self._history_cache is not None:
+            return self._history_cache
 
+        if not HISTORY_FILE.exists():
+            self._history_cache = []
+            return self._history_cache
+            
         fd = os.open(str(HISTORY_FILE), os.O_RDONLY)
 
         try:
-            data = os.read(fd, 50_000_000)
+            size = os.path.getsize(HISTORY_FILE)
+            data = os.read(fd, size)
         finally:
             os.close(fd)
 
         if not data:
-            return []
-
+            self._history_cache = []
+            return self._history_cache
+            
         lines = data.decode("utf-8").splitlines()
 
-        return [json.loads(line) for line in lines if line.strip()]
+        self._history_cache = [
+            json.loads(line) for line in lines if line.strip()
+        ]
+        log_store.info(f"Store History mit. {lines} geladen")
+
+        return self._history_cache
 
     # ------------------------------------------------
     # LOAD TODAY STORE
@@ -47,10 +73,11 @@ class TimeseriesStore:
             }
             return
 
+        size = os.path.getsize(TODAY_FILE)
         fd = os.open(str(TODAY_FILE), os.O_RDONLY)
 
         try:
-            data = os.read(fd, 10_000_000)
+            data = os.read(fd, size)
         finally:
             os.close(fd)
 
@@ -70,16 +97,10 @@ class TimeseriesStore:
 
         payload = json.dumps(self.today, indent=2).encode("utf-8")
 
-        fd = os.open(
-            str(TODAY_FILE),
-            os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
-            0o644
-        )
-
         try:
-            os.write(fd, payload)
+            self._write_file(TODAY_FILE, payload, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
         finally:
-            os.close(fd)
+            log_store.info(f"Store Today geschrieben")
 
     def _median(self, values):
 
@@ -127,18 +148,16 @@ class TimeseriesStore:
         self.snapshot_today()
 
         # neuer Tag
-        self.today = {
-            "date": today,
-            "forecast": self.today.get("forecast", {})
-        }
+        self._reset_today()
 
-        self._save_today()
-    
     def save_today(self):
+        if not self._dirty:
+                return
         try:
             task.executor(self._save_today)
         except NameError:
             self._save_today()
+            self._dirty = False
 
     # ------------------------------------------------
     # WRITE TODAY VALUE
@@ -155,6 +174,8 @@ class TimeseriesStore:
         self.today[scope][key][source] = value
 
         self._update_median(self.today[scope][key])
+
+        self._dirty = True
 
         self._save_today()
 
@@ -198,6 +219,8 @@ class TimeseriesStore:
 
         self._update_median(self.today["forecast"][forecast_date][key])
 
+        self._dirty = True
+
         self._save_today()
 
     # ------------------------------------------------
@@ -214,6 +237,8 @@ class TimeseriesStore:
             self.today["forecast"][forecast_date]["irrigation"] = {}
 
         self.today["forecast"][forecast_date]["irrigation"][zone_key] = mm
+
+        self._dirty = True
 
         self._save_today()
 
@@ -233,7 +258,8 @@ class TimeseriesStore:
                 changed = True
 
         if changed:
-            self._save_today()
+            self._dirty = True
+
 
     # ------------------------------------------------
     # READ TODAY VALUE
@@ -304,18 +330,13 @@ class TimeseriesStore:
 
         payload = ("\n".join(lines) + "\n").encode("utf-8")
 
-        fd = os.open(
-            str(HISTORY_FILE),
-            os.O_WRONLY | os.O_CREAT | os.O_APPEND,
-            0o644
-        )
-
         try:
-            os.write(fd, payload)
+            self._write_file(HISTORY_FILE, payload, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
         finally:
-            os.close(fd)
+            log_store.info(f"Store heute historisiert")
 
         self._prune_history()
+        self._history_cache = None
 
     # ------------------------------------------------
     # PRUNE OLD HISTORY
@@ -324,6 +345,8 @@ class TimeseriesStore:
     def _prune_history(self):
 
         entries = self._read_history()
+        if len(entries) < 500:
+            return
 
         cutoff = date.today() - timedelta(days=MAX_HISTORY_DAYS)
 
@@ -338,16 +361,10 @@ class TimeseriesStore:
 
         payload = ("\n".join(filtered) + "\n").encode("utf-8")
 
-        fd = os.open(
-            str(HISTORY_FILE),
-            os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
-            0o644
-        )
-
         try:
-            os.write(fd, payload)
+            self._write_file(HISTORY_FILE, payload, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
         finally:
-            os.close(fd)
+            log_store.info(f"Store - Historie gekürzt ({MAX_HISTORY_DAYS}) Tage")
 
     def reset_today(self):
 
@@ -355,7 +372,7 @@ class TimeseriesStore:
             "date": date.today().isoformat(),
             "forecast": self.today.get("forecast",{})
         }
-
+        self._dirty = True
         self._save_today()
 
     # ------------------------------------------------
@@ -481,11 +498,8 @@ class TimeseriesStore:
             irrigation = (
                 forecast[d]
                 .get("irrigation",{})
-                .get(scope)
+                .get(scope, 0)
             )
-
-            if irrigation is None:
-                irrigation = 0
 
             if eto is None or rain is None:
                 continue
@@ -549,28 +563,12 @@ class TimeseriesStore:
         return dict(sorted(series.items()))
 
     def compute_today_median(self, scope, key):
-
+        self._ensure_today()
         data = self.today.get(scope, {}).get(key, {})
-
-        vals = []
-
-        for src, v in data.items():
-
-            if src == "median":
-                continue
-
-            vals.append(v)
-
-        med = self._median(vals)
-
-        if med is not None:
-
-            self.today[scope][key]["median"] = med
-
-            self._save_today()
+        self._update_median(data)
             
     def compute_soil_forecast(self, scope, minimum, maximum):
-
+        self._ensure_today()
         soil_today = self.today_value(scope, "soil", "median")
 
         if soil_today is None:
@@ -595,36 +593,36 @@ class TimeseriesStore:
 
             self.write_forecast(d, "soil", "model", round(soil, 2))
             
-    def compute_forecast_medians(self):
+#    def compute_forecast_medians(self):
+#        self._ensure_today()
+#        forecast = self.today.get("forecast", {})
+#
+#        for d in forecast:
+#
+#            for key in ["eto", "rain", "prob", "soil"]:
 
-        forecast = self.today.get("forecast", {})
-
-        for d in forecast:
-
-            for key in ["eto", "rain", "prob", "soil"]:
-
-                src_values = forecast[d].get(key, {})
-
-                values = []
-
-                for src, val in src_values.items():
-
-                    if src == "median":
-                        continue
-
-                    values.append(val)
-
-                med = self._median(values)
-
-                if med is None:
-                    continue
-
-                if key not in forecast[d]:
-                    forecast[d][key] = {}
-
-                forecast[d][key]["median"] = med
-
-        self._save_today()
+#                src_values = forecast[d].get(key, {})
+#
+#                values = []
+#
+#                for src, val in src_values.items():
+#
+#                    if src == "median":
+#                        continue
+#
+#                    values.append(val)
+#
+#                med = self._median(values)
+#
+#                if med is None:
+#                    continue
+#
+#                if key not in forecast[d]:
+#                    forecast[d][key] = {}
+#
+#                forecast[d][key]["median"] = med
+#
+#        self._save_today()
         
     def adaptation_deficit(self, zone_key, soil_optimal, weights=(0.7,0.4,0.2), explain=False):
 
