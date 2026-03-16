@@ -497,7 +497,7 @@ def safe_float(entity_id: str, default: float = 0.0) -> float:
         return default
 
 def get_daily_rain():
-    rain = safe_float("SENSOR_RAIN_TODAY", 0)
+    rain = safe_float(SENSOR_RAIN_TODAY, 0)
 
     TsStore.write("global", "rain", "local", rain)
 
@@ -506,6 +506,8 @@ def calculate_eto_for_source(cfg: dict):
     Manuell auslösbarer Service:
     pyscript.calculate_eto
     """
+    lat, lon = get_home_coordinates()
+
     if not cfg:
         log_eto.error(f"Calculate ETo - No Configuration")
 
@@ -521,7 +523,7 @@ def calculate_eto_for_source(cfg: dict):
         eto_raw = weather["eto_direct"]
         method = "direct"
     else:
-        eto_raw = calculate_eto_fao56_light(weather, cfg["latitude"])
+        eto_raw = calculate_eto_fao56_light(weather, lat)
 
     eto_mm = clamp(eto_raw, ETO_MIN_MM, ETO_MAX_MM)
 
@@ -547,7 +549,7 @@ def calculate_eto_daily():
         try:
             eto_val = calculate_eto_for_source(cfg=cfg)
             eto_values.append(eto_val)
-            store.write("global", "eto", source, eto_val)
+            TsStore.write("global", "eto", source, eto_val)
         except Exception as err:
             log_eto.error(f"ETo calculation failed for {source}: {err}")
 
