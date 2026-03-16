@@ -4,11 +4,35 @@ from homeassistant.util import dt as dt_util
 
 log_datetime = logging.getLogger("pyscript.sprinkler.datetime")
 
+# ------------------------------------------------
+# Time source
+# ------------------------------------------------
 def aware_now():
-    aw_now = dt_util.now()
+    return dt_util.now()
    
-    return aw_now
+# ------------------------------------------------
+# ISO helpers
+# ------------------------------------------------
 
+def from_iso(value: str):
+    if not value:
+        return None
+    return datetime.datetime.fromisoformat(value)
+
+def to_iso(dt):
+    if not dt:
+        return None
+    return dt.isoformat()
+
+# ------------------------------------------------
+# Delta helpers
+# ------------------------------------------------
+def seconds_between(start, end):
+
+    if not start or not end:
+        return 0
+
+    return int((end - start).total_seconds())
 
 def normalize_dt(value):
     if value is None:
@@ -22,11 +46,10 @@ def normalize_dt(value):
 
     if isinstance(value, datetime.datetime):
         if value.tzinfo is None:
-            return value.astimezone()
+            return dt_util.as_local(value)
         return value
 
     return None
-
 
 def today_at(time_str: str, day: datetime.date) -> datetime.datetime:
     """
@@ -50,6 +73,7 @@ def today_at(time_str: str, day: datetime.date) -> datetime.datetime:
     )
     aware = dt_util.as_local(naive)
 
-    log_datetime.info(f"today_at: {aware}")
+    log_datetime.debug(f"today_at: {aware}")
 
     return aware
+
