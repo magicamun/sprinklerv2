@@ -961,6 +961,7 @@ class SprinklerCore():
                 zone_key,
                 round(irrigation_mm, 2)
             )
+            self._dirty_irrigation = False
     
     def apply_irrigation_to_zone(self, zone_id: int, runtime_seconds: float):
 
