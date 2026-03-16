@@ -2,14 +2,18 @@
 ETo Calculator (FAO-56-Light)
 Phase 1: Manual trigger, no soil model, no scheduler
 """
+from typing import Dict
 
 from datetime import datetime, date
 import math
 import logging
 import urllib.request
 import json
-from pyscript.openmeteo import fetch_openmeteo
 from collections import defaultdict
+from pyscript.modules.util.general_utils import clamp
+
+from pyscript.openmeteo import fetch_openmeteo
+
 from pyscript.modules.infra.store.timeseries_store import TsStore
 
 log = logging.getLogger("pyscript.soil")
@@ -21,8 +25,9 @@ SENSOR_RAIN_TODAY       = "sensor.regen_mm_heute"    # NUR wenn die Ermittlung u
 
 log_eto           = logging.getLogger("pyscript.eto")
 
-
 SOIL_MAX = float(state.get("input_number.soil_capacity_mm"))
+
+
 
 # --- Pyscript editor hints (no runtime effect) ---
 from typing import TYPE_CHECKING, Any
@@ -38,8 +43,8 @@ if TYPE_CHECKING:
 # -----------------------------
 # CONFIG (erstmal hart codiert)
 # -----------------------------
-LATITUDE = 47.5546
-LONGITUDE =  8.2623
+LATITUDE  = hass.config.latitude
+LONGITUDE = hass.config.longitude
 
 ETO_TRIGGER_TIME = "23:55"
 ETO_MIN_MM = 1.0
@@ -65,7 +70,6 @@ WEATHER_SOURCES = {
         "wind": None,
         "forecast_id": None
     },
-
     SOURCE_OWD: {
         "friendly_name": "OpenWeather",
         "type": "sensor",
@@ -113,45 +117,12 @@ def normalize_forecast_date(value):
     # Weather integrations -> ISO datetime
     return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
 
-def clamp(value, min_value, max_value):
-    return max(min_value, min(value, max_value))
+def get_soil_max():
+    return float(state.get("input_number.soil_capacity_mm") or 30)    
 
-def set_eto_state(entity_id: str, eto_mm: float, friendly_name: str, method: str, today: str):
-    if not entity_id:
-        return
-    
-    pystate = to_pyscript_entity(entity_id)
-
-    # --- Guard 0: Check if Sensor exists
-    #if not state.exist(pystate):
-    #    state.set(pystate, 0, {"eto_date": None})
-    #    state.persist(pystate)
-    #    log_eto.info(f"ETo-Sensor {pystate} created, persisted")
-
-    # --- Guard 1: Already calculated today?
-    attrs = state.getattr(pystate)
-    eto_date = attrs.get("eto_date")
-    
-    if today:
-        if eto_date == today:
-            log_eto.info(f"Daily ETo already calculated for {entity_id} – skipping")
-            return
-            
-    #state.set(pystate,
-    #    round(eto_mm, 2),
-    #    {
-    #        "friendly_name": f"ETo {friendly_name}",
-    #        "unit_of_measurement": "mm",
-    #        "state_class": "measurement",
-    #        "icon": "mdi:water-percent",
-    #        "raw_mm": eto_mm,
-    #        "caps_mm": [ETO_MIN_MM, ETO_MAX_MM],
-    #        "calculated_at": datetime.now().isoformat(),
-    #        "method": method,
-    #        "eto_date": date.today().isoformat(),
-    #    },
-    #)
-
+# -----------------------------
+# Global Projections
+# -----------------------------
 def project_today_sensors():
 
     eto = TsStore.today_value("global", "eto", "median")
@@ -278,7 +249,7 @@ def project_global_chart_sensors():
     
     eto_series = TsStore.build_series("global","eto")
     rain_series = TsStore.build_series("global","rain")
-    soil_series = TsStore.build_soil_series("global", 0, SOIL_MAX)
+    soil_series = TsStore.build_soil_series("global", 0, get_soil_max())
 
     project_chart_sensor("sensor.irrigation_chart_eto", eto_series, "mm")
     project_chart_sensor("sensor.irrigation_chart_rain", rain_series, "mm")
@@ -298,7 +269,7 @@ def calculate_eto_fao56_light(data: dict, latitude: float) -> float:
     # Input
     # -----------------------------
     t_mean = data["temp_c"]
-    rh_mean = data["humidity_pct"]
+    rh_mean = data.get("humidity_pct", 60)
     wind = data["wind_ms"]
     sun_hours = data.get("sun_hours")
 
@@ -372,8 +343,7 @@ def collect_eto_data_for_source(cfg: Dict):
         return None
 
     if cfg["type"] == "direct":
-        lat, lon = get_home_coordinates()
-        data = task.executor(fetch_openmeteo, lat, lon)
+        data = task.executor(fetch_openmeteo, LATITUDE, LONGITUDE)
 
         daily = data.get("daily")
         daily_units = data.get("daily_units")
@@ -429,8 +399,7 @@ def get_forecast_for_source(cfg: dict, type="daily"):
 
 def get_openmeteo_forecast(cfg: dict):
 
-    lat, lon = get_home_coordinates()
-    data = task.executor(fetch_openmeteo, lat, lon)
+    data = task.executor(fetch_openmeteo, LATITUDE, LONGITUDE)
 
     if not data:
         log_eto.warning("OpenMeteo forecast fetch failed")
@@ -478,23 +447,13 @@ def compute_soil_balance():
 
     soil_new = soil + rain - eto
 
-    soil_new = clamp(soil_new, 0, SOIL_MAX)
+    soil_new = clamp(soil_new, 0, get_soil_max())
 
     TsStore.write("global", "soil", "local", soil_new)
-
-    #TsStore.build_soil_series("global", 0, soil_max)
 
 # -----------------------------
 # Sources
 # -----------------------------
-
-def safe_float(entity_id: str, default: float = 0.0) -> float:
-    value = state.get(entity_id)
-
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return default
 
 def get_daily_rain():
     rain = safe_float(SENSOR_RAIN_TODAY, 0)
@@ -506,7 +465,6 @@ def calculate_eto_for_source(cfg: dict):
     Manuell auslösbarer Service:
     pyscript.calculate_eto
     """
-    lat, lon = get_home_coordinates()
 
     if not cfg:
         log_eto.error(f"Calculate ETo - No Configuration")
@@ -523,11 +481,9 @@ def calculate_eto_for_source(cfg: dict):
         eto_raw = weather["eto_direct"]
         method = "direct"
     else:
-        eto_raw = calculate_eto_fao56_light(weather, lat)
+        eto_raw = calculate_eto_fao56_light(weather, LATITUDE)
 
     eto_mm = clamp(eto_raw, ETO_MIN_MM, ETO_MAX_MM)
-
-    # set_eto_state(entity_id=entity_id, eto_mm = eto_mm, friendly_name = friendly_name, method = method, today = date.today().isoformat())
 
     log_eto.info(f"ETo finished for {friendly_name}: {eto_raw:.2f} mm")
 
@@ -552,11 +508,6 @@ def calculate_eto_daily():
             TsStore.write("global", "eto", source, eto_val)
         except Exception as err:
             log_eto.error(f"ETo calculation failed for {source}: {err}")
-
-    #eto_raw_median = median(eto_values)
-
-    # set_eto_state(entity_id=f"{SENSOR_PREFIX_ETO}_median", eto_mm = eto_raw_median, friendly_name = "ETo Median", method = "", today = date.today().isoformat())
-    #TsStore.write("global", "eto", "median", eto_raw_median)
 
 def rh_from_dewpoint(temp_c, dew_point_c):
 
@@ -617,7 +568,7 @@ def get_forecast():
 
                 eto_input = forecast_weather_to_eto_input(f)
 
-                eto = calculate_eto_fao56_light(eto_input, lat)
+                eto = calculate_eto_fao56_light(eto_input, LATITUDE)
                 rain = float(f.get("precipitation", 0))
                 prob = float(f.get("precipitation_probability", 0))
 
@@ -628,7 +579,7 @@ def get_forecast():
 @time_trigger("cron(0 * * * *)")
 def hourly():
     get_forecast()
-    TsStore.compute_soil_forecast("global", 0, SOIL_MAX)
+    TsStore.compute_soil_forecast("global", 0, get_soil_max())
     
     project_forecast_sensors()
     project_global_chart_sensors()
@@ -649,7 +600,7 @@ def daily_begin():
     
     get_forecast()
 
-    TsStore.compute_soil_forecast("global", 0, SOIL_MAX)
+    TsStore.compute_soil_forecast("global", 0, get_soil_max())
 
     project_today_sensors()
     project_forecast_sensors()
@@ -662,7 +613,7 @@ def startup():
     get_forecast()
     compute_soil_balance()
 
-    TsStore.compute_soil_forecast("global", 0, SOIL_MAX)
+    TsStore.compute_soil_forecast("global", 0, get_soil_max())
 
     project_today_sensors()
     project_forecast_sensors()
