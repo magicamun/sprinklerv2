@@ -18,7 +18,7 @@ from pyscript.modules.util.datetime_utils import aware_now
 from pyscript.modules.infra.queues.active_queue import ActiveQueue
 from pyscript.modules.infra.queues.program_queue import ProgramQueue
 from pyscript.modules.infra.queues.done_queue import DoneQueue
-from pyscript.modules.infra.queues.queue_entry import QueueEntry
+from pyscript.modules.infra.queues.queue_entry import QueueEntry, RuntimeReason, ForecastContribution
 from pyscript.modules.infra.queues.program_block import ProgramBlock
 from pyscript.modules.infra.queues.manual_queue import ManualQueue
 
@@ -187,7 +187,7 @@ class SprinklerCore():
             self.program_queue.add_block(block)
 
             log_scheduler.info(
-                f"[program] block scheduled run {i} for {program.get('program_id')}"
+                f"[program] block scheduled run {i} for {program.get('program_id')} Capacity: {self._capacity}"
             )
 
             start, end = self.program_engine.program_time_window(block.entries)
@@ -553,7 +553,6 @@ class SprinklerCore():
     async def _process_start_logic(self, capacity):
         now = aware_now()
 
-        # capacity = get_capacity()
         self.used = self._current_load()
 
         for entry in self._sorted_active_entries():
@@ -823,10 +822,34 @@ class SprinklerCore():
                     if soil is None:
                         soil = soil_optimal
 
-                    deficit = TsStore.adaption_deficit(zone_key, soil_optimal)
+                    deficit, details = TsStore.adaption_deficit(zone_key, soil_optimal, explain=True)
+
                     deficit = min(deficit, soil_capacity)
 
+                    entry.runtime_deficit_mm = deficit
+                    entry.zone_precipitation_rate = zone.get("precipitation_rate_mm_per_hour", 0)
+                    
+                    if details:
+                        forecast_items = [
+                            ForecastContribution(**f)
+                            for f in details.get("forecast", [])
+                        ]
+
+                        entry.runtime_reason = RuntimeReason(
+                            model=details.get("model", "forecast_weighted_v1"),
+                            soil=details["soil"],
+                            soil_optimal=details["soil_optimal"],
+                            deficit_today=details["deficit_today"],
+                            weighted_deficit=details["weighted_deficit"],
+                            precip_rate_mm_h=zone.get("precipitation_rate_mm_per_hour", 0),
+                            runtime_seconds=new_duration,
+                            forecast=forecast_items
+                        )
+
                     new_duration = self.calculate_zone_seconds(zone, deficit)
+
+                    explain["precip_rate"] = zone["precipitation_rate_mm_per_hour"]
+                    explain["runtime_seconds"] = runtime
 
                     log_scheduler.info(
                         f"[ADAPT] Zone {zone_id} deficit = weighted Deficit {deficit} vs deficit {max(0, soil_optimal - soil)}"

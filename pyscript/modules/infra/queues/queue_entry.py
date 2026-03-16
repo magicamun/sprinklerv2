@@ -5,6 +5,40 @@ from typing import Optional
 from uuid import uuid4
 
 @dataclass
+class RuntimeReason:
+    model: str
+
+    soil: float
+    soil_optimal: float
+
+    deficit_today: float
+    weighted_deficit: float
+
+    precip_rate_mm_h: float
+    runtime_seconds: int
+
+    forecast: list[ForecastContribution]
+
+    version: int = 1
+
+@dataclass
+class ForecastContribution:
+
+    date: str
+
+    eto: float
+    rain: float
+    prob: float
+
+    rain_effective: float
+    irrigation_planned: float
+
+    soil_after: float
+    deficit: float
+
+    weight: float
+
+@dataclass
 class QueueEntry:
 
     # Identity
@@ -55,13 +89,23 @@ class QueueEntry:
     # Color
     program_color:  Optional[str]   = None
 
+    # Herleitung Laufzeit aus Wetterabhängiger Adaption
+    zone_precipitation_rate: float | None = None
+    runtime_deficit_mm: float | None = None
+    runtime_reason: RuntimeReason | None = None
+
 
     # ---------------------------------
     # Serialization
     # ---------------------------------
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        data = asdict(self)
+
+        if self.runtime_reason:
+            data["runtime_reason"] = asdict(self.runtime_reason)
+
+        return data
 
     @classmethod
     def from_dict(cls, data: dict) -> "QueueEntry":
@@ -72,6 +116,22 @@ class QueueEntry:
             k: v for k, v in data.items()
             if k in allowed
         }
+
+        # runtime_reason rekonstruieren
+        rr = filtered.get("runtime_reason")
+
+        if isinstance(rr, dict):
+
+            forecast = rr.get("forecast")
+
+            if isinstance(forecast, list):
+
+                rr["forecast"] = [
+                    ForecastContribution(**f)
+                    for f in forecast
+                ]
+
+            filtered["runtime_reason"] = RuntimeReason(**rr)
         return cls(**filtered)
 
     # ---------------------------------
