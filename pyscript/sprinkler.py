@@ -684,7 +684,7 @@ def sprinkler_ui_reset_soil(zone_id: int, request_id: str = None, context=None):
 
     zone_key = f"zone:{zone_id}"
 
-    store.write(zone_key, "soil", "manual")
+    TsStore.write(zone_key, "soil", "manual")
 
     ui_success(
         context,
