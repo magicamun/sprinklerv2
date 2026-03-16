@@ -80,6 +80,11 @@ class DoneQueue:
 
         fd = os.open(self._file_path, os.O_RDONLY)
         size = os.path.getsize(self._file_path)
+
+        if size == 0:
+            log_done_queue.info(f"DoneQueue empty")
+            return
+
         data = os.read(fd, size).decode("utf-8")
         os.close(fd)
 
@@ -94,8 +99,8 @@ class DoneQueue:
                 entry = QueueEntry.from_dict(raw)
                 self._entries.append(entry)
                 loaded += 1
-            except Exception:
-                pass
+            except Exception as err:
+                log_done_queue.warning(f"Failed to load entry: {err}")
 
         log_done_queue.info(f"DoneQueue loaded {loaded} entries")
 

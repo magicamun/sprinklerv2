@@ -35,6 +35,10 @@ class BaseQueue:
     def all(self) -> List[QueueEntry]:
         return list(self._entries.values())
 
+    @property
+    def entries(self) -> List[QueueEntry]:
+        return list(self._entries.values())
+        
     def clear(self):
         self._entries.clear()
 

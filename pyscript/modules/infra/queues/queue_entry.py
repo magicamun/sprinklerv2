@@ -5,6 +5,23 @@ from typing import Optional
 from uuid import uuid4
 
 @dataclass
+class ForecastContribution:
+
+    date: str
+
+    eto: float
+    rain: float
+    prob: float
+
+    rain_effective: float
+    irrigation_planned: float
+
+    soil_after: float
+    deficit: float
+
+    weight: float
+
+@dataclass
 class RuntimeReason:
     model: str
 
@@ -21,22 +38,6 @@ class RuntimeReason:
 
     version: int = 1
 
-@dataclass
-class ForecastContribution:
-
-    date: str
-
-    eto: float
-    rain: float
-    prob: float
-
-    rain_effective: float
-    irrigation_planned: float
-
-    soil_after: float
-    deficit: float
-
-    weight: float
 
 @dataclass
 class QueueEntry:
@@ -173,5 +174,9 @@ class QueueEntry:
             remaining=self.planned_duration,
             source=self.source,
             weather_enabled=self.weather_enabled,
-            program_color = self.program_color
+            program_color = self.program_color,
+
+            zone_precipitation_rate=None,
+            runtime_deficit_mm=None,
+            runtime_reason=None
         )

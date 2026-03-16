@@ -11,16 +11,13 @@ if TYPE_CHECKING:
     time_trigger: Any
 
 
-from typing import List
 import logging
-import datetime
+
 from typing import Dict, Optional, List
 from .base_queue import BaseQueue
 from .queue_entry import QueueEntry
 
 log_active_queue           = logging.getLogger("pyscript.sprinkler.queues.active_queue")
-
-from .queue_entry import QueueEntry
 
 class ActiveQueue(BaseQueue):
     """
@@ -31,7 +28,6 @@ class ActiveQueue(BaseQueue):
 
     def __init__(self):
         super().__init__("active")
-        self._entries: Dict[str, QueueEntry] = {}
 
     # ---------------------------------
     # Core API
@@ -57,7 +53,7 @@ class ActiveQueue(BaseQueue):
         return len(self._entries)
 
     def clear(self):
-        self._entries = {}
+        self._entries.clear()
 
     def find_by_zone(self, zone_id: int) -> QueueEntry | None:
         for entry in self._entries.values():
@@ -81,7 +77,7 @@ class ActiveQueue(BaseQueue):
     
     def remove_by_program(self, program_id: int):
 
-        for entry in self._entries.values():
+        for entry in list(self._entries.values()):
 
             if (
                 entry.program_id == program_id

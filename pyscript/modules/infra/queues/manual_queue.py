@@ -37,9 +37,9 @@ class ManualQueue(BaseQueue):
             program_run_count   = 0,
 
             zone_id             = zone_id,
-            zone_name           = zone.get("name"),
-            switch              = zone.get("switch"),
-            enabled             = zone.get("enabled"),
+            zone_name           = zone.get("name", ""),
+            switch              = zone.get("switch", ""),
+            enabled             = zone.get("enabled", TRue),
             zone_index          = 0,
             zone_count          = 0,
 

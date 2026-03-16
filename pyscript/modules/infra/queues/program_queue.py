@@ -35,11 +35,7 @@ class ProgramQueue:
         return [b.to_dict() for b in self._blocks]
 
     def clear(self):
-        self.blocks = []
-
-    def remove_block(self, block: ProgramBlock):
-        if block in self._blocks:
-            self._blocks.remove(block)
+        self._blocks = []
 
     # -------------------------------------------------
     # Execution-related
