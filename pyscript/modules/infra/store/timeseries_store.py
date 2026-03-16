@@ -626,7 +626,7 @@ class TimeseriesStore:
 
         self._save_today()
         
-    def adaptation_deficit(self, zone_key, soil_optimal, weights=(0.7,0.4,0.2)):
+    def adaptation_deficit(self, zone_key, soil_optimal, weights=(0.7,0.4,0.2), explain=False):
 
         soil = self.today_value(zone_key, "soil", "median")
 
@@ -635,6 +635,12 @@ class TimeseriesStore:
 
         forecast = self.today.get("forecast", {})
 
+        details = {
+            "soil": soil,
+            "soil_optimal": soil_optimal,
+            "forecast": []
+        }
+
         deficit_sum = 0
 
         # ------------------------
@@ -642,9 +648,11 @@ class TimeseriesStore:
         # ------------------------
 
         deficit_today = max(0, soil_optimal - soil)
-
+        
         deficit_sum += weights[0] * deficit_today
 
+        details["deficit_today"] = deficit_today
+        
         # ------------------------
         # FORECAST DAYS
         # ------------------------
@@ -674,6 +682,23 @@ class TimeseriesStore:
             deficit = max(0, soil_optimal - soil)
 
             deficit_sum += weights[i+1] * deficit
+
+            details["forecast"].append({
+                "date": d,
+                "eto": eto,
+                "rain": rain,
+                "prob": prob,
+                "rain_effective": rain_eff,
+                "irrigation_planned": irrigation,
+                "soil_after": soil,
+                "deficit": deficit,
+                "weight": weights[i+1]
+            })
+
+        details["weighted_deficit"] = deficit_sum
+
+        if explain:
+            return deficit_sum, details
 
         return deficit_sum
 
