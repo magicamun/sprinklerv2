@@ -34,6 +34,7 @@ from pyscript.modules.sprinkler.zones import zone_store
 from pyscript.modules.sprinkler.programs import program_store
 from pyscript.modules.sprinkler.events import SprinklerEvents
 from pyscript.modules.sprinkler.scheduler import SprinklerCore, HardwareAdapter
+from pyscript.modules.sprinkler.context import SchedulerContext
 
 # ------------------------------------------------
 # Sprinkler Configuration
@@ -56,6 +57,7 @@ sprinkler_ready = False
 sprinkler_scheduler_task = None
 sprinkler_scheduler_running = None
 sprinkler_donefile = done_file()
+scheduler_context = SchedulerContext(None, {}, {})
 
 class HAHardwareAdapter(HardwareAdapter):
 
@@ -1289,8 +1291,8 @@ def update_soil_margins():
         "minimum": float(state.get("input_number.soil_min_mm") or 5)
     }
 
-    if sprinkler_core:
-        sprinkler_core.set_soil_margins(soil_margins)
+    return soil_margins
+
 
 # -------------------------
 # Start and Update Sunrise/Sunset
@@ -1314,25 +1316,27 @@ def update_sun_times():
 
     sun_times = {"sunrise": sunrise, "sunset": sunset}
 
-    if sprinkler_core:
-        sprinkler_core.set_sun_times(sun_times)
-
     return sun_times
-
-@time_trigger("startup")
-def update_sun_times_startup():
-    update_sun_times()
 
 @time_trigger("cron(10 0 * * *)")  # 00:10 täglich
 def update_sun_times_daily():
-    update_sun_times()
+    scheduler_context.sun_times = update_sun_times()
+
+    if sprinkler_core:
+        scheduler_core.update_context(scheduler_context)
+
 # -------------------------
 # Start Core
 # -------------------------
 @time_trigger("startup")
 def sprinkler_startup():
-    capacity = get_capacity()
-    
+    scheduler_context.capacity = get_capacity()
+    scheduler_context.sun_times = update_sun_times()
+    scheduler_context.soil_margins = update_soil_margins()   
+
+    if sprinkler_core:
+        sprinkler_core.update_context(scheduler_context)
+
     # 1️⃣ Queues aufbauen
 
     # ----------------------------------
@@ -1348,10 +1352,9 @@ def sprinkler_startup():
     # ----------------------------------
     # 3) Programm für Scheduler aufbereiten
     # ----------------------------------
-    update_sun_times_startup()
-    update_soil_margins()
 
-    sprinkler_core.initialize_program_queue(program_store, capacity)
+
+    sprinkler_core.initialize_program_queue(program_store)
 
     # 2️⃣ erste Projektionen
     project_all_zones(zone_store)
@@ -1390,10 +1393,13 @@ async def sprinkler_scheduler_loop():
     try:
         while sprinkler_scheduler_running:
             is_active = sprinkler_is_active()
-            capacity = get_capacity()
-            update_soil_margins()
 
-            await sprinkler_core.tick(is_active, capacity)
+            scheduler_context.capacity = get_capacity()
+            scheduler_context.soil_margins = update_soil_margins()
+            if sprinkler_core:
+                sprinkler_core.update_context(scheduler_context)
+
+            await sprinkler_core.tick(is_active)
 
             project_sprinkler_core()
             project_all_zones(zone_store)

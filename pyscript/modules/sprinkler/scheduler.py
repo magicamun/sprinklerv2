@@ -28,6 +28,9 @@ from pyscript.modules.sprinkler.manual_queue_owner import ManualQueueOwner
 # from pyscript.modules.sprinkler.irrigations import IrrigationStore
 from pyscript.modules.sprinkler.program_engine import ProgramEngine
 from pyscript.modules.sprinkler.zones import zone_store
+from pyscript.modules.sprinkler.context import SchedulerContext
+
+
 
 
 log_scheduler = logging.getLogger("pyscript.sprinkler.scheduler")
@@ -60,19 +63,21 @@ class SprinklerCore():
         self.done_queue = DoneQueue(done_file_path)
         self.active_queue = ActiveQueue()
         self.hardware = hardware
-        self.sun_times = {}
+
         self.program_queue = ProgramQueue()
         self.program_engine = ProgramEngine(self.program_queue)
-#        self.irrigation_store = IrrigationStore()
-        self.soil_margins = {}
+
         self.used = 0
         self._dirty_irrigation = True
 
-    def set_sun_times(self, sun_times: dict):
-        self.sun_times = sun_times
+        self.context = SchedulerContext(
+            capacity = 1,
+            sun_times = {},
+            soil_margins = { "capacity": 30, "optimal": 20, "minimum": 5}
+        )
 
-    def set_soil_margins(self, soil_margins: dict):
-        self.soil_margins = soil_margins
+    def update_context(self, ctx: SchedulerContext):
+        self.context = ctx
 
     # -------------------------------------------------
     # Bootstrap
@@ -109,6 +114,7 @@ class SprinklerCore():
     # Program-Queue Init und Program Reschedule
     # -------------------------------------------------
     def _schedule_single_program(self, raw_program: dict, adHoc: bool = False):
+        capacity = self.context.capacity
 
         name = raw_program.get("name")
         enabled = raw_program.get("enabled")
@@ -156,7 +162,7 @@ class SprinklerCore():
             run = self.program_engine.compute_next_program_run(
                 program,
                 now,
-                self.sun_times
+                self.context.sun_times
             )
 
             if not run:
@@ -176,7 +182,7 @@ class SprinklerCore():
             block = self.program_engine.build_program_block(
                 program=program,
                 anchor=anchor,
-                capacity=self._capacity,
+                capacity=capacity,
                 adHoc = adHoc, 
                 program_run_index = i + 1,
                 program_run_count = repeat +1
@@ -189,7 +195,7 @@ class SprinklerCore():
 
             program_id = program.get("program_id")
             log_scheduler.info(
-                f"[program] block scheduled run {i} for {program_id} Capacity: {self._capacity}"
+                f"[program] block scheduled run {i} for {program_id} Capacity: {capacity}"
             )
 
             start, end = self.program_engine.program_time_window(block.entries)
@@ -203,18 +209,18 @@ class SprinklerCore():
             else:
                 anchor = end + timedelta(minutes=pause)
             
-    def initialize_program_queue(self, program_store, capacity: int):
+    def initialize_program_queue(self, program_store):
         """
         Initial planning of all programs into program_queue.
         Called once at startup.
         """
         self.program_store = program_store
-        self._capacity = capacity
+        # self._capacity = capacity
 
         # Queue vorher leeren (falls Restart)
         self.program_queue.clear()
 
-        if not self.sun_times:
+        if not self.context.sun_times:
             log_scheduler.warning(f"Not Data for sun - rising, setting")
             return
 
@@ -507,7 +513,8 @@ class SprinklerCore():
 
         to_stop.clear()
 
-    async def _process_start_logic(self, capacity):
+    async def _process_start_logic(self):
+        capacity = self.context.capacity
         now = aware_now()
 
         self.used = self._current_load()
@@ -773,8 +780,8 @@ class SprinklerCore():
 
                     soil = TsStore.today_value(zone_key, "soil", "median")
 
-                    soil_optimal = self.soil_margins.get("optimal", 20)
-                    soil_capacity = self.soil_margins.get("capacity", 30)
+                    soil_optimal = self.context.soil_margins.get("optimal")
+                    soil_capacity = self.context.soil_margins.get("capacity")
 
                     if soil is None:
                         soil = soil_optimal
@@ -1084,8 +1091,7 @@ class SprinklerCore():
     # -------------------------------------------------
     # Scheduler-Tick
     # -------------------------------------------------
-    async def tick(self, is_active: bool, capacity: int):
-        self._capacity = capacity
+    async def tick(self, is_active: bool):
         self._dirty_planned_irrigation = False
         # MIG global sprinkler_scheduler_running
         """
@@ -1141,7 +1147,7 @@ class SprinklerCore():
         # 4.1) queued Elemente starten, nur wenn keine running
         # -------------------------
 
-        await self._process_start_logic(capacity)
+        await self._process_start_logic()
 
         # log_scheduler.info(f"Scheduler Tick({is_active}, {capacity}) ended...")
 
