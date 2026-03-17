@@ -22,3 +22,11 @@ home-assistant.log*
 
 # system
 .DS_Store
+
+# config
+sprinkler/*.json
+sprinkler/*.jsonl
+
+.ha_run.lock
+
+homematicip_local/cache
