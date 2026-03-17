@@ -538,31 +538,48 @@ def sprinkler_ui_zone_add(zone: dict = None, request_id: str = None, context=Non
         if not new_zone["switch"]:
             raise ValueError("Switch missing")
 
-        zone_store._zones[zone_id] = new_zone
+        zone_store.add(new_zone)
         zone_store.save()
         
-        sprinkler_core.manual_owner.on_zone_added(zone)
+        sprinkler_core.manual_owner.on_zone_added(new_zone)
 
         project_all_zones(zone_store)
 
-        event.fire(
-            "sprinkler_ui_feedback",
-            request_id=request_id,
-            user_id=user_id,
-            code="zone_added",
-            data={"zone_id": zone_id},
+        #event.fire(
+        #    "sprinkler_ui_feedback",
+        #    request_id=request_id,
+        #    user_id=user_id,
+        #    code="zone_added",
+        #    data={"zone_id": zone_id},
+        #)
+        ui_success(
+            context,
+            action      = "add",
+            code        = SprinklerEvents.Zone.ADDED,
+            entity_type = "zone",
+            entity_id   = zone_id,
+            request_id  = request_id
         )
 
     except Exception as e:
         log_sprinkler.error(f"[ZONE ADD] failed: {e}")
-
-        event.fire(
-            "sprinkler_ui_feedback",
-            request_id=request_id,
-            user_id=user_id,
-            code="zone_add_failed",
-            data={"error": str(e)},
+        ui_error(
+            context,
+            action      = "add",
+            code        = SprinklerEvents.Zone.NOT_ADDED,
+            entity_type = "zone",
+            entity_id   = new_zone.get("zone_id") if new_zone else None,
+            request_id  = request_id,
+            message     = str(e),
         )
+
+        #event.fire(
+        #    "sprinkler_ui_feedback",
+        #    request_id=request_id,
+        #    user_id=user_id,
+        #    code="zone_add_failed",
+        #    data={"error": str(e)},
+        #)
 
 @service
 def sprinkler_ui_zone_update(zone: dict = None, request_id: str = None, context=None):
@@ -659,7 +676,6 @@ def sprinkler_ui_zone_delete(zone_id: int = None, request_id: str = None, contex
     # 1️⃣ Store löschen
     # -------------------------------------------------
     remove_zone_states(zone_id)
-    remove_irrigation_states(zone_id)
     zone_store.delete(zone_id)
     zone_store.save()
 

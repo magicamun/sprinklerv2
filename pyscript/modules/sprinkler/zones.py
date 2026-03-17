@@ -112,20 +112,20 @@ class ZoneStore:
             log_zones.warning("Add rejected: zone id=%s already exists", zid)
             raise ValueError(f"Zone {zid} already exists")
 
-        for key, value in zone.items():
-            ordered_zone[key] = copy.deepcopy(value)
-            ordered_zone["zone_id"] = zid
+        # ✅ saubere Kopie + garantiert zone_id
+        new_zone = copy.deepcopy(zone)
+        new_zone["zone_id"] = zid
 
-        self._zones[zid] = ordered_zone
+        self._zones[zid] = new_zone
 
         log_zones.info(
             "Zone added id=%s name=%s",
             zid,
-            zone.get("name")
+            new_zone.get("zone_name")
         )
 
         return zid
-
+        
     def update(self, zone: dict):
 
         zid = zone.get("zone_id")
@@ -143,7 +143,7 @@ class ZoneStore:
         log_zones.info(
             "Zone updated id=%s name=%s",
             zid,
-            updated.get("name")
+            zone.get("name")
         )
 
     def delete(self, zone_id: int):
