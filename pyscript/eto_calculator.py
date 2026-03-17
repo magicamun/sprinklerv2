@@ -125,15 +125,16 @@ def safe_float(entity_id: str, default: float = 0.0) -> float:
         return float(value)
     except (TypeError, ValueError):
         return default
-        
+
 # -----------------------------
 # Global Projections
 # -----------------------------
 def project_today_sensors():
+    soil_optimal = float(state.get("input_number.soil_optimal_mm") or 20)  
 
-    eto = TsStore.today_value("global", "eto", "median")
-    rain = TsStore.today_value("global", "rain", "median")
-    soil = TsStore.today_value("global", "soil", "median")
+    eto = TsStore.today_value("global", "eto", "median") or 0
+    rain = TsStore.today_value("global", "rain", "median") or 0
+    soil = TsStore.today_value("global", "soil", "median") or soil_optimal
 
     if eto is not None:
 

@@ -1156,8 +1156,8 @@ def apply_daily_balance_if_needed(zone_store):
 
     today = aware_now().date()
 
-    eto = TsStore.yesterday_value("global", "eto", "median")
-    rain = TsStore.yesterday_value("global", "rain", "median")
+    eto = TsStore.yesterday_value("global", "eto", "median") or 0
+    rain = TsStore.yesterday_value("global", "rain", "median") or 0
 
     log_irrigation.info(f"Apply Daily Balance if Needed: ETo: {eto}, Rain: {rain}")
     for zone in zone_store.all().values():
