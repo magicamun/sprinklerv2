@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 # ------------------------------------------------
 import logging
 import datetime
+import copy
 
 # ------------------------------------------------
 # Home Assistant / pyscript
@@ -1022,6 +1023,9 @@ def project_qe(entry):
 
     attributes = entry.to_dict()
     
+    # 👇 DAS ist dein Fix
+    attributes["zone"] = copy.deepcopy(zone)
+
     optimal = safe_float(INPUT_SOIL_OPTIMAL, 0)
 
     soil = TsStore.today_value(zone_key, "soil", "median") or 0
