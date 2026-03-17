@@ -21,6 +21,34 @@ log_zones.debug("Module reloaded")
 
 from .sprinkler_config import ZONE_FILE
 
+ZONE_TYPES = {
+    "lawn": {
+        "label": "Rasen",
+        "eto_factor": 1.0,
+        "rain_factor": 1.0,
+    },
+    "bed_sun": {
+        "label": "Beet (volle Sonne)",
+        "eto_factor": 0.8,
+        "rain_factor": 1.0,
+    },
+    "bed_dense": {
+        "label": "Beet (dicht bewachsen)",
+        "eto_factor": 0.6,
+        "rain_factor": 0.6,
+    },
+    "pot_outdoor": {
+        "label": "Topf (Regen)",
+        "eto_factor": 0.5,
+        "rain_factor": 0.5,
+    },
+    "pot_protected": {
+        "label": "Topf (geschützt)",
+        "eto_factor": 0.5,
+        "rain_factor": 0.0,
+    }
+}
+
 class ZoneStore:
 
     def __init__(self, file_path: str):
@@ -31,12 +59,46 @@ class ZoneStore:
     # =========================================================
     # ACCESS
     # =========================================================
+    def _normalize_zone(self, zone: dict) -> dict:
+        z = copy.deepcopy(zone)
+
+        # ------------------------
+        # TYPE
+        # ------------------------
+        ztype = z.get("type", "lawn")
+        type_defaults = ZONE_TYPES.get(ztype, ZONE_TYPES["lawn"])
+
+        z["type"] = ztype
+
+        # ------------------------
+        # MIGRATION (alt → neu)
+        # ------------------------
+        if "eto_factor" not in z:
+            z["eto_factor"] = z.get("zone_factor", type_defaults["eto_factor"])
+
+        if "rain_factor" not in z:
+            z["rain_factor"] = type_defaults["rain_factor"]
+
+        # ------------------------
+        # DEFAULTS (nur wenn fehlt)
+        # ------------------------
+        if z.get("eto_factor") is None:
+            z["eto_factor"] = type_defaults["eto_factor"]
+
+        if z.get("rain_factor") is None:
+            z["rain_factor"] = type_defaults["rain_factor"]
+
+        return z
 
     def all(self) -> dict[int, dict]:
         return dict(self._zones)
 
     def get(self, zone_id: int) -> dict | None:
-        return self._zones.get(zone_id)
+        z = self._zones.get(zone_id)
+        if not z:
+            return None
+
+        return self._normalize_zone(z)
 
     def exists(self, zone_id: int) -> bool:
         return zone_id in self._zones
@@ -113,15 +175,14 @@ class ZoneStore:
             raise ValueError(f"Zone {zid} already exists")
 
         # ✅ saubere Kopie + garantiert zone_id
-        new_zone = copy.deepcopy(zone)
-        new_zone["zone_id"] = zid
+        z = self._normalize_zone(zone)
 
-        self._zones[zid] = new_zone
-
+        self._zones[zid] = copy.deepcopy(z)
+        
         log_zones.info(
             "Zone added id=%s name=%s",
             zid,
-            new_zone.get("zone_name")
+            z.get("zone_name")
         )
 
         return zid
@@ -138,12 +199,14 @@ class ZoneStore:
             log_zones.warning("Update rejected: zone id=%s not found", zid)
             raise ValueError(f"Zone {zid} not found")
 
-        self._zones[zid] = copy.deepcopy(zone)
+        z = self._normalize_zone(zone)
+
+        self._zones[zid] = copy.deepcopy(z)
 
         log_zones.info(
             "Zone updated id=%s name=%s",
             zid,
-            zone.get("name")
+            z.get("name")
         )
 
     def delete(self, zone_id: int):

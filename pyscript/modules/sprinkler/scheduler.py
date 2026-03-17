@@ -786,7 +786,7 @@ class SprinklerCore():
                     if soil is None:
                         soil = soil_optimal
 
-                    deficit, details = TsStore.adaptation_deficit(zone_key, soil_optimal, explain=True)
+                    deficit, details = TsStore.adaptation_deficit(zone_key, soil_optimal, eto_factor=zone.get("eto_factor", 1.0), rain_factor=zone.get("rain_factor", 1.0), explain=True)
 
                     deficit = min(deficit, soil_capacity)
 

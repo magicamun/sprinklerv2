@@ -527,7 +527,7 @@ class TimeseriesStore:
 
             self.write_forecast(d, "soil", "model", round(soil, 2))
                     
-    def adaptation_deficit(self, zone_key, soil_optimal, weights=(0.7,0.4,0.2), explain=False):
+    def adaptation_deficit(self, zone_key, soil_optimal, weights=(0.7,0.4,0.2), eto_factor=1.0, rain_factor=1.0, explain=False):
 
         soil = self.today_value(zone_key, "soil", "median")
 
@@ -570,7 +570,8 @@ class TimeseriesStore:
 
             prob = block.get("prob", {}).get("median", 0)
 
-            rain_eff = rain * (prob / 100)
+            rain_eff = round(rain * (prob / 100) * rain_factor, 2)
+            eto_eff = round(eto * eto_factor, 2)
 
             irrigation = (
                 block
@@ -578,7 +579,7 @@ class TimeseriesStore:
                 .get(zone_key, 0)
             )
 
-            soil = soil + rain_eff + irrigation - eto
+            soil = soil + rain_eff + irrigation - eto_eff
 
             deficit = max(0, soil_optimal - soil)
 
@@ -587,6 +588,7 @@ class TimeseriesStore:
             details["forecast"].append({
                 "date": d,
                 "eto": eto,
+                "eto_effective": eto_eff,
                 "rain": rain,
                 "prob": prob,
                 "rain_effective": rain_eff,
@@ -597,6 +599,8 @@ class TimeseriesStore:
             })
 
         details["weighted_deficit"] = deficit_sum
+        details["eto_factor"] = eto_factor
+        details["rain_factor"] = rain_factor
 
         if explain:
             return deficit_sum, details
