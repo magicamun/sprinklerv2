@@ -786,13 +786,15 @@ class SprinklerCore():
                     if soil is None:
                         soil = soil_optimal
 
-                    deficit, details = TsStore.adaption_deficit(zone_key, soil_optimal, explain=True)
+                    deficit, details = TsStore.adaptation_deficit(zone_key, soil_optimal, explain=True)
 
                     deficit = min(deficit, soil_capacity)
 
                     entry.runtime_deficit_mm = deficit
                     entry.zone_precipitation_rate = zone.get("precipitation_rate_mm_per_hour", 0)
                     
+                    new_duration = self.calculate_zone_seconds(zone, deficit)
+
                     if details:
                         forecast_items = [
                             ForecastContribution(**f)
@@ -810,10 +812,10 @@ class SprinklerCore():
                             forecast=forecast_items
                         )
 
-                    new_duration = self.calculate_zone_seconds(zone, deficit)
 
-                    explain["precip_rate"] = zone["precipitation_rate_mm_per_hour"]
-                    explain["runtime_seconds"] = runtime
+                    explain = {}
+                    explain["precip_rate"] = zone.get("precipitation_rate_mm_per_hour", 0)
+                    explain["runtime_seconds"] = new_duration
 
                     log_scheduler.info(
                         f"[ADAPT] Zone {zone_id} deficit = weighted Deficit {deficit} vs deficit {max(0, soil_optimal - soil)}"
