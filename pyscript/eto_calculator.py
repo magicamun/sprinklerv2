@@ -10,7 +10,6 @@ import logging
 import urllib.request
 import json
 from collections import defaultdict
-from pyscript.modules.util.general_utils import clamp
 
 from pyscript.openmeteo import fetch_openmeteo
 
@@ -100,6 +99,9 @@ WEATHER_SOURCES = {
 # -----------------------------
 # Helper: normalize_date, clamp
 # -----------------------------
+def clamp(value, min_value, max_value):
+    return max(min_value, min(value, max_value))
+
 def get_home_coordinates():
     return hass.config.latitude, hass.config.longitude
 
