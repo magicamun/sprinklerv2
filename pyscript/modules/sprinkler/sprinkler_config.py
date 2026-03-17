@@ -28,8 +28,6 @@ DEFAULT_DEFICIT_MM      = 0.0
 # ------------------------------------------------
 CONFIG_DIR              = Path("/config/sprinkler")
 
-DONE_QUEUE              = "done_queue.jsonl"
-
 TODAY_FILE              = CONFIG_DIR / "irrigation_today.json"
 HISTORY_FILE            = CONFIG_DIR / "irrigation_history.jsonl"
 
@@ -38,9 +36,6 @@ ZONE_FILE               = CONFIG_DIR / "zonesv2.json"
 PROGRAM_FILE            = CONFIG_DIR / "programs.json"
 
 MAX_HISTORY_DAYS        = 28
-
-def done_file():
-    return CONFIG_DIR / DONE_QUEUE
 
 def ensure_config_dir():
     CONFIG_DIR.mkdir(parents=True, exist_ok = True)

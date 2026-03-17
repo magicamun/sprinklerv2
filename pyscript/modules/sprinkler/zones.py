@@ -19,9 +19,7 @@ log_zones = logging.getLogger("pyscript.sprinkler.zone_v2")
 
 log_zones.debug("Module reloaded")
 
-from .sprinkler_config import CONFIG_DIR
-
-ZONES_FILE = f"{CONFIG_DIR}/zonesv2.json"
+from .sprinkler_config import ZONE_FILE
 
 class ZoneStore:
 
@@ -168,5 +166,5 @@ class ZoneStore:
 # SINGLETON
 # =========================================================
 
-zone_store = ZoneStore(ZONES_FILE)
+zone_store = ZoneStore(ZONE_FILE)
 zone_store.load()

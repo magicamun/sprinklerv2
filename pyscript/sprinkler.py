@@ -43,7 +43,7 @@ from pyscript.modules.sprinkler.sprinkler_config import (
     SENSOR_PREFIX_PROGRAMS, SENSOR_PREFIX_ZONE, 
     SENSOR_TIMELINE, SENSOR_PROGRAMS_DEBUG,
     SENSOR_ETO_YESTERDAY, SENSOR_RAIN_YESTERDAY, SENSOR_DEFICIT_KIND, SENSOR_SOIL_KIND, DEFAULT_SOIL_MM, DEFAULT_DEFICIT_MM, INPUT_SOIL_CAPACITY, INPUT_SOIL_OPTIMAL,
-    done_file
+    DONE_FILE
 )
 
 log_sprinkler           = logging.getLogger("pyscript.sprinkler.sprinkler")
@@ -56,7 +56,6 @@ log_sprinkler.debug("Sprinkler - Startup")
 sprinkler_ready = False
 sprinkler_scheduler_task = None
 sprinkler_scheduler_running = None
-sprinkler_donefile = done_file()
 scheduler_context = SchedulerContext(None, {}, {})
 
 class HAHardwareAdapter(HardwareAdapter):
@@ -78,7 +77,7 @@ class HAHardwareAdapter(HardwareAdapter):
 hardware = HAHardwareAdapter()
 
 
-sprinkler_core = SprinklerCore(hardware, sprinkler_donefile)
+sprinkler_core = SprinklerCore(hardware, DONE_FILE)
 
 # -------------- isAdmin ---------------
 def safe_float(entity_id: str, default: float = 0.0) -> float:
