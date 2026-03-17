@@ -366,7 +366,7 @@ class TimeseriesStore:
         finally:
             log_store.info(f"Store - Historie gekürzt ({MAX_HISTORY_DAYS}) Tage")
 
-    def reset_today(self):
+    def _reset_today(self):
 
         self.today = {
             "date": date.today().isoformat(),

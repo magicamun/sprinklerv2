@@ -118,6 +118,14 @@ def normalize_forecast_date(value):
 def get_soil_max():
     return float(state.get("input_number.soil_capacity_mm") or 30)    
 
+def safe_float(entity_id: str, default: float = 0.0) -> float:
+    value = state.get(entity_id)
+
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+        
 # -----------------------------
 # Global Projections
 # -----------------------------
