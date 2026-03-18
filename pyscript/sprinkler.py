@@ -1194,12 +1194,12 @@ def apply_daily_balance_if_needed(zone_store):
 
         irrigation = TsStore.yesterday_value(zone_key, "irrigation", "actual") or 0
 
-        new_soil = soil - eto + rain + irrigation
+        new_soil = global_soil - eto + rain + irrigation
         new_soil = max(0, min(soil_capacity, new_soil))
         
         TsStore.write(zone_key, "soil", "median", new_soil)
 
-        log_irrigation.info(f"Apply Soil (Old): {soil}, New:{new_soil}, Capa: {soil_capacity}, Optimal: {soil_optimal}, ETo: {eto} Rain: {rain} Irrigation: {irrigation}")
+        log_irrigation.info(f"Apply Soil (Old): {global_soil}, New:{new_soil}, Capa: {soil_capacity}, Optimal: {soil_optimal}, ETo: {eto} Rain: {rain} Irrigation: {irrigation}")
 
         deficit = max(0, soil_optimal - new_soil)
 
