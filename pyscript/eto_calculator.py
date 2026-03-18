@@ -120,6 +120,9 @@ def normalize_forecast_date(value):
 def get_soil_max():
     return float(state.get("input_number.soil_capacity_mm") or 30)    
 
+def get_soil_optimal():
+    return float(state.get("input_number.soil_optimal_mm") or 20)    
+
 def safe_float(entity_id: str, default: float = 0.0) -> float:
     value = state.get(entity_id)
 
@@ -134,9 +137,11 @@ def safe_float(entity_id: str, default: float = 0.0) -> float:
 def project_today_sensors():
     soil_optimal = float(state.get("input_number.soil_optimal_mm") or 20)  
 
-    eto = TsStore.today_value("global", "eto", "median") or 0
-    rain = TsStore.today_value("global", "rain", "median") or 0
-    soil = TsStore.today_value("global", "soil", "median") or soil_optimal
+    eto = TsStore.today_value("eto", "median") or 0
+    rain = TsStore.today_value("rain", "median") or 0
+    soil = TsStore.today_value("soil", "median")
+    if soil is None:
+        soil = soil_optimal
 
     if eto is not None:
 
@@ -185,10 +190,10 @@ def project_forecast_sensors():
 
     for d in sorted(forecast):
 
-        eto = forecast[d].get("eto",{}).get("median")
-        rain = forecast[d].get("rain",{}).get("median")
-        prob = forecast[d].get("prob",{}).get("median")
-        soil = forecast[d].get("soil", {}).get("median")
+        eto = TsStore._val(forecast[d].get("eto",{}).get("median"))
+        rain = TsStore._val(forecast[d].get("rain",{}).get("median"))
+        prob = TsStore._val(forecast[d].get("prob",{}).get("median"))
+        soil = TsStore._val(forecast[d].get("soil", {}).get("median"))
 
         if eto is not None:
             eto_attrs[d] = round(eto,2)
@@ -256,9 +261,9 @@ def project_chart_sensor(entity_id, series, unit):
 
 def project_global_chart_sensors():
     
-    eto_series = TsStore.build_series("global","eto")
-    rain_series = TsStore.build_series("global","rain")
-    soil_series = TsStore.build_soil_series("global", 0, get_soil_max())
+    eto_series  = TsStore.build_series(None, "eto")
+    rain_series = TsStore.build_series(None, "rain")
+    soil_series = TsStore.build_series(None, "soil")
 
     project_chart_sensor("sensor.irrigation_chart_eto", eto_series, "mm")
     project_chart_sensor("sensor.irrigation_chart_rain", rain_series, "mm")
@@ -441,33 +446,14 @@ def get_openmeteo_forecast(cfg: dict):
     return forecast
 
 # -----------------------------
-# Soil
-# -----------------------------
-def compute_soil_balance():
-
-    soil = TsStore.yesterday_value("global","soil","median")
-
-    if soil is None:
-        soil = float(state.get("input_number.soil_optimal_mm"))
-
-    eto = TsStore.yesterday_value("global","eto","median") or 0
-
-    rain = TsStore.yesterday_value("global", "rain", "median") or 0
-
-    soil_new = soil + rain - eto
-
-    soil_new = clamp(soil_new, 0, get_soil_max())
-
-    TsStore.write("global", "soil", "local", soil_new)
-
-# -----------------------------
 # Sources
 # -----------------------------
 
 def get_daily_rain():
     rain = safe_float(SENSOR_RAIN_TODAY, 0)
+    today = date.today().isoformat()
 
-    TsStore.write("global", "rain", "local", rain)
+    TsStore.write_forecast(today, "rain", "local", rain)
 
 def calculate_eto_for_source(cfg: dict):
     """
@@ -514,7 +500,8 @@ def calculate_eto_daily():
         try:
             eto_val = calculate_eto_for_source(cfg=cfg)
             eto_values.append(eto_val)
-            TsStore.write("global", "eto", source, eto_val)
+            today = date.today().isoformat()
+            TsStore.write_forecast(today, "eto", source, eto_val)
         except Exception as err:
             log_eto.error(f"ETo calculation failed for {source}: {err}")
 
@@ -588,8 +575,10 @@ def get_forecast():
 @time_trigger("cron(0 * * * *)")
 def hourly():
     get_forecast()
-    TsStore.compute_soil_forecast("global", 0, get_soil_max())
+    get_daily_rain()
     
+    TsStore.compute_soil_forecast(None, 0, get_soil_optimal(), get_soil_max())
+    project_today_sensors()    
     project_forecast_sensors()
     project_global_chart_sensors()
 
@@ -599,17 +588,20 @@ def daily_end():
     calculate_eto_daily()
     get_daily_rain()
 
+    # optional:
+    project_today_sensors()
+
     TsStore.snapshot_today()
     TsStore.reset_today()
 
 
 @time_trigger("cron(05 00 * * *)")
 def daily_begin():
-    compute_soil_balance()
-    
+    # compute_soil_balance()
     get_forecast()
+    get_daily_rain()
 
-    TsStore.compute_soil_forecast("global", 0, get_soil_max())
+    TsStore.compute_soil_forecast(None, 0, get_soil_optimal(), get_soil_max())
 
     project_today_sensors()
     project_forecast_sensors()
@@ -618,11 +610,10 @@ def daily_begin():
 
 @time_trigger("startup")
 def startup():
-    # calculate_eto_daily()
+    get_daily_rain()
     get_forecast()
-    compute_soil_balance()
 
-    TsStore.compute_soil_forecast("global", 0, get_soil_max())
+    TsStore.compute_soil_forecast(None, 0, get_soil_optimal(), get_soil_max())
 
     project_today_sensors()
     project_forecast_sensors()

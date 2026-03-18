@@ -778,7 +778,7 @@ class SprinklerCore():
 
                     zone_key = f"zone:{zone_id}"
 
-                    soil = TsStore.today_value(zone_key, "soil", "median")
+                    soil = TsStore.scope_value(zone_key, "soil", "median")
 
                     soil_optimal = self.context.soil_margins.get("optimal")
                     soil_capacity = self.context.soil_margins.get("capacity")

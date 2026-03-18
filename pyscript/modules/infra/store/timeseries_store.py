@@ -1,12 +1,9 @@
-# TODO v2.1
-# unify build_series / build_soil_series
-# introduce history index for O(1) lookup
-
 import os
 import json
 import logging
 
 from datetime import date, datetime, timedelta
+
 
 from pyscript.modules.sprinkler.sprinkler_config import (
     TODAY_FILE, HISTORY_FILE, MAX_HISTORY_DAYS
@@ -84,10 +81,17 @@ class TimeseriesStore:
 
         return self._history_cache
 
+    def _now_ts(self):
+        return datetime.utcnow().isoformat() + "Z"
+
+    def _val(self, v):
+        if isinstance(v, dict):
+            return v.get("value", 0)
+        return v or 0
+
     # ------------------------------------------------
     # LOAD TODAY STORE
     # ------------------------------------------------
-
     def _load_today(self):
 
         if not TODAY_FILE.exists():
@@ -114,6 +118,16 @@ class TimeseriesStore:
 
         self.today = json.loads(data.decode("utf-8"))
 
+        today_str = date.today().isoformat()
+
+        # 👉 Forecast bereinigen (Vergangenheit raus)
+        forecast = self.today.get("forecast", {})
+
+        self.today["forecast"] = {
+            d: v for d, v in forecast.items()
+            if d >= today_str
+        }
+
     # ------------------------------------------------
     # SAVE TODAY STORE
     # ------------------------------------------------
@@ -138,7 +152,7 @@ class TimeseriesStore:
         n = len(vals)
         mid = n // 2
 
-        if n % 2:
+        if n % 2:            
             return vals[mid]
 
         return (vals[mid-1] + vals[mid]) / 2
@@ -152,12 +166,21 @@ class TimeseriesStore:
             if src == "median":
                 continue
 
-            values.append(val)
+            if isinstance(val, dict):
+                v = val.get("value")
+            else:
+                v = val  # backward compatibility
+
+            if v is not None:
+                values.append(v)
 
         med = self._median(values)
 
         if med is not None:
-            data["median"] = med
+            data["median"] = {
+                "value": med,
+                "ts": self._now_ts()
+            }
             
     def _ensure_today(self):
 
@@ -172,7 +195,7 @@ class TimeseriesStore:
         self.snapshot_today()
 
         # neuer Tag
-        self._reset_today()
+        self.reset_today()
 
     def save_today(self):
         if not self._dirty:
@@ -186,21 +209,30 @@ class TimeseriesStore:
     # ------------------------------------------------
     # WRITE TODAY VALUE
     # ------------------------------------------------
-
     def write(self, scope, key, source, value):
         self._ensure_today()
-        if scope not in self.today:
-            self.today[scope] = {}
 
-        if key not in self.today[scope]:
-            self.today[scope][key] = {}
+        today_str = self.today.get("date")
 
-        self.today[scope][key][source] = value
+        # 👉 sicherstellen, dass forecast existiert
+        if "forecast" not in self.today:
+            self.today["forecast"] = {}
 
-        self._update_median(self.today[scope][key])
+        if today_str not in self.today["forecast"]:
+            self.today["forecast"][today_str] = {}
+
+        # 👉 scope berücksichtigen (z.B. "zone:1" oder "global")
+        if scope not in self.today["forecast"][today_str]:
+            self.today["forecast"][today_str][scope] = {}
+
+        if key not in self.today["forecast"][today_str][scope]:
+            self.today["forecast"][today_str][scope][key] = {}
+
+        self.today["forecast"][today_str][scope][key][source] = { "value": value, "ts": self._now_ts()}
+
+        self._update_median(self.today["forecast"][today_str][scope][key])
 
         self._dirty = True
-
         self.save_today()
 
     # ------------------------------------------------
@@ -208,8 +240,12 @@ class TimeseriesStore:
     # ------------------------------------------------
     def add(self, scope, key, source, value):
 
+        today_str = self.today.get("date")
+
         current = (
             self.today
+            .get("forecast", {})
+            .get(today_str, {})
             .get(scope, {})
             .get(key, {})
             .get(source)
@@ -218,14 +254,13 @@ class TimeseriesStore:
         if current is None:
             new_val = value
         else:
-            new_val = current + value
+            new_val = self._val(current) + value
 
         self.write(scope, key, source, round(new_val, 3))
 
     # ------------------------------------------------
     # WRITE FORECAST VALUE
     # ------------------------------------------------
-
     def write_forecast(self, forecast_date, key, source, value):
         self._ensure_today()
         forecast_date = str(forecast_date)
@@ -239,7 +274,7 @@ class TimeseriesStore:
         if key not in self.today["forecast"][forecast_date]:
             self.today["forecast"][forecast_date][key] = {}
 
-        self.today["forecast"][forecast_date][key][source] = value
+        self.today["forecast"][forecast_date][key][source] = { "value": value, "ts": self._now_ts()}
 
         self._update_median(self.today["forecast"][forecast_date][key])
 
@@ -287,19 +322,36 @@ class TimeseriesStore:
     # ------------------------------------------------
     # READ TODAY VALUE
     # ------------------------------------------------
+    def scope_value(self, scope, key, source):
 
-    def today_value(self, scope, key, source):
+        today_str = self.today.get("date")
 
-        return (
+        val = (
             self.today
+            .get("forecast", {})
+            .get(today_str, {})
             .get(scope, {})
             .get(key, {})
             .get(source)
         )
 
-    
-        # ------------------------------------------------
+        return self._val(val)
+        
+    def today_value(self, key, source):
 
+        today_str = self.today.get("date")
+
+        val = (
+            self.today
+            .get("forecast", {})
+            .get(today_str, {})
+            .get(key, {})
+            .get(source)
+        )
+
+        return self._val(val)
+
+    # ------------------------------------------------
     # READ TODAY VALUE
     # ------------------------------------------------
     def yesterday_value(self, scope, key, source="median"):
@@ -316,7 +368,7 @@ class TimeseriesStore:
                 and entry["key"] == key
                 and entry["source"] == source
             ):
-                return entry["value"]
+                return entry.get("value")
 
         return None
 
@@ -326,46 +378,94 @@ class TimeseriesStore:
     def snapshot_today(self):
 
         today_date = self.today.get("date")
+        forecast = self.today.get("forecast", {})
 
         lines = []
 
-        for scope in self.today:
+        today_date = self.today.get("date")
+        day_block = forecast.get(today_date)
 
-            if scope in ["date", "forecast"]:
-                continue
+        if not day_block:
+            return
+        
+        log_store.info(f"snapshot_today {today_date}")
 
-            for key in self.today[scope]:
+        for key, val in day_block.items():
+            log_store.info(f"snapshot_today get keys {key} {val}")
 
-                for source, value in self.today[scope][key].items():
+            # 👉 CASE 1: env data (eto, rain, prob, soil)
+            if isinstance(val, dict) and all(isinstance(v, dict) for v in val.values()):
 
-                    entry = {
+                for source, entry in val.items():
+
+                    v = self._val(entry)
+                    ts = entry.get("ts") if isinstance(entry, dict) else None
+
+                    lines.append(json.dumps({
                         "date": today_date,
-                        "scope": scope,
+                        "scope": None,
                         "key": key,
                         "source": source,
-                        "value": value
-                    }
+                        "value": v,
+                        "ts": ts
+                    }))
 
-                    lines.append(json.dumps(entry))
+            # 👉 CASE 2: zone blocks
+            elif key.startswith("zone:"):
 
+                zone = key
+
+                for subkey, subval in val.items():
+
+                    for source, entry in subval.items():
+
+                        v = self._val(entry)
+                        ts = entry.get("ts") if isinstance(entry, dict) else None
+
+                        lines.append(json.dumps({
+                            "date": today_date,
+                            "scope": zone,
+                            "key": subkey,
+                            "source": source,
+                            "value": v,
+                            "ts": ts
+                        }))
+
+            # 👉 CASE 3: irrigation
+            elif key == "irrigation":
+
+                for zone, mm in val.items():
+
+                    lines.append(json.dumps({
+                        "date": today_date,
+                        "scope": zone,
+                        "key": "irrigation",
+                        "source": "forecast",
+                        "value": mm,
+                        "ts": None
+                    }))
+
+        log_store.info(f"snapshot - Anzahl lines :{len(lines)}")
         if not lines:
             return
 
         payload = ("\n".join(lines) + "\n").encode("utf-8")
 
-        try:
-            self._write_file(HISTORY_FILE, payload, os.O_WRONLY | os.O_CREAT | os.O_APPEND)
-        finally:
-            log_store.info(f"Store heute historisiert")
+        self._write_file(
+            HISTORY_FILE,
+            payload,
+            os.O_WRONLY | os.O_CREAT | os.O_APPEND
+        )
+
+        log_store.info("Store heute historisiert")
 
         self._prune_history()
         self._history_cache = None
         self._history_index = None
-
+        
     # ------------------------------------------------
     # PRUNE OLD HISTORY
     # ------------------------------------------------
-
     def _prune_history(self):
 
         entries = self._read_history()
@@ -390,12 +490,22 @@ class TimeseriesStore:
         finally:
             log_store.info(f"Store - Historie gekürzt ({MAX_HISTORY_DAYS}) Tage")
 
-    def _reset_today(self):
+    def reset_today(self):
+        today_str = date.today().isoformat()
+
+        old_forecast = self.today.get("forecast", {})
+
+        # 👉 Vergangenheit rauswerfen
+        new_forecast = {
+            d: v for d, v in old_forecast.items()
+            if d >= today_str
+        }
 
         self.today = {
-            "date": date.today().isoformat(),
-            "forecast": self.today.get("forecast",{})
+            "date": today_str,
+            "forecast": new_forecast
         }
+
         self._dirty = True
         self.save_today()
 
@@ -416,23 +526,28 @@ class TimeseriesStore:
 
         base = self._get_history_series(scope, metric, source)
 
-        today_date = self.today.get("date")
-
-        today_val = (
-            self.today
-            .get(scope, {})
-            .get(metric, {})
-            .get(source)
-        )
-
         forecast = self.today.get("forecast", {})
 
-        forecast_iter = (
-            (d, forecast[d].get(metric, {}).get(source))
-            for d in forecast
-        )
+        series = dict(base)
 
-        return self._merge_series(base, today_val, today_date, forecast_iter)
+        for d in sorted(forecast):
+
+            if scope is None:
+                raw = forecast[d].get(metric, {}).get(source)
+            else:
+                raw = (
+                    forecast[d]
+                    .get(scope, {})
+                    .get(metric, {})
+                    .get(source)
+                )
+
+            val = self._val(raw)
+
+            if val is not None:
+                series[d] = round(val, 2)
+
+        return dict(sorted(series.items()))
 
     def build_soil_series(self, scope, soil_min, soil_max):
 
@@ -442,7 +557,7 @@ class TimeseriesStore:
 
         today = self.today.get("date")
 
-        soil_today = self.today_value(scope, "soil", "median")
+        soil_today = self.today_value("soil", "median")
 
         if soil_today is None:
             return dict(sorted(series.items()))
@@ -455,14 +570,10 @@ class TimeseriesStore:
 
         for d in sorted(forecast):
 
-            eto = forecast[d].get("eto", {}).get("median")
-            rain = forecast[d].get("rain", {}).get("median")
+            eto = self._val(forecast[d].get("eto", {}).get("median"))
+            rain = self._val(forecast[d].get("rain", {}).get("median"))
 
-            irrigation = (
-                forecast[d]
-                .get("irrigation", {})
-                .get(scope, 0)
-            )
+            irrigation = self._val(forecast[d].get("irrigation", {}).get(scope, 0))
 
             if eto is None or rain is None:
                 continue
@@ -480,11 +591,12 @@ class TimeseriesStore:
 
         today_date = self.today.get("date")
 
-        today_val = (
+        today_val = self._val(
             self.today
-            .get(scope, {})
+            .get("forecast", {})
+            .get(today_date, {})
             .get("irrigation", {})
-            .get("actual")
+            .get(scope)
         )
 
         forecast = self.today.get("forecast", {})
@@ -498,38 +610,62 @@ class TimeseriesStore:
 
     def compute_today_median(self, scope, key):
         self._ensure_today()
-        data = self.today.get(scope, {}).get(key, {})
+        today_str = self.today.get("date")
+
+        data = (
+            self.today
+            .get("forecast", {})
+            .get(today_str, {})
+            .get(scope, {})
+            .get(key, {})
+        )
+
         self._update_median(data)
             
-    def compute_soil_forecast(self, scope, minimum, maximum):
+    def compute_soil_forecast(self, scope, minimum, optimal, maximum):
+
         self._ensure_today()
-        soil_today = self.today_value(scope, "soil", "median")
 
-        if soil_today is None:
-            return
+        soil_yesterday = self.yesterday_value(scope, "soil", "median")
 
-        soil = soil_today
+        if soil_yesterday is None:
+            soil_yesterday = optimal
+
+        soil = soil_yesterday
 
         forecast = self.today.get("forecast", {})
 
-        for d in sorted(forecast):#
+        for d in sorted(forecast):
 
-            eto = forecast[d].get("eto", {}).get("median")
-            rain = forecast[d].get("rain", {}).get("median")
+            block = forecast[d]
+
+            eto = self._val(block.get("eto", {}).get("median"))
+            rain = self._val(block.get("rain", {}).get("median"))
 
             if eto is None or rain is None:
                 continue
 
-            soil = soil + rain - eto
+            # 👉 irrigation nur bei Zonen!
+            irrigation = 0
+            if scope:
+                irrigation = self._val(
+                    block.get("irrigation", {}).get(scope, 0)
+                )
 
-            # IMPORTANT
+            soil = soil + rain + irrigation - eto
             soil = max(minimum, min(soil, maximum))
 
-            self.write_forecast(d, "soil", "model", round(soil, 2))
+            # 🔥 WRITE – entscheidend!
+            if scope:
+                # zone
+                self.write(scope, "soil", "model", round(soil, 2))
+            else:
+                # global
+                self.write_forecast(d, "soil", "model", round(soil, 2))
                     
     def adaptation_deficit(self, zone_key, soil_optimal, weights=(0.7,0.4,0.2), eto_factor=1.0, rain_factor=1.0, explain=False):
 
-        soil = self.today_value(zone_key, "soil", "median")
+        soil = self.scope_value(zone_key, "soil", "median")
 
         if soil is None:
             soil = soil_optimal
@@ -564,11 +700,11 @@ class TimeseriesStore:
 
             block = forecast[d]
 
-            eto = block.get("eto", {}).get("median", 0)
+            eto = self._val(block.get("eto", {}).get("median"))
 
-            rain = block.get("rain", {}).get("median", 0)
+            rain = self._val(block.get("rain", {}).get("median"))
 
-            prob = block.get("prob", {}).get("median", 0)
+            prob = self._val(block.get("prob", {}).get("median"))
 
             rain_eff = round(rain * (prob / 100) * rain_factor, 2)
             eto_eff = round(eto * eto_factor, 2)

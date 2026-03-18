@@ -1044,7 +1044,7 @@ def project_qe(entry):
 
     optimal = safe_float(INPUT_SOIL_OPTIMAL, 0)
 
-    soil = TsStore.today_value(zone_key, "soil", "median") or 0
+    soil = TsStore.scope_value(zone_key, "soil", "median") or 0
     deficit = max(0, optimal - soil)
 
     attributes.update({"soil_mm": round(soil, 2), "deficit_mm": round(deficit, 2)})
@@ -1187,9 +1187,10 @@ def apply_daily_balance_if_needed(zone_store):
         soil_capacity = safe_float(INPUT_SOIL_CAPACITY, 30)
         soil_optimal = safe_float(INPUT_SOIL_OPTIMAL, 0)
 
-        soil = TsStore.yesterday_value(zone_key, "soil", "median")
-        if soil is None:
-            soil = soil_optimal
+        global_soil = TsStore.yesterday_value(None, "soil", "median")
+
+        if global_soil is None:
+            global_soil = soil_optimal
 
         irrigation = TsStore.yesterday_value(zone_key, "irrigation", "actual") or 0
 
