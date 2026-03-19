@@ -594,6 +594,11 @@ def daily_end():
     TsStore.snapshot_today()
     TsStore.reset_today()
 
+    log_irrigation.info(f"""
+        CHECK AFTER RESET:
+        global_yesterday: {TsStore.yesterday_value(None, "soil", "median")}
+        """)
+
 
 @time_trigger("cron(05 00 * * *)")
 def daily_begin():

@@ -19,6 +19,7 @@ class TimeseriesStore:
         self._dirty = False
         self._history_cache = None
         self._load_today()
+        self._last_snapshot_date = None
 
     def _build_history_index(self):
 
@@ -30,7 +31,7 @@ class TimeseriesStore:
 
             key = (e["scope"], e["key"], e["source"])
 
-            index.setdefault(key, {})[e["date"]] = e["value"]
+            index.setdefault(key, {})[e["date"]] = self._val(e["value"])
 
         self._history_index = index
 
@@ -46,6 +47,8 @@ class TimeseriesStore:
     def _write_file(self, path: Path, payload: bytes, flags):
         fd = os.open(str(path), flags, 0o644)
         try:
+            if not payload.endswith(b"\n"):
+                payload += b"\n"
             os.write(fd, payload)
         finally:
             os.close(fd)
@@ -74,10 +77,19 @@ class TimeseriesStore:
             
         lines = data.decode("utf-8").splitlines()
 
-        self._history_cache = [
-            json.loads(line) for line in lines if line.strip()
-        ]
-        log_store.info(f"Store History mit. {len(lines)} geladen")
+        clean = []
+
+        for line in lines:
+            if not line.strip():
+                continue
+            try:
+                clean.append(json.loads(line))
+            except Exception:
+                log_store.error(f"Skipping bad history line: {line}")
+
+        self._history_cache = clean
+
+        log_store.info(f"Store History mit. {len(clean)} geladen")
 
         return self._history_cache
 
@@ -352,7 +364,7 @@ class TimeseriesStore:
         return self._val(val)
 
     # ------------------------------------------------
-    # READ TODAY VALUE
+    # READ Yesterday VALUE
     # ------------------------------------------------
     def yesterday_value(self, scope, key, source="median"):
 
@@ -368,7 +380,8 @@ class TimeseriesStore:
                 and entry["key"] == key
                 and entry["source"] == source
             ):
-                return entry.get("value")
+                log_store.info(f"yesterday_value: {entry.get('value')}")
+                return self._val(entry.get("value"))
 
         return None
 
@@ -379,10 +392,16 @@ class TimeseriesStore:
 
         today_date = self.today.get("date")
         forecast = self.today.get("forecast", {})
+    
+        # 🔥 GUARD: nur 1x pro Tag snapshotten
+        if getattr(self, "_last_snapshot_date", None) == today_date:
+            log_store.info(f"snapshot_today skipped (already done for {today_date})")
+            return
 
+        self._last_snapshot_date = today_date
+        
         lines = []
 
-        today_date = self.today.get("date")
         day_block = forecast.get(today_date)
 
         if not day_block:
@@ -393,25 +412,8 @@ class TimeseriesStore:
         for key, val in day_block.items():
             log_store.info(f"snapshot_today get keys {key} {val}")
 
-            # 👉 CASE 1: env data (eto, rain, prob, soil)
-            if isinstance(val, dict) and all(isinstance(v, dict) for v in val.values()):
-
-                for source, entry in val.items():
-
-                    v = self._val(entry)
-                    ts = entry.get("ts") if isinstance(entry, dict) else None
-
-                    lines.append(json.dumps({
-                        "date": today_date,
-                        "scope": None,
-                        "key": key,
-                        "source": source,
-                        "value": v,
-                        "ts": ts
-                    }))
-
-            # 👉 CASE 2: zone blocks
-            elif key.startswith("zone:"):
+            # 👉 CASE 1: zone blocks
+            if key.startswith("zone:"):
 
                 zone = key
 
@@ -431,7 +433,7 @@ class TimeseriesStore:
                             "ts": ts
                         }))
 
-            # 👉 CASE 3: irrigation
+            # 👉 CASE 2: irrigation
             elif key == "irrigation":
 
                 for zone, mm in val.items():
@@ -444,6 +446,24 @@ class TimeseriesStore:
                         "value": mm,
                         "ts": None
                     }))
+
+            # 👉 CASE 3: env data (eto, rain, prob, soil)
+            elif isinstance(val, dict) and all(isinstance(v, dict) for v in val.values()):
+
+                for source, entry in val.items():
+
+                    v = self._val(entry)
+                    ts = entry.get("ts") if isinstance(entry, dict) else None
+
+                    lines.append(json.dumps({
+                        "date": today_date,
+                        "scope": None,
+                        "key": key,
+                        "source": source,
+                        "value": v,
+                        "ts": ts
+                    }))
+
 
         log_store.info(f"snapshot - Anzahl lines :{len(lines)}")
         if not lines:
@@ -557,8 +577,13 @@ class TimeseriesStore:
 
         today = self.today.get("date")
 
-        soil_today = self.today_value("soil", "median")
+        soil_today = None
 
+        if scope:
+            soil_today = self.scope_value(scope, "soil", "median")
+        else:
+            soil_today = self.today_value("soil", "median")
+        
         if soil_today is None:
             return dict(sorted(series.items()))
 
