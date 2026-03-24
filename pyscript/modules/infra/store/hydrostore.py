@@ -42,6 +42,11 @@ class HydroStore:
     def _num(self, v, default=0):
         val = self._val(v)
         return val if val is not None else default
+
+    def _sum_values(self, data):
+        if isinstance(data, dict):
+            return sum(v for v in data.values() if v is not None)
+        return data or 0
         
     def _ensure_path(self, date, scope, key, kind):
 
@@ -229,7 +234,7 @@ class HydroStore:
                     continue
 
                 if "forecast" in irrigation:
-                    irrigation["forecast"] = {}
+                    del irrigation["forecast"]
                     changed = True
 
                 if "derived" in irrigation:
@@ -697,11 +702,11 @@ class HydroStore:
 
             rain_eff = rain * (prob / 100)
 
-            irrigation_fc = self.get(zone_key, "irrigation_mm", "forecast", None, d) or 0
+            irrigation_fc = self._sum_values(self.get(zone_key, "irrigation_mm", "forecast", None, d))
 
             irrigation_obs = 0
             if d == today:
-                irrigation_obs = self.get(zone_key, "irrigation_mm", "observed", None, d) or 0
+                irrigation_obs = self._sum_values(self.get(zone_key, "irrigation_mm", "observed", None, d))
 
             irrigation = irrigation_fc + irrigation_obs
 
@@ -733,11 +738,11 @@ class HydroStore:
 
         for d in days:
 
-            fc = self.get(zone_key, "irrigation_mm", "forecast", None, d) or 0
+            fc = self._sum_values(self.get(zone_key, "irrigation_mm", "forecast", None, d))
 
             obs = 0
             if d == today:
-                obs = self.get(zone_key, "irrigation_mm", "observed", None, d) or 0
+                obs = self._sum_values(self.get(zone_key, "irrigation_mm", "observed", None, d))
 
             series[d] = round(fc + obs, 2)
 

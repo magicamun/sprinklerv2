@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 import logging
 
 from uuid import uuid4
-import datetime
+import datetime 
 from datetime import timedelta
 from pyscript.modules.infra.queues.program_block import ProgramBlock
 from pyscript.modules.infra.queues.queue_entry import QueueEntry
@@ -103,7 +103,7 @@ class ProgramEngine:
 
         program_weather_enabled = program.get("weather", {}).get("enabled", False)
 
-        log_engine.info(f"expand program to entries {program_id} {program_run_id} {program_name} {program_weather_enabled}")
+        log_engine.info(f"Expand program to entries {program_id} {program_run_id} {program_name} {program_weather_enabled}")
 
         zone_count = len(program["zones"])
 
@@ -116,10 +116,10 @@ class ProgramEngine:
                 # Optional: log warning
                 continue
 
-            log_engine.info(f"expand Zone, found id {zone_id}, {idx}")
+            log_engine.info(f"Expand Zone, found id {zone_id}, {idx}")
             planned_duration = z["planned_duration"]
 
-            log_engine.debug(f"ZONE_DATA: %s", zone)
+            log_engine.info(f"ZONE_DATA: {zone}")
 
             src = f"program:{program_id}:{day_str}:{idx}"
 
@@ -143,7 +143,7 @@ class ProgramEngine:
 
                 status="planned",  # Engine-Level initial state
                 policy=policy,
-                load=z.get("load", 1),
+                load=zone.get("load", 1),
 
                 # Planning layer
                 planned_start=None,
@@ -168,7 +168,7 @@ class ProgramEngine:
                 program_color = program.get("color")
             )
 
-            log_engine.info(f"Wetter - enabled: {qe.weather_enabled} {program_weather_enabled}")
+            log_engine.info(f"Wetter - enabled: {qe.weather_enabled} {program_weather_enabled}, Load: {qe.load}")
 
             entries.append(qe)
 
@@ -192,7 +192,7 @@ class ProgramEngine:
             load = e.load or 1
             duration_seconds = e.planned_duration
             dur = timedelta(seconds=duration_seconds)
-
+            log_engine.info(f"plan_strict_forward Capacity: {capacity} Load {load}, Entry: {e.zone_name}")
             # fits in current wave
             if used_slots + load <= capacity:
 
@@ -332,6 +332,7 @@ class ProgramEngine:
 
         day = anchor.date()
 
+        log_engine.info("build_program_block")
         entries = self.expand_program_to_entries(program, day, adHoc, program_run_index, program_run_count)
 
         if not entries:
@@ -385,3 +386,5 @@ class ProgramEngine:
             return None, None
 
         return min(starts), max(ends)
+
+
