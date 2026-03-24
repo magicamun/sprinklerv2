@@ -643,9 +643,12 @@ class EToEngine:
 
         log_eto.info(f"eto_series: {eto_series}")
 
-        self.project_chart_sensor("sensor.irrigation_chart_eto1", eto_series, "mm")
-        self.project_chart_sensor("sensor.irrigation_chart_rain1", rain_series, "mm")
-        self.project_chart_sensor("sensor.irrigation_chart_soil1", soil_series, "mm")
+        self.project_chart_sensor("sensor.irrigation_chart_eto", eto_series, "mm")
+        self.project_chart_sensor("sensor.irrigation_chart_rain", rain_series, "mm")
+        self.project_chart_sensor("sensor.irrigation_chart_soil", soil_series, "mm")
+
+    def prune(self):
+        self.store.prune()
 
 etoengine = EToEngine(hydro_store)
 
@@ -661,6 +664,8 @@ def etoengine_collecthourly():
 
 @time_trigger("startup")
 def etoengine_startup():
+    etoengine.prune()
+
     etoengine.collect_all_sources()
     etoengine.compute_eto_all_days()
     etoengine.compute_soil()

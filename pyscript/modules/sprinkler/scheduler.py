@@ -13,7 +13,8 @@ if TYPE_CHECKING:
 import logging
 import datetime
 
-from datetime import timedelta
+from datetime import timedelta, date as dt_date
+
 from pyscript.modules.util.datetime_utils import aware_now
 from pyscript.modules.infra.queues.active_queue import ActiveQueue
 from pyscript.modules.infra.queues.program_queue import ProgramQueue
@@ -22,7 +23,7 @@ from pyscript.modules.infra.queues.queue_entry import QueueEntry, RuntimeReason,
 from pyscript.modules.infra.queues.program_block import ProgramBlock
 from pyscript.modules.infra.queues.manual_queue import ManualQueue
 
-from pyscript.modules.infra.store.timeseries_store import TsStore
+from pyscript.modules.infra.store.hydrostore import hydro_store
 
 from pyscript.modules.sprinkler.manual_queue_owner import ManualQueueOwner
 # from pyscript.modules.sprinkler.irrigations import IrrigationStore
@@ -778,7 +779,7 @@ class SprinklerCore():
 
                     zone_key = f"zone:{zone_id}"
 
-                    soil = TsStore.scope_value(zone_key, "soil", "median")
+                    soil = hydro_store.get(zone_key, "soil_mm", "derived", "model", today)
 
                     soil_optimal = self.context.soil_margins.get("optimal")
                     soil_capacity = self.context.soil_margins.get("capacity")
@@ -786,8 +787,9 @@ class SprinklerCore():
                     if soil is None:
                         soil = soil_optimal
 
-                    deficit, details = TsStore.adaptation_deficit(zone_key, soil_optimal, eto_factor=zone.get("eto_factor", 1.0), rain_factor=zone.get("rain_factor", 1.0), explain=True)
-
+                #    deficit, details = TsStore.adaptation_deficit(zone_key, soil_optimal, eto_factor=zone.get("eto_factor", 1.0), rain_factor=zone.get("rain_factor", 1.0), explain=True)
+                    deficit, details = adaptation_deficit(hydro_store, zone_key, soil_optimal, eto_factor=zone.get("eto_factor", 1.0), rain_factor=zone.get("rain_factor", 1.0), explain=True)
+                
                     deficit = min(deficit, soil_capacity)
 
                     entry.runtime_deficit_mm = deficit
@@ -812,13 +814,15 @@ class SprinklerCore():
                             forecast=forecast_items
                         )
 
-
                     explain = {}
                     explain["precip_rate"] = zone.get("precipitation_rate_mm_per_hour", 0)
                     explain["runtime_seconds"] = new_duration
 
                     log_scheduler.info(
-                        f"[ADAPT] Zone {zone_id} deficit = weighted Deficit {deficit} vs deficit {max(0, soil_optimal - soil)}"
+                        f"[ADAPT] Zone {zone_id} "
+                        f"soil={soil:.2f} "
+                        f"deficit={deficit:.2f} "
+                        f"raw_deficit={max(0, soil_optimal - soil):.2f}"
                     )
 
                 # ------------------------------------------
@@ -868,19 +872,88 @@ class SprinklerCore():
 
         log_scheduler.info(f"Program {program_run_id}: adaptation finished")
         
+    def adaptation_deficit(self, hydro_store, zone_key, soil_optimal, weights=(0.7,0.4,0.2),
+                        eto_factor=1.0, rain_factor=1.0, explain=False):
+
+        today = dt_date.today().isoformat()
+
+        soil = hydro_store.get(zone_key, "soil_mm", "derived", "model", today)
+        if soil is None:
+            soil = soil_optimal
+
+        details = {
+            "soil": soil,
+            "soil_optimal": soil_optimal,
+            "forecast": []
+        }
+
+        deficit_sum = 0
+
+        # ------------------------
+        # TODAY
+        # ------------------------
+        deficit_today = max(0, soil_optimal - soil)
+        deficit_sum += weights[0] * deficit_today
+
+        details["deficit_today"] = deficit_today
+
+        # ------------------------
+        # FORECAST DAYS
+        # ------------------------
+        days = hydro_store.get_days("global")
+
+        future_days = [d for d in days if d > today][:len(weights)-1]
+
+        for i, d in enumerate(future_days):
+
+            eto  = hydro_store.get("global", "eto_mm",  "derived", "median", d)
+            rain = hydro_store.get("global", "rain_mm", "derived", "median", d)
+            prob = hydro_store.get("global", "prob_pct","derived", "median", d)
+
+            rain_eff = round((rain or 0) * ((prob or 0) / 100) * rain_factor, 2)
+            eto_eff  = round((eto or 0) * eto_factor, 2)
+
+
+            if d == today:
+                irrigation = (
+                    (hydro_store.get(zone_key, "irrigation_mm", "forecast", None, d) or 0) +
+                    (hydro_store.get(zone_key, "irrigation_mm", "observed", None, today) or 0)
+                )
+            else:
+                irrigation = (
+                    (hydro_store.get(zone_key, "irrigation_mm", "forecast", None, d) or 0)
+                )            
+
+            soil = soil + rain_eff + irrigation - eto_eff
+            deficit = max(0, soil_optimal - soil)
+
+            deficit_sum += weights[i+1] * deficit
+
+            details["forecast"].append({
+                "date": d,
+                "soil_after": soil,
+                "deficit": deficit
+            })
+
+        if explain:
+            return deficit_sum, details
+
+        return deficit_sum
+
     def rebuild_irrigation_forecast(self, forecast_days: int = 7):
 
-        today = datetime.date.today()
+        today = dt_date.today()
         max_date = today + timedelta(days=forecast_days)
 
         # --------------------------------
-        # 1. Forecast-Irrigation löschen
+        # 1. Forecast löschen
         # --------------------------------
-        TsStore.clear_forecast_irrigation()
+        hydro_store.clear_forecast_irrigation()
 
         entries = self.active_queue.all()
 
         if not entries:
+            self._dirty_irrigation = False
             return
 
         # --------------------------------
@@ -896,22 +969,18 @@ class SprinklerCore():
 
             run_date = entry.scheduled_start.date()
 
-            # nur Forecast-Zeitraum
             if run_date < today or run_date > max_date:
                 continue
 
             zone = zone_store.get(entry.zone_id)
-
             if not zone:
                 continue
 
             mm_per_hour = zone.get("precipitation_rate_mm_per_hour")
-
             if not mm_per_hour:
                 continue
 
             duration = entry.scheduled_duration or entry.remaining or 0
-
             if duration <= 0:
                 continue
 
@@ -922,13 +991,14 @@ class SprinklerCore():
             # --------------------------------
             # 3. Store schreiben
             # --------------------------------
-            TsStore.add_forecast_irrigation(
+            hydro_store.add_forecast_irrigation(
                 run_date,
                 zone_key,
                 round(irrigation_mm, 2)
             )
-            self._dirty_irrigation = False
-    
+
+        self._dirty_irrigation = False
+            
     def apply_irrigation_to_zone(self, zone_id: int, runtime_seconds: float):
 
         zone = zone_store.get(zone_id)
@@ -943,10 +1013,13 @@ class SprinklerCore():
 
         irrigation_mm = mm_per_hour * (runtime_seconds / 3600)
 
-        TsStore.add(zone_key, "irrigation", "actual", round(irrigation_mm, 2))
+        hydro_store.add_actual_irrigation(
+            zone_key,
+            round(irrigation_mm, 2)
+        )
 
         log_scheduler.info(
-            f"[IRRIGATION] Zone {zone_id}: +{irrigation_mm:.2f}mm irrigation"
+            f"[IRRIGATION] Zone {zone_id}: +{irrigation_mm:.2f}mm"
         )
 
     def _group_entries_by_run(self, entries):

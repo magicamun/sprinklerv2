@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 import logging
 import datetime
 import copy
+from datetime import date as dt_date, timedelta
 
 # ------------------------------------------------
 # Home Assistant / pyscript
@@ -26,6 +27,7 @@ from homeassistant.util import dt as dt_util
 # Infra
 # ------------------------------------------------
 from pyscript.modules.infra.store.timeseries_store import TsStore
+from pyscript.modules.infra.store.hydrostore import hydro_store
 from pyscript.modules.util.datetime_utils import aware_now
 
 # ------------------------------------------------
@@ -1044,7 +1046,7 @@ def project_qe(entry):
 
     optimal = safe_float(INPUT_SOIL_OPTIMAL, 0)
 
-    soil = TsStore.scope_value(zone_key, "soil", "median") or 0
+    soil = hydro_store.get(zone_key, "soil_mm", "derived", "model") or 0
     deficit = max(0, optimal - soil)
 
     attributes.update({"soil_mm": round(soil, 2), "deficit_mm": round(deficit, 2)})
@@ -1135,21 +1137,37 @@ def remove_zone_states(zone_id: int):
                     }
                 )
 
-def project_all_zone_charts(zone_store):
+def project_all_zone_charts(zone_store, hydro_store):
+
+    from datetime import date, timedelta
 
     zones = zone_store.all()
 
     soil_min = float(state.get("input_number.soil_min_mm"))
     soil_max = float(state.get("input_number.soil_capacity_mm"))
 
+    today = date.today()
+    start = (today - timedelta(days=9)).isoformat()
+    end   = (today + timedelta(days=4)).isoformat()
+
     for zone in zones.values():
 
         zone_id = zone["zone_id"]
         zone_key = f"zone:{zone_id}"
 
-        soil_series = TsStore.build_soil_series(zone_key, 0, soil_max)
+        soil_series = hydro_store.build_soil_series(
+            zone_key,
+            soil_min,
+            soil_max,
+            start,
+            end
+        )
 
-        irrigation_series = TsStore.build_irrigation_series(zone_key)
+        irrigation_series = hydro_store.build_irrigation_series(
+            zone_key,
+            start,
+            end
+        )
 
         state.set(
             f"sensor.irrigation_chart_zone_{zone_id:02d}_soil",
@@ -1169,39 +1187,53 @@ def project_all_zone_charts(zone_store):
             }
         )
 
+
 # ----------- Soil, Deficit --------------
 
-def apply_daily_balance_if_needed(zone_store):
+def apply_daily_balance_if_needed(zone_store, hydro_store):
 
-    today = aware_now().date()
+    yesterday = (dt_date.today() - timedelta(days=1)).isoformat()
+    today     = dt_date.today().isoformat()
 
-    eto = TsStore.yesterday_value("global", "eto", "median") or 0
-    rain = TsStore.yesterday_value("global", "rain", "median") or 0
+    eto  = hydro_store.get("global", "eto_mm",  "derived", "median", yesterday) or 0
+    rain = hydro_store.get("global", "rain_mm", "derived", "median", yesterday) or 0
 
-    log_irrigation.info(f"Apply Daily Balance if Needed: ETo: {eto}, Rain: {rain}")
+    log_irrigation.info(f"Apply Daily Balance: ETo={eto}, Rain={rain}")
+
     for zone in zone_store.all().values():
 
-        zone_id = zone["zone_id"]
+        zone_id  = zone["zone_id"]
         zone_key = f"zone:{zone_id}"
 
         soil_capacity = safe_float(INPUT_SOIL_CAPACITY, 30)
-        soil_optimal = safe_float(INPUT_SOIL_OPTIMAL, 0)
+        soil_optimal  = safe_float(INPUT_SOIL_OPTIMAL, 0)
 
-        global_soil = TsStore.yesterday_value(None, "soil", "median")
+        # ------------------------
+        # GLOBAL SOIL (gestern)
+        # ------------------------
+        global_soil = hydro_store.get(None, "soil_mm", "derived", "median", yesterday)
 
         if global_soil is None:
             global_soil = soil_optimal
 
-        irrigation = TsStore.yesterday_value(zone_key, "irrigation", "actual") or 0
+        # ------------------------
+        # IRRIGATION (gestern)
+        # ------------------------
+        irrigation = hydro_store.get(zone_key, "irrigation_mm", "actual", None, yesterday) or 0
 
+        # ------------------------
+        # Compute
+        # ------------------------
         new_soil = global_soil - eto + rain + irrigation
         new_soil = max(0, min(soil_capacity, new_soil))
-        
-        TsStore.write(zone_key, "soil", "median", new_soil)
 
-        log_irrigation.info(f"Apply Soil (Old): {global_soil}, New:{new_soil}, Capa: {soil_capacity}, Optimal: {soil_optimal}, ETo: {eto} Rain: {rain} Irrigation: {irrigation}")
+        # 👉 wichtig: heute schreiben!
+        hydro_store.write(zone_key, "soil_mm", "derived", "model", round(new_soil, 2), today)
 
-        deficit = max(0, soil_optimal - new_soil)
+        log_irrigation.info(
+            f"Soil: old={global_soil}, new={new_soil}, "
+            f"ETo={eto}, rain={rain}, irrigation={irrigation}"
+        )
 
 # ----------- Timeline -------------------
 
@@ -1302,7 +1334,7 @@ def project_timeline():
 # -------------- ETo, Soil_Water, Deficit
 @time_trigger("cron(05 00 * * *)") # 00:05 täglich
 def irrigation_daily():
-    apply_daily_balance_if_needed(zone_store)
+    apply_daily_balance_if_needed(zone_store, hydro_store)
 
 def update_soil_margins():
     soil_margins = {
@@ -1343,7 +1375,7 @@ def update_sun_times_daily():
     scheduler_context.sun_times = update_sun_times()
 
     if sprinkler_core:
-        scheduler_core.update_context(scheduler_context)
+        sprinkler_core.update_context(scheduler_context)
 
 # -------------------------
 # Start Core
@@ -1379,7 +1411,7 @@ def sprinkler_startup():
     # 2️⃣ erste Projektionen
     project_all_zones(zone_store)
     
-    apply_daily_balance_if_needed(zone_store)
+    apply_daily_balance_if_needed(zone_store, hydro_store)
 
     project_all_programs(program_store, sprinkler_core)
     
@@ -1423,7 +1455,7 @@ async def sprinkler_scheduler_loop():
 
             project_sprinkler_core()
             project_all_zones(zone_store)
-            project_all_zone_charts(zone_store)
+            project_all_zone_charts(zone_store, hydro_store)
             project_all_programs(program_store, sprinkler_core)
             project_timeline()
             # Debug Sensor

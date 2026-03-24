@@ -193,85 +193,73 @@ class HydroStore:
             self.write(scope, "soil_mm", "derived", "model", round(soil, 2), day)     
 
     # ------------------------------------------------
-    # Anpassungsrechung Zonendefizit mit Forecast-Gewichtung
+    # Zonen, Irrigation
     # ------------------------------------------------
-    def adaptation_deficit(self, zone_key, soil_optimal, weights=(0.7,0.4,0.2), eto_factor=1.0, rain_factor=1.0, explain=False):
+    def add_actual_irrigation(self, zone_key, value):
 
-        soil = self.scope_value(zone_key, "soil", "median")
+        today = dt_date.today().isoformat()
 
-        if soil is None:
-            soil = soil_optimal
+        # bestehende Werte holen
+        existing = self.get(zone_key, "irrigation_mm", "observed", date=today)
 
-        details = {
-            "soil": soil,
-            "soil_optimal": soil_optimal,
-            "forecast": []
-        }
+        total = value
 
-        deficit_sum = 0
+        if isinstance(existing, dict):
+            total += sum(v for v in existing.values() if v is not None)
 
-        # ------------------------
-        # TODAY
-        # ------------------------
-
-        deficit_today = max(0, soil_optimal - soil)
+        self.write(
+            zone_key,
+            "irrigation_mm",
+            "observed",
+            "runtime",
+            round(total, 2),
+            today
+        )
         
-        deficit_sum += weights[0] * deficit_today
+    def clear_forecast_irrigation(self):
 
-        details["deficit_today"] = deficit_today
-        
-        # ------------------------
-        # FORECAST DAYS
-        # ------------------------
+        changed = False
 
-        days = sorted(self.today.keys())[:len(weights)-1]
+        for day, day_block in self.today.items():
+            log_store.info(f"Clear Forecst irrigaton")
+            for scope, scope_block in day_block.items():
+                log_store.info(f"Clear Forecst irrigaton Scope {scope}")
+                irrigation = scope_block.get("irrigation_mm")
+                if not irrigation:
+                    continue
 
-        for i, d in enumerate(days):
+                if "forecast" in irrigation:
+                    irrigation["forecast"] = {}
+                    changed = True
 
-            block = self.today.get(d, {})
+                if "derived" in irrigation:
+                    del irrigation["derived"]
+                    changed = True
 
-            eto = self._val(block.get("eto_mm", {}).get("median"))
 
-            rain = self._val(block.get("rain_mm", {}).get("median"))
+        if changed:
+            self._dirty = True
+            self.save_today()
 
-            prob = self._val(block.get("prob_pct", {}).get("median"))
+    def add_forecast_irrigation(self, forecast_date, zone_key, mm):
 
-            rain_eff = round(rain * (prob / 100) * rain_factor, 2)
-            eto_eff = round(eto * eto_factor, 2)
+        day = str(forecast_date)
 
-            irrigation = (
-                block
-                .get("irrigation_mm", {})
-                .get(zone_key, 0)
-            )
+        existing = self.get(zone_key, "irrigation_mm", "forecast", date=day)
 
-            soil = soil + rain_eff + irrigation - eto_eff
+        total = mm
 
-            deficit = max(0, soil_optimal - soil)
+        if isinstance(existing, dict):
+            total += sum(v for v in existing.values() if v is not None)
 
-            deficit_sum += weights[i+1] * deficit
-
-            details["forecast"].append({
-                "date": d,
-                "eto_mm": eto,
-                "eto_effective_mm": eto_eff,
-                "rain_mm": rain,
-                "prob_pct": prob,
-                "rain_effective_mm": rain_eff,
-                "irrigation_planned_mm": irrigation,
-                "soil_after_mm": soil,
-                "deficit_mm": deficit,
-                "weight": weights[i+1]
-            })
-
-        details["weighted_defici_mm"] = deficit_sum
-        details["eto_factor"] = eto_factor
-        details["rain_factor"] = rain_factor
-
-        if explain:
-            return deficit_sum, details
-
-        return deficit_sum
+        self.write(
+            zone_key,
+            "irrigation_mm",
+            "forecast",
+            "scheduler",
+            round(total, 2),
+            day
+        )
 
     # ------------------------------------------------
     # Store API
@@ -671,6 +659,91 @@ class HydroStore:
         log_store.info(f"build_series: {result}")
         return result
                         
+    def build_soil_series(self, zone_key, soil_min, soil_max, start=None, end=None):
+
+        from datetime import date as dt_date
+
+        today = dt_date.today().isoformat()
+
+        days = self.get_days("global")
+        days = sorted(days)
+
+        if start:
+            days = [d for d in days if d >= start]
+        if end:
+            days = [d for d in days if d <= end]
+
+        if not days:
+            return {}
+
+        # ------------------------
+        # STARTWERT = gestern
+        # ------------------------
+        soil = self.get_yesterday(zone_key, "soil_mm", "model")
+
+        if soil is None:
+            soil = self.get_yesterday("global", "soil_mm", "model")
+
+        if soil is None:
+            soil = soil_max  # fallback
+
+        series = {}
+
+        for d in days:
+
+            eto  = self.get("global", "eto_mm",  "derived", "median", d) or 0
+            rain = self.get("global", "rain_mm", "derived", "median", d) or 0
+            prob = self.get("global", "prob_pct","derived", "median", d) or 0
+
+            rain_eff = rain * (prob / 100)
+
+            irrigation_fc = self.get(zone_key, "irrigation_mm", "forecast", None, d) or 0
+
+            irrigation_obs = 0
+            if d == today:
+                irrigation_obs = self.get(zone_key, "irrigation_mm", "observed", None, d) or 0
+
+            irrigation = irrigation_fc + irrigation_obs
+
+            # ------------------------
+            # Simulation
+            # ------------------------
+            soil = soil + rain_eff + irrigation - eto
+            soil = max(soil_min, min(soil, soil_max))
+
+            series[d] = round(soil, 2)
+
+        return series
+
+    def build_irrigation_series(self, zone_key, start=None, end=None):
+
+        from datetime import date as dt_date
+
+        today = dt_date.today().isoformat()
+
+        days = self.get_days("global")
+        days = sorted(days)
+
+        if start:
+            days = [d for d in days if d >= start]
+        if end:
+            days = [d for d in days if d <= end]
+
+        series = {}
+
+        for d in days:
+
+            fc = self.get(zone_key, "irrigation_mm", "forecast", None, d) or 0
+
+            obs = 0
+            if d == today:
+                obs = self.get(zone_key, "irrigation_mm", "observed", None, d) or 0
+
+            series[d] = round(fc + obs, 2)
+
+        return series
+
+
 hydro_store = HydroStore()
 log_store.info("=== HYDROSTORE DEBUG ===")
 log_store.info(dir(hydro_store))
