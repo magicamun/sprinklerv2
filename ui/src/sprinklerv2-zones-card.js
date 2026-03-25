@@ -1175,11 +1175,20 @@ class SprinklerZonesCardBase extends HTMLElement {
       el.addEventListener("click", e => {
         const zoneId = Number(e.currentTarget.dataset.zone);
 
-        callServiceWithRequest(
-          this,
-          "sprinkler_ui_reset_soil",
-          { zone_id: zoneId }
-        );
+        openConfirmDialog({
+          title: "Bodenbilanz zurücksetzen",
+          text: `Soll die Bodenfeuchte dieser Zone wirklich zurückgesetzt werden?`,
+          confirmText: "Zurücksetzen",
+          danger: false,
+          parent: this,
+          onConfirm: () => {
+            callServiceWithRequest(
+              this,
+              "sprinkler_ui_reset_soil",
+              { zone_id: zoneId }
+            );
+          }
+        });
       });
     });
     this.querySelectorAll(".zone-action").forEach(el => {
@@ -1323,7 +1332,8 @@ class SprinklerZonesCardBase extends HTMLElement {
         .zone-left {
           display: flex;
           gap: 6px;
-          width: 96px;
+          width: auto;
+          flex-sshrink: 0;
         }
 
         .zone-delete,
@@ -1340,7 +1350,7 @@ class SprinklerZonesCardBase extends HTMLElement {
           border-radius: 10px;
           cursor: pointer;
 
-          flex: 0 0 auto;
+          flex: 0 0 40px;
         }
           
         .zone-delete ha-icon,

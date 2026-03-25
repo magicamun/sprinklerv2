@@ -712,8 +712,10 @@ def sprinkler_ui_reset_soil(zone_id: int, request_id: str = None, context=None):
     optimal = float(state.get("input_number.soil_optimal_mm") or 0)
 
     zone_key = f"zone:{zone_id}"
+    today = dt_date.today()
 
-    TsStore.write(zone_key, "soil", "manual")
+    hydro_store.write(zone_key, "soil_mm", "manual", "user_reset", optimal, today)
+    hydro_store.write(zone_key, "soil_mm", "derived", "model", optimal, today)
 
     ui_success(
         context,
