@@ -583,30 +583,6 @@ class SprinklerProgramsCardBase extends HTMLElement {
         `;
     }
 
-    _renderSwitchRow(program) {
-        return `
-            <div class="switch-row">
-
-                <div class="switch-item">
-                    <span>Aktiviert</span>
-                    <ha-switch
-                        id="enabledSwitch"
-                        ${program.enabled ? "checked" : ""}>
-                    </ha-switch>
-                </div>
-
-                <div class="switch-item">
-                    <span>Wetter</span>
-                    <ha-switch
-                        id="weatherSwitch"
-                        ${program.weather?.enabled ? "checked" : ""}>
-                    </ha-switch>
-                </div>
-
-            </div>
-        `;
-    }
-
     _renderColorSection(program) {
         const color = program.color || "#4CAF50";
 
@@ -920,6 +896,10 @@ class SprinklerProgramsCardBase extends HTMLElement {
                 opacity: 1;
             }
 
+            .toggle-row {
+                grid-template-columns: 1fr auto;
+            }
+
             .separator {
                 margin: 0 4px;
                 opacity: 0.4;
@@ -1104,23 +1084,6 @@ class SprinklerProgramsCardBase extends HTMLElement {
                 justify-content: center;
                 cursor: pointer;
             }
-            /* =========================
-            SWITCH ROW
-            ========================= */
-
-            .switch-row {
-                display: flex;
-                flex-direction: column;   /* 🔥 das ist der Key */
-                gap: 10px;
-                margin-top: 10px;
-            }
-
-            .switch-item {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                width: 100%;
-            }
 
             /* =========================
             POLICY SELECT
@@ -1163,10 +1126,14 @@ class SprinklerProgramsCardBase extends HTMLElement {
             }
             
             .title-inline-wrapper {
-                flex:1;
-                min-width:0;
+                flex: 1;
                 display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 8px;
+                min-width: 0;
             }
+
             /* =========================
             SCHEDULE BLOCK
             ========================= */
@@ -1422,6 +1389,15 @@ class SprinklerProgramsCardBase extends HTMLElement {
             <div class="detail-row">
             <div class="label">${label}</div>
             <div class="value">${value}</div>
+            </div>
+        `;
+    }
+
+    _rowToggle(label, id, checked) {
+        return `
+            <div class="detail-row toggle-row">
+                <div class="label">${label}</div>
+                <ha-switch id="${id}" ${checked ? "checked" : ""}></ha-switch>
             </div>
         `;
     }
@@ -1899,7 +1875,8 @@ class SprinklerProgramsCardBase extends HTMLElement {
         return `
         <div class="detail-block">
 
-            ${this._renderSwitchRow(program)}
+            ${this._rowToggle("Aktiviert", "enabledSwitch", program.enabled)}
+            ${this._rowToggle("Wetter", "weatherSwitch", program.weather?.enabled)}
             <div class="divider"></div>
             
             ${this._renderWeekdaySection(program)}
@@ -1908,9 +1885,10 @@ class SprinklerProgramsCardBase extends HTMLElement {
                     ${this._validationErrors.weekdays}
                 </div>
             ` : ""}
+
+            ${this._renderScheduleSection(program)}
             <div class="divider"></div>
             ${this._renderModeSection(program)}
-            ${this._renderScheduleSection(program)}
             ${this._renderRepeatSection(program)}
         </div>
         `;
