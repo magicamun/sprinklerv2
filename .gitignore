@@ -28,7 +28,8 @@ sprinkler/*.json
 sprinkler/*.jsonl
 
 # www
-www
+www/*
+!www/sprinklerv2/
 
 .ha_run.lock
 
