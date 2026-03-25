@@ -104,6 +104,14 @@ export function openConfirmDialog({
     const cancelBtn = dialog.querySelector("#cancelBtn");
     const confirmBtn = dialog.querySelector("#confirmBtn");
 
+    confirmBtn.onclick = () => {
+
+      dialog.open = false;   // 👈 WICHTIG (nicht nur close())
+
+      setTimeout(() => dialog.remove(), 150);
+
+      onConfirm?.();
+    };
     cancelBtn.onclick = () => dialog.close();
 
     cancelBtn.onclick = () => {
