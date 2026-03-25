@@ -1,4 +1,4 @@
-import { registerSprinklerFeedback } from "./sprinklev2-events.js";
+import { registerSprinklerFeedback } from "./sprinklerv2-events.js";
 import { callServiceWithRequest } from "./sprinklerv2-events.js";
 import { isAdmin } from "./sprinklerv2-utils.js";
 
