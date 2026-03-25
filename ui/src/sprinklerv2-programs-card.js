@@ -587,19 +587,21 @@ class SprinklerProgramsCardBase extends HTMLElement {
         return `
             <div class="switch-row">
 
-            <label class="switch-item">
-                <input type="checkbox"
-                    id="enabledSwitch"
-                    ${program.enabled ? "checked" : ""}>
-                Aktiviert
-            </label>
+                <div class="switch-item">
+                    <span>Aktiviert</span>
+                    <ha-switch
+                        id="enabledSwitch"
+                        ${program.enabled ? "checked" : ""}>
+                    </ha-switch>
+                </div>
 
-            <label class="switch-item">
-                <input type="checkbox"
-                    id="weatherSwitch"
-                    ${program.weather?.enabled ? "checked" : ""}>
-                Wetter
-            </label>
+                <div class="switch-item">
+                    <span>Wetter</span>
+                    <ha-switch
+                        id="weatherSwitch"
+                        ${program.weather?.enabled ? "checked" : ""}>
+                    </ha-switch>
+                </div>
 
             </div>
         `;
@@ -1107,16 +1109,16 @@ class SprinklerProgramsCardBase extends HTMLElement {
 
             .switch-row {
                 display: flex;
-                justify-content: space-between;
+                flex-direction: column;   /* 🔥 das ist der Key */
+                gap: 10px;
                 margin-top: 10px;
             }
 
             .switch-item {
                 display: flex;
+                justify-content: space-between;
                 align-items: center;
-                gap: 6px;
-                font-size: 14px;
-                cursor: pointer;
+                width: 100%;
             }
 
             /* =========================
