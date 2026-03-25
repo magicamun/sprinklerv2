@@ -143,7 +143,7 @@ class ProgramStore:
         pid = self._next_id()
 
         ordered = copy.deepcopy(program)
-        ordered["program_id"] = pid
+        ordered["id"] = pid
 
         if not ordered.get("color"):
             ordered["color"] = self._default_program_color()

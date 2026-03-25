@@ -26,7 +26,6 @@ from homeassistant.util import dt as dt_util
 # ------------------------------------------------
 # Infra
 # ------------------------------------------------
-from pyscript.modules.infra.store.timeseries_store import TsStore
 from pyscript.modules.infra.store.hydrostore import hydro_store
 from pyscript.modules.util.datetime_utils import aware_now
 
