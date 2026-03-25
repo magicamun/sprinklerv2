@@ -1999,17 +1999,14 @@ class SprinklerProgramsCardBase extends HTMLElement {
 
         this.querySelectorAll(".program-action").forEach(el => {
 
-            let pressStart = 0;
             let pressTimer = null;
             let isLongPress = false;
 
             const icon = el.querySelector("ha-icon");
-
             const LONG_PRESS = 600;
 
             el.addEventListener("pointerdown", () => {
 
-                pressStart = Date.now();
                 isLongPress = false;
 
                 pressTimer = setTimeout(() => {
@@ -2034,7 +2031,9 @@ class SprinklerProgramsCardBase extends HTMLElement {
                 const id = Number(el.dataset.id);
                 const runId = el.dataset.run;
 
+                // -------------------------
                 // LONG PRESS → SKIP
+                // -------------------------
                 if (isLongPress) {
 
                     if (state === "queued") {
@@ -2049,8 +2048,11 @@ class SprinklerProgramsCardBase extends HTMLElement {
                     return;
                 }
 
+                // -------------------------
                 // SHORT PRESS
+                // -------------------------
 
+                // 👉 START
                 if (state !== "running") {
 
                     callServiceWithRequest(
@@ -2062,9 +2064,32 @@ class SprinklerProgramsCardBase extends HTMLElement {
                     return;
                 }
 
+                // 👉 STOP (Confirm Dialog)
                 if (!runId) return;
 
-                this._openStopDialog(runId);
+                // optional: Name holen (nice UX)
+                const entityId = this.config?.entity;
+                const sensor = this._hass.states[entityId];
+                const program = sensor?.attributes?.programs?.find(p => p.id === id);
+                const name = program?.name;
+
+                openConfirmDialog({
+                    title: "Programm stoppen",
+                    text: "Programm wirklich stoppen?",
+                    entityName: name,
+                    confirmText: "Stoppen",
+                    danger: true,
+                    parent: document.body,
+                    onConfirm: () => {
+
+                        callServiceWithRequest(
+                            this,
+                            "sprinkler_ui_program_stop",
+                            { program_run_id: runId }
+                        );
+
+                    }
+                });
 
             });
 
@@ -2081,59 +2106,6 @@ class SprinklerProgramsCardBase extends HTMLElement {
     
     getCardSize() {
         return 4;
-    }
-
-
-    _openStopDialog(runId) {
-
-        const dialog = document.createElement("ha-dialog");
-        this._closeActiveDialog();
-        this._activeDialog = dialog;
-        document.body.appendChild(dialog);
-
-        dialog.innerHTML = `
-            <div style="padding:20px;min-width:260px;text-align:center">
-
-                <h3>Programm stoppen?</h3>
-
-                <div style="margin-top:18px;display:flex;gap:10px">
-
-                    <button id="cancelBtn"
-                        style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--divider-color)">
-                        Abbrechen
-                    </button>
-
-                    <button id="stopBtn"
-                        style="flex:1;padding:10px;border-radius:10px;background:#e53935;color:white;border:none">
-                        Stop
-                    </button>
-
-                </div>
-            </div>
-        `;
-
-        this._activeDialog = dialog;
-
-        setTimeout(() => { dialog.open = true; }, 0);
-
-        dialog.querySelector("#cancelBtn").onclick = () => dialog.close();
-
-        dialog.querySelector("#stopBtn").onclick = () => {
-
-            callServiceWithRequest(
-                this,
-                "sprinkler_ui_program_stop",
-                { program_run_id: runId },
-                { closeDialog: false }
-            );
-
-            dialog.open = false;
-        };
-
-        dialog.addEventListener("closed", () => {
-            dialog.remove();
-            this._activeDialog = null;
-        });
     }
 }
 
