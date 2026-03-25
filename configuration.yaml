@@ -2,8 +2,20 @@
 # Loads default set of integrations. Do not remove.
 default_config:
 
+homeassistant:
+  name: HomeAssistant DEV
+
+zeroconf:
+  default_interface: false
+
+ssdp:
+  enabled: false
+
+dhcp:
+  enabled: false
+
 http:
-  server_port: 8123
+  server_port: 8124
   use_x_forwarded_for: true
   trusted_proxies:
     - 192.168.50.2  # IP des Nginx Reverse-Proxy im DMZ VLAN
@@ -12,7 +24,7 @@ http:
 
 # Include Packages (Garage, Roboter, Weihnachtsbeleuchtung etc.)
 homeassistant:
-  internal_url: http://192.168.10.36:8123
+  internal_url: http://192.168.10.190:8124
   packages: !include_dir_named packages
 
 browser_mod:
