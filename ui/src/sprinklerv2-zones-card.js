@@ -657,103 +657,6 @@ class SprinklerZonesCardBase extends HTMLElement {
     });
   }
 
-  openCancelDialog(zoneId, qeId) {
-    const dialog = document.createElement("ha-dialog");
-    this.appendChild(dialog);
-    setTimeout(() => { dialog.open = true; }, 0);
-
-    dialog.innerHTML = `
-      <style>
-
-        .dialog-content {
-          padding: 0;
-          min-width: 240px;
-        }
-        ha-dialog {
-          --mdc-dialog-shape-radius: 10px;
-        }
-        .dialog-header {
-          background: var(--primary-color);
-          color: white;
-          padding: 14px 20px;
-          font-size: 17px;
-          font-weight: 600;
-        }
-
-        .dialog-body {
-          padding: 18px 20px 8px 20px; /* unten weniger */
-          text-align: center;
-          font-size: 15px;
-        }
-
-        .actions {
-          display: flex;
-          padding: 12px 20px 16px 20px;
-          gap: 12px;
-        }
-
-        .action-btn {
-          flex: 1;
-          padding: 10px 0;
-          text-align: center;
-          border-radius: 10px;
-          cursor: pointer;
-          font-weight: 600;
-          border: 1px solid var(--divider-color);
-        }
-
-        .cancel-btn {
-          background: var(--card-background-color);
-        }
-
-        .danger-btn {
-          background: #e53935;
-          color: white;
-          border: none;
-        }
-
-        .action-btn:active {
-          opacity: 0.85;
-        }
-      </style>
-
-      <div class="dialog-content">
-        <div class="dialog-header">
-          Zone abbrechen
-        </div>
-
-        <div class="dialog-body">
-          Möchtest du diese Zone wirklich stoppen?
-        </div>
-
-        <div class="actions">
-          <div id="cancelBtn" class="action-btn cancel-btn">
-            Abbrechen
-          </div>
-
-          <div id="confirmBtn" class="action-btn danger-btn">
-            Stoppen
-          </div>
-        </div>
-      </div>
-    `;
-
-    setTimeout(() => dialog.show(), 0);
-
-    dialog.querySelector("#cancelBtn").addEventListener("click", () => {
-      dialog.open = false;
-    });
-
-    dialog.querySelector("#confirmBtn").addEventListener("click", () => {
-      this._activeDialog = dialog;
-      callServiceWithRequest(this, "sprinkler_ui_cancel_zone", { qe_id: qeId })
-    });
-
-    dialog.addEventListener("transitionend", () => {
-      if (!dialog.open) dialog.remove();
-    });
-  }
-
   render() {
     if (this._view === "edit") {
       this.renderEditView();
@@ -1214,7 +1117,6 @@ class SprinklerZonesCardBase extends HTMLElement {
     this.querySelectorAll(".zone-delete").forEach(el => {
       el.addEventListener("click", e => {
         const zoneId = Number(e.currentTarget.dataset.zone);
-        const row = e.currentTarget.closest(".zone-row");
         const entityId = this._getZoneEntity(zoneId);
         const zone = this._hass.states[entityId];
 
@@ -1237,8 +1139,6 @@ class SprinklerZonesCardBase extends HTMLElement {
             });
         }
         });        
-    //    this.openDeleteDialog(zoneId);
-
       });
     });
     this.querySelectorAll(".zone-edit").forEach(el => {
@@ -1293,7 +1193,32 @@ class SprinklerZonesCardBase extends HTMLElement {
         const state = this._hass.states[entityId]?.state;
 
         if (state === "running" || state === "queued") {
-          this.openCancelDialog(zoneId, qeId);
+          const zoneId = Number(e.currentTarget.dataset.zone);
+          const entityId = this._getZoneEntity(zoneId);
+          const zone = this._hass.states[entityId];
+
+          const name =
+          zone?.attributes?.zone?.name ||
+          zone?.attributes?.zone_name ||
+          `Zone ${zoneId}`;
+          openConfirmDialog({
+            title: "Zone stoppen",
+            text: "Möchtest du diese Zone wirklich stoppen?",
+            entityName: name, // 👈 wenn verfügbar!
+            confirmText: "Stoppen",
+            danger: true,
+            parent: this,
+            onConfirm: () => {
+              this._activeDialog = null;
+
+              callServiceWithRequest(
+                this,
+                "sprinkler_ui_cancel_zone",
+                { qe_id: qeId }
+              );
+
+            }
+          });
         } else {
           callServiceWithRequest(this, "sprinkler_ui_start_zone", { qe_id: qeId });
         }
