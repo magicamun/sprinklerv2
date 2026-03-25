@@ -469,15 +469,61 @@ class SprinklerZonesCardBase extends HTMLElement {
     */
     const slider = dialog.querySelector("#slider");
     const valueEl = dialog.querySelector("#value");
+    const minusBtn = dialog.querySelector("#minus");
+    const plusBtn  = dialog.querySelector("#plus");
+
+    const min = Number(slider.min);
+    const max = Number(slider.max);
 
     function updateDisplay() {
       valueEl.textContent = `${minutes} min`;
       slider.value = minutes;
     }
 
-    slider.addEventListener("change", (e) => {
-      minutes = Number(e.target.value);
-      updateDisplay();
+    let interval;
+
+    plusBtn.addEventListener("mousedown", () => {
+    interval = setInterval(() => {
+        if (minutes < max) {
+        minutes++;
+        updateDisplay();
+        }
+    }, 150);
+    });
+
+    ["mouseup","mouseleave"].forEach(evt =>
+    plusBtn.addEventListener(evt, () => clearInterval(interval))
+    );
+
+    minusBtn.addEventListener("mousedown", () => {
+    interval = setInterval(() => {
+        if (minutes > min) {
+        minutes--;
+        updateDisplay();
+        }
+    }, 150);
+    });
+
+    ["mouseup","mouseleave"].forEach(evt =>
+    minusBtn.addEventListener(evt, () => clearInterval(interval))
+    );
+
+    minusBtn?.addEventListener("click", () => {
+    if (minutes > min) {
+        minutes--;
+        updateDisplay();
+    }
+    });
+
+    plusBtn?.addEventListener("click", () => {
+    if (minutes < max) {
+        minutes++;
+        updateDisplay();
+    }
+    });
+    slider.addEventListener("input", (e) => {
+    minutes = Number(e.target.value);
+    updateDisplay();
     });
 
     dialog.querySelector("#cancelBtn").addEventListener("click", () => {
