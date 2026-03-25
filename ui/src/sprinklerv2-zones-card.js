@@ -2,6 +2,8 @@
 import { registerSprinklerFeedback } from "./sprinklerv2-events.js";
 import { callServiceWithRequest } from "./sprinklerv2-events.js";
 import { isAdmin } from "./sprinklerv2-utils.js";
+import { openConfirmDialog } from "./sprinklerv2-utils.js";
+
 
 const ZONE_TYPES = {
   lawn: "Rasen",
@@ -1212,7 +1214,31 @@ class SprinklerZonesCardBase extends HTMLElement {
     this.querySelectorAll(".zone-delete").forEach(el => {
       el.addEventListener("click", e => {
         const zoneId = Number(e.currentTarget.dataset.zone);
-        this.openDeleteDialog(zoneId);
+        const row = e.currentTarget.closest(".zone-row");
+        const entityId = this._getZoneEntity(zoneId);
+        const zone = this._hass.states[entityId];
+
+        const name =
+        zone?.attributes?.zone?.name ||
+        zone?.attributes?.zone_name ||
+        `Zone ${zoneId}`;
+
+        console.log("openConfirmDialog:", openConfirmDialog);
+        openConfirmDialog({
+        title: "Zone löschen",
+        text: "Zone wirklich löschen?",
+        entityName: name,
+        confirmText: "Löschen",
+        danger: true,
+        parent: this,
+        onConfirm: () => {
+            callServiceWithRequest(this, "sprinkler_ui_zone_delete", {
+            zone_id: zoneId
+            });
+        }
+        });        
+    //    this.openDeleteDialog(zoneId);
+
       });
     });
     this.querySelectorAll(".zone-edit").forEach(el => {

@@ -1,6 +1,7 @@
 import { registerSprinklerFeedback } from "./sprinklerv2-events.js";
 import { callServiceWithRequest } from "./sprinklerv2-events.js";
 import { isAdmin } from "./sprinklerv2-utils.js";
+import { openConfirmDialog } from "./sprinklerv2-utils.js";
 
 const IS_DEV = import.meta.env?.DEV === true;
 console.log(
@@ -681,6 +682,7 @@ class SprinklerProgramsCardBase extends HTMLElement {
             </label>
 
             <!-- OFFSET -->
+            <div class="label">Offset</div>
             <div class="offset-row ${isSun ? "" : "disabled"}">
                 <input type="range"
                     id="scheduleOffsetInput"
@@ -688,6 +690,7 @@ class SprinklerProgramsCardBase extends HTMLElement {
                     max="120"
                     step="5"
                     value="${offset}">
+
                 <div class="offset-value">
                     ${offset} min
                 </div>
@@ -804,9 +807,10 @@ class SprinklerProgramsCardBase extends HTMLElement {
             }
 
             .program-left {
-                width: 32px;
                 display: flex;
-                justify-content: center;
+                align-items: center;
+                gap: 6px;
+                width: 96px; /* wie Zones */
             }
 
             .color-dot {
@@ -1175,13 +1179,16 @@ class SprinklerProgramsCardBase extends HTMLElement {
                 gap: 10px;
             }
 
-            .offset-row.disabled {
-                opacity: 0.4;
-                pointer-events: none;
-            }
-
             .offset-row input[type="range"] {
                 flex: 1;
+            }
+
+            .offset-value {
+                width: 60px;
+                text-align: right;
+                font-size: 13px;
+                opacity: 0.7;
+                font-variant-numeric: tabular-nums;
             }
 
             .offset-value {
@@ -1256,6 +1263,23 @@ class SprinklerProgramsCardBase extends HTMLElement {
             }
 
             /* --- Slider (Zeile 2 links) --- */
+
+            .slider-block {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .slider-block input[type="range"] {
+                width: 100%;
+            }
+
+            .slider-block .slider-value {
+                text-align: right;
+                font-size: 13px;
+                opacity: 0.7;
+                font-variant-numeric: tabular-nums;
+            }
 
             .zone-slider {
                 grid-column: 2;
@@ -1393,6 +1417,26 @@ class SprinklerProgramsCardBase extends HTMLElement {
         `;
     }
 
+    _rowSliderFull(label, id, value, min, max, unit = "", step = 1) {
+        return `
+            <div class="slider-block">
+
+                <div class="label">${label}</div>
+
+                <input type="range"
+                    id="${id}"
+                    min="${min}"
+                    max="${max}"
+                    step="${step}"
+                    value="${value}">
+
+                <div class="slider-value">
+                    ${value} ${unit}
+                </div>
+
+            </div>
+        `;
+    }
     _rowToggle(label, id, checked) {
         return `
             <div class="detail-row toggle-row">
@@ -1770,19 +1814,19 @@ class SprinklerProgramsCardBase extends HTMLElement {
 
                 <div class="program-left">
                     <div class="color-dot" style="background:${color}"></div>
+
+
+                    ${admin ? `
+                    <div class="program-admin">
+                        <div class="program-delete" data-id="${program.id}" title="${this._getAdminTooltip('delete')}">
+                            <ha-icon icon="mdi:trash-can-outline"></ha-icon>
+                        </div>
+                        <div class="program-edit" data-id="${program.id}" title="${this._getAdminTooltip('edit')}">
+                            <ha-icon icon="mdi:cog-outline"></ha-icon>
+                        </div>
+                    </div>                
+                    `: ""}
                 </div>
-
-                ${admin ? `
-                <div class="program-admin">
-                    <div class="program-delete" data-id="${program.id}" title="${this._getAdminTooltip('delete')}">
-                        <ha-icon icon="mdi:trash-can-outline"></ha-icon>
-                    </div>
-                    <div class="program-edit" data-id="${program.id}" title="${this._getAdminTooltip('edit')}">
-                        <ha-icon icon="mdi:cog-outline"></ha-icon>
-                    </div>
-                </div>                
-                `: ""}
-
                 <div class="program-center">
 
                     <div class="program-name">
@@ -1918,6 +1962,37 @@ class SprinklerProgramsCardBase extends HTMLElement {
             });
         });
 
+        this.querySelectorAll(".program-delete").forEach(el => {
+            el.addEventListener("click", e => {
+
+                const programId = Number(e.currentTarget.dataset.id);
+
+                const entityId = this.config?.entity;
+                const sensor = entityId ? this._hass.states[entityId] : null;
+                const programs = sensor?.attributes?.programs || [];
+
+                const program = programs.find(p => p.id === programId);
+                const name = program?.name || `#${programId}`;
+
+                openConfirmDialog({
+                title: "Programm löschen",
+                text: "Programm wirklich löschen?",
+                entityName: name,
+                confirmText: "Löschen",
+                danger: true,
+                parent: document.body,   // 👈 wichtig!
+                onConfirm: () => {
+                    callServiceWithRequest(
+                    this,
+                    "sprinkler_ui_program_delete",
+                    { program_id: programId }
+                    );
+                }
+                });
+
+            });
+        });
+
         // -------------------------------
         // PROGRAM ACTION (tap / hold)
         // -------------------------------
@@ -2008,134 +2083,6 @@ class SprinklerProgramsCardBase extends HTMLElement {
         return 4;
     }
 
-    _openDeleteDialog(programId) {
-
-        const entityId = this.config?.entity;
-        const sensor = entityId ? this._hass.states[entityId] : null;
-        const programs = sensor?.attributes?.programs || [];
-        const program = programs.find(p => p.id === programId);
-
-        const name = program?.name || `#${programId}`;
-
-        const dialog = document.createElement("ha-dialog");
-        document.body.appendChild(dialog);
-
-        dialog.innerHTML = `
-            <style>
-
-            .dialog-content {
-                padding: 0;
-                min-width: 260px;
-            }
-
-            ha-dialog {
-                --mdc-dialog-shape-radius: 12px;
-            }
-
-            .dialog-header {
-                background: var(--primary-color);
-                color: white;
-                padding: 14px 20px;
-                font-size: 17px;
-                font-weight: 600;
-            }
-
-            .dialog-body {
-                padding: 18px 20px 8px 20px;
-                text-align: center;
-                font-size: 15px;
-            }
-
-            .program-name {
-                font-weight: 600;
-                margin-top: 6px;
-            }
-
-            .actions {
-                display: flex;
-                padding: 12px 20px 16px 20px;
-                gap: 12px;
-            }
-
-            .action-btn {
-                flex: 1;
-                padding: 10px 0;
-                text-align: center;
-                border-radius: 10px;
-                cursor: pointer;
-                font-weight: 600;
-                border: 1px solid var(--divider-color);
-            }
-
-            .cancel-btn {
-                background: var(--card-background-color);
-            }
-
-            .danger-btn {
-                background: #e53935;
-                color: white;
-                border: none;
-            }
-
-            .action-btn:active {
-                opacity: 0.85;
-            }
-
-            </style>
-
-            <div class="dialog-content">
-
-            <div class="dialog-header">
-                Programm löschen
-            </div>
-
-            <div class="dialog-body">
-                Wirklich löschen?
-                <div class="program-name">
-                ${name}
-                </div>
-            </div>
-
-            <div class="actions">
-
-                <div id="cancelBtn" class="action-btn cancel-btn">
-                Abbrechen
-                </div>
-
-                <div id="confirmBtn" class="action-btn danger-btn">
-                Löschen
-                </div>
-
-            </div>
-
-            </div>
-        `;
-
-        this._activeDialog = dialog;
-
-        setTimeout(() => dialog.show(), 0);
-
-        dialog.querySelector("#cancelBtn").addEventListener("click", () => {
-            dialog.open = false;
-        });
-
-        dialog.querySelector("#confirmBtn").addEventListener("click", () => {
-
-            callServiceWithRequest(
-            this,
-            "sprinkler_ui_program_delete",
-            { program_id: programId },
-            { closeDialog: false }   // wir schließen manuell
-            );
-
-            dialog.close();
-        });
-
-        dialog.addEventListener("closed", () => {
-            dialog.remove();
-            this._activeDialog = null;
-        });
-    }
 
     _openStopDialog(runId) {
 
