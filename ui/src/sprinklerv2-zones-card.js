@@ -894,7 +894,8 @@ class SprinklerZonesCardBase extends HTMLElement {
 
         </div>
 
-        <div class="detail-container">
+        <div class="detail-content">
+          <div class="detail-block">
             ${this._rowToggle("Aktiviert", "enabledInput", z.enabled)}
             ${this._rowSelect(
               "Switch",
@@ -916,6 +917,7 @@ class SprinklerZonesCardBase extends HTMLElement {
               z.type || "lawn"
             )}
 
+            <div class="divider"></div>
 
             ${this._rowSliderCompact(
               "Laufzeit",
@@ -934,6 +936,8 @@ class SprinklerZonesCardBase extends HTMLElement {
               30,
               "mm/h"
             )}
+
+            <div class="divider"></div>
 
             ${this._rowStepper(
               "Load",
@@ -962,7 +966,7 @@ class SprinklerZonesCardBase extends HTMLElement {
               "",
               0.1
             )}
-
+          </div>
         </div>
       </ha-card>
     `;
@@ -1483,12 +1487,24 @@ class SprinklerZonesCardBase extends HTMLElement {
           width: 100%;
           background: transparent;
         }
-        .detail-container {
-          background: #ffffff;
-          border-radius: 14px;
-          padding: 12px 14px;
-          margin-top: 8px;
-          border: 1px solid #e6e6e6;
+
+        .detail-content {
+            padding: 10px 14px;
+        }
+
+        .detail-block {
+            background: white;
+            border-radius: 14px;
+            border: 1px solid #e6e6e6;
+            padding: 14px 16px;
+            margin-bottom: 18px;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--divider-color);
+            margin: 14px 0;
+            opacity: 0.35;
         }
 
         .detail-row {
