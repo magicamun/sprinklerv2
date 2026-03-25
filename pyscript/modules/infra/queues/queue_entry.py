@@ -20,6 +20,7 @@ class ForecastContribution:
     deficit: float
 
     weight: float
+    weighted_deficit: float
 
 @dataclass
 class RuntimeReason:

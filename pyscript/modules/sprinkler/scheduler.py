@@ -738,6 +738,8 @@ class SprinklerCore():
             f"Adapt program {program_run_id} | recalc={recalc_durations}"
         )
 
+        today = dt_date.today().isoformat()
+
         slots = {}
 
         # 🔹 Entries pro Slot aus active_queue sammeln
@@ -787,8 +789,7 @@ class SprinklerCore():
                     if soil is None:
                         soil = soil_optimal
 
-                #    deficit, details = TsStore.adaptation_deficit(zone_key, soil_optimal, eto_factor=zone.get("eto_factor", 1.0), rain_factor=zone.get("rain_factor", 1.0), explain=True)
-                    deficit, details = adaptation_deficit(hydro_store, zone_key, soil_optimal, eto_factor=zone.get("eto_factor", 1.0), rain_factor=zone.get("rain_factor", 1.0), explain=True)
+                    deficit, details = self.adaptation_deficit(hydro_store, zone_key, soil_optimal, eto_factor=zone.get("eto_factor", 1.0), rain_factor=zone.get("rain_factor", 1.0), explain=True)
                 
                     deficit = min(deficit, soil_capacity)
 
@@ -808,7 +809,7 @@ class SprinklerCore():
                             soil=details["soil"],
                             soil_optimal=details["soil_optimal"],
                             deficit_today=details["deficit_today"],
-                            weighted_deficit=details["weighted_deficit"],
+                            weighted_deficit=details.get("weighted_deficit", 0),
                             precip_rate_mm_h=zone.get("precipitation_rate_mm_per_hour", 0),
                             runtime_seconds=new_duration,
                             forecast=forecast_items
@@ -902,7 +903,7 @@ class SprinklerCore():
         # ------------------------
         days = hydro_store.get_days("global")
 
-        future_days = [d for d in days if d > today][:len(weights)-1]
+        future_days = [d for d in days if d >= today][:len(weights)-1]
 
         for i, d in enumerate(future_days):
 
@@ -916,12 +917,12 @@ class SprinklerCore():
 
             if d == today:
                 irrigation = (
-                    (hydro_store.get(zone_key, "irrigation_mm", "forecast", None, d) or 0) +
-                    (hydro_store.get(zone_key, "irrigation_mm", "observed", None, today) or 0)
+                    hydro_store._sum_values(hydro_store.get(zone_key, "irrigation_mm", "forecast", None, d)) +
+                    hydro_store._sum_values(hydro_store.get(zone_key, "irrigation_mm", "observed", None, today))
                 )
             else:
                 irrigation = (
-                    (hydro_store.get(zone_key, "irrigation_mm", "forecast", None, d) or 0)
+                    hydro_store._sum_values(hydro_store.get(zone_key, "irrigation_mm", "forecast", None, d))
                 )            
 
             soil = soil + rain_eff + irrigation - eto_eff
@@ -931,6 +932,14 @@ class SprinklerCore():
 
             details["forecast"].append({
                 "date": d,
+                "eto": eto or 0,
+                "rain": rain or 0,
+                "prob": prob or 0,
+                "rain_effective": rain_eff,
+                "irrigation_planned": irrigation or 0,
+                "weight": weights[i+1],
+                "weighted_deficit": deficit_sum,
+                # optional (für Debug/UI nice)
                 "soil_after": soil,
                 "deficit": deficit
             })
