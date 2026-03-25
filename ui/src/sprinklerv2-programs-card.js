@@ -780,6 +780,7 @@ class SprinklerProgramsCardBase extends HTMLElement {
                 justify-content: center;
                 cursor: pointer;
                 border-radius: 10px;
+                flex-shrink: 0;
             }
 
             .save-btn {
@@ -1138,12 +1139,11 @@ class SprinklerProgramsCardBase extends HTMLElement {
             ========================= */
 
             .title-row {
-                display: flex;
-                align-items: center;
-                gap: 10px;
                 flex: 1;
+                display: flex;
                 justify-content: center;
-                min-width: 0;
+                align-items: center;
+                gap: 8px;
             }
 
             .title-text {
