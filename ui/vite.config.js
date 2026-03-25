@@ -1,0 +1,31 @@
+import { defineConfig } from "vite";
+import { resolve } from "path";
+
+export default defineConfig({
+  server: {
+    host: true,
+    port: 5173,
+    strictPort: true,
+    cors: true,
+  },
+
+  build: {
+    outDir: "../www/sprinklerv2",
+    emptyOutDir: true,
+
+    rollupOptions: {
+      input: {
+        "sprinklerv2-timeline-card": resolve(__dirname, "src/sprinklerv2-timeline-card.js"),
+        "sprinklerv2-zones-card": resolve(__dirname, "src/sprinklerv2-zones-card.js"),
+        "sprinklerv2-programs-card": resolve(__dirname, "src/sprinklerv2-programs-card.js"),
+      },
+
+      output: {
+        entryFileNames: "[name].js",
+        chunkFileNames: "[name].js",
+        format: "es",
+        manualChunks: undefined
+      },
+    },
+  },
+});
