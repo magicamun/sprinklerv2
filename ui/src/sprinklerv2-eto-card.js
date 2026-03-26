@@ -36,7 +36,7 @@ class SprinklerEToCard extends HTMLElement {
     const level   = explanation.level || "low";
     const factors = explanation.factors || [];
     const icon = this._getIcon(level);
-    
+
     this.innerHTML = `
       <ha-card>
         ${this._styles()}
@@ -144,7 +144,13 @@ class SprinklerEToCard extends HTMLElement {
 
         .eto-icon.high {
           color: #E53935;
+          animation: pulse 1.5s infinite;
         }
+        @keyframes pulse {
+        0%   { transform: scale(1); }
+        50%  { transform: scale(1.15); }
+        100% { transform: scale(1); }
+        }          
       </style>
     `;
   }
