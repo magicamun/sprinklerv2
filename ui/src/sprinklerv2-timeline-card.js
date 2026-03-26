@@ -133,6 +133,7 @@ function mapSensorEvents(sensorEvents) {
       policy: e.policy,
       state: e.state,
       slot: e.slot,
+      load: e.load ?? 1,
     };
   });
 }
@@ -148,7 +149,8 @@ function packProgramLanes(events) {
         programName: e.programName ?? "Unbenannt",
         programColor: e.programColor ?? e.program_color ?? "9e9e9e",
         events: [],
-        slotCount: 0
+//        slotCount: 0,
+        maxLoad: 1
       });
     }
 
@@ -160,7 +162,11 @@ function packProgramLanes(events) {
     const slots = new Set(
       program.events.map(e => e.slot ?? 0)
     );
-    program.slotCount = slots.size;
+//    program.slotCount = slots.size;
+      // 🔥 max load bestimmen
+    program.maxLoad = Math.max(
+      ...program.events.map(e => (e.slot ?? 0) + (e.load ?? 1))
+    );
   }
 
   return Array.from(programs.values())
@@ -621,12 +627,19 @@ class SprinklerTimelineCardBase extends HTMLElement {
     // Lanes und vertikale Geometrie
     const programLanes = packProgramLanes(normalizedEvents);
 
-    const strictSlotCount = programLanes.reduce(
+/*    const strictSlotCount = programLanes.reduce(
       (sum, p) => sum + p.slotCount,
       0
     );
 
     const strictHeight = strictSlotCount * EVENT_ROW_HEIGHT;
+*/
+    const strictLoadCount = programLanes.reduce(
+      (sum, p) => sum + p.maxLoad,
+      0
+    );
+
+    const strictHeight = strictLoadCount * EVENT_ROW_HEIGHT;
 
     const headerHeight =
       HEADER_ROW_HEIGHT +
@@ -809,8 +822,11 @@ class SprinklerTimelineCardBase extends HTMLElement {
       // const color = getProgramColor(program.programId);
       const color = program.programColor || "#9e9e9e";
 
+//      const programHeight =
+//        program.slotCount * EVENT_ROW_HEIGHT;
+
       const programHeight =
-        program.slotCount * EVENT_ROW_HEIGHT;
+          program.maxLoad * EVENT_ROW_HEIGHT;
 
       // 🔷 Lane Hintergrund im labelLayer
       const bg = document.createElement("div");
@@ -872,12 +888,15 @@ class SprinklerTimelineCardBase extends HTMLElement {
         const width = Math.max(right - left, 6);
 
         const bar = document.createElement("div");
+
+        const height = (EVENT_ROW_HEIGHT * (e.load ?? 1)) -4;
+
         bar.style.cssText = `
           position:absolute;
           left:${left}px;
           top:${(slotTop + 2)}px;
 
-          height:${EVENT_ROW_HEIGHT - 4}px;
+          height:${height}px;
           width:${width}px;
           background:${color};
           
@@ -885,7 +904,7 @@ class SprinklerTimelineCardBase extends HTMLElement {
           color:white;
           font-size:12px;
           padding-left:6px;
-          line-height:${EVENT_ROW_HEIGHT - 4}px;
+          line-height:${height}px;
           white-space:nowrap;
           overflow:hidden;
           z-index:1;
@@ -935,7 +954,8 @@ class SprinklerTimelineCardBase extends HTMLElement {
         this.timelineLayer.appendChild(bar);
       }
 
-      currentTop += program.slotCount * EVENT_ROW_HEIGHT;
+      // currentTop += program.slotCount * EVENT_ROW_HEIGHT;
+      currentTop += program.maxLoad * EVENT_ROW_HEIGHT;
     }
 
     // Now-Line einmal anlegen

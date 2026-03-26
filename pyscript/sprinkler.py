@@ -1300,6 +1300,7 @@ def entry_to_timeline_event(entry):
         "state": status,
         "start": start.isoformat() if start else None,
         "slot": entry.slot,
+        "load": entry.load,
         "end": end.isoformat() if end else None,
         "program_color": entry.program_color,
         "program_run_index": entry.program_run_index,
