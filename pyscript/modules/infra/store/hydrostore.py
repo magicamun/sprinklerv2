@@ -6,11 +6,8 @@ from datetime import date as dt_date, datetime, timedelta
 
 
 from pyscript.modules.sprinkler.sprinkler_config import (
-    TODAY_FILE, HISTORY_FILE, MAX_HISTORY_DAYS
+    HYDRO_FILE, MAX_HISTORY_DAYS
 )
-
-TODAY_FILE = Path("/config/sprinkler/hydro_today.json")
-HISTORY_FILE = Path("/config/sprinkler/hydro_history.json")
 
 log_store           = logging.getLogger("pyscript.sprinkler.hydrostore")
 
@@ -60,12 +57,12 @@ class HydroStore:
     # ------------------------------------------------
     def _load_today(self):
 
-        if not TODAY_FILE.exists():
+        if not HYDRO_FILE.exists():
             self.today = {}
             return
 
-        size = os.path.getsize(TODAY_FILE)
-        fd = os.open(str(TODAY_FILE), os.O_RDONLY)
+        size = os.path.getsize(HYDRO_FILE)
+        fd = os.open(str(HYDRO_FILE), os.O_RDONLY)
 
         try:
             data = os.read(fd, size)
@@ -90,7 +87,7 @@ class HydroStore:
         payload = json.dumps(self.today, indent=2).encode("utf-8")
 
         try:
-            self._write_file(TODAY_FILE, payload, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
+            self._write_file(HYDRO_FILE, payload, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
         finally:
             log_store.info(f"Store Today geschrieben")
 

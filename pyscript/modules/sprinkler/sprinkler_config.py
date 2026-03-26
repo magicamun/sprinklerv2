@@ -16,8 +16,6 @@ SENSOR_PROGRAMS_DEBUG   = f"{SENSOR_PREFIX}_program_queue"
 # ------------------------------------------------
 # Soil model
 # ------------------------------------------------
-SENSOR_ETO_YESTERDAY    = "pyscript.irrigation_eto_raw_local"
-SENSOR_RAIN_YESTERDAY   = "sensor.regen_mm_gestern"
 INPUT_SOIL_CAPACITY     = "input_number.soil_capacity_mm"
 INPUT_SOIL_OPTIMAL      = "input_number.soil_optimal_mm"
 DEFAULT_SOIL_MM         = 20.0
@@ -28,8 +26,7 @@ DEFAULT_DEFICIT_MM      = 0.0
 # ------------------------------------------------
 CONFIG_DIR              = Path("/config/sprinkler")
 
-TODAY_FILE              = CONFIG_DIR / "irrigation_today.json"
-HISTORY_FILE            = CONFIG_DIR / "irrigation_history.jsonl"
+HYDRO_FILE              = CONFIG_DIR / "hydro.json"
 
 DONE_FILE               = CONFIG_DIR / "done_queue.jsonl"
 ZONE_FILE               = CONFIG_DIR / "zonesv2.json"
