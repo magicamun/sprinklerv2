@@ -1372,6 +1372,16 @@ def update_sun_times():
 
     return sun_times
 
+@state_trigger("input_number.sprinkler_capacity")
+def capacity_changed(value=None, old_value=None):
+    if value == old_value:
+        return
+
+    log_sprinkler.info(f"[CAPA] changed {old_value} → {value}")
+    # Alle QE's abbrechen (cancel) - das führt zu neuplanung im n. Tick
+  
+    sprinkler_core.remove_all_active()
+
 @time_trigger("cron(10 0 * * *)")  # 00:10 täglich
 def update_sun_times_daily():
     scheduler_context.sun_times = update_sun_times()

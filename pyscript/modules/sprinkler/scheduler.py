@@ -320,7 +320,7 @@ class SprinklerCore():
 
         elif reason == "remove":
             entry.status = "removed"
-            entry.program_id = None
+            # entry.program_id = None
         else:
             # cancel
             entry.actual_end = now
@@ -355,7 +355,7 @@ class SprinklerCore():
         if entry.program_id and entry.source.startswith("program:"):
             is_last_zone = entry.zone_index == entry.zone_count
             is_last_run = entry.program_run_index == entry.program_run_count
-
+            log_scheduler.info(f"Entry-Source: {entry.zone_name} {entry.source} {entry.zone_index} {entry.zone_count} {is_last_zone} {entry.program_run_index} {entry.program_run_count} {is_last_run}")
             if is_last_zone and is_last_run:        
                 await self._maybe_reschedule_program(entry.program_id)
                 log_scheduler.info(
@@ -601,7 +601,14 @@ class SprinklerCore():
             else:
                 continue
 
-    def request_cancel_qe(self, qe_id: str) -> bool:
+    def remove_all_active(self):
+        c = len(self.active_queue.all())
+
+        log_scheduler.info(f"[REPLAN] removing {c} queue entries")  
+        for qe in self.active_queue.all():
+            self.request_remove_qe(qe.qe_id, force_all=True)
+
+    def request_cancel_qe(self, qe_id: str, force_all: bool = False) -> bool:
 
         entry = self.active_queue.get(qe_id)
 
@@ -609,13 +616,30 @@ class SprinklerCore():
             log_scheduler.warning(f"Cancel failed: QE {qe_id} not found")
             return False
 
-        if entry.status not in ("queued", "running"):
+        if entry.status not in ("queued", "running") and not force_all:
             log_scheduler.warning(
                 f"Cancel ignored: QE {qe_id} status={entry.status}"
             )
             return False
 
         entry.status = "cancel"
+        return True
+
+    def request_remove_qe(self, qe_id: str, force_all: bool = False) -> bool:
+
+        entry = self.active_queue.get(qe_id)
+
+        if not entry:
+            log_scheduler.warning(f"Remove failed: QE {qe_id} not found")
+            return False
+
+        if entry.status not in ("queued", "running") and not force_all:
+            log_scheduler.warning(
+                f"Cancel ignored: QE {qe_id} status={entry.status}"
+            )
+            return False
+
+        entry.status = "remove"
         return True
 
     def compute_program_conflict_delta(self, entries: list[QueueEntry]):
