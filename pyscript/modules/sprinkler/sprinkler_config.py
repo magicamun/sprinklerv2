@@ -12,6 +12,9 @@ SENSOR_DEFICIT_KIND     = "deficit"
 SENSOR_TIMELINE         = f"{SENSOR_PREFIX}_timeline"
 MANUAL_COLOR            = "#546E7A"
 SENSOR_PROGRAMS_DEBUG   = f"{SENSOR_PREFIX}_program_queue"
+SENSOR_HYDRO_ETO        = f"{SENSOR_PREFIX}_hydro_eto"
+SENSOR_HYDRO_RAIN       = f"{SENSOR_PREFIX}_hydro_rain"
+SENSOR_HYDRO_SOIL       = f"{SENSOR_PREFIX}_hydro_soil"
 
 # ------------------------------------------------
 # Soil model

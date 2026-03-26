@@ -14,8 +14,10 @@ from collections import defaultdict
 from pyscript.openmeteo import fetch_openmeteo
 from pyscript.modules.infra.store.hydrostore import hydro_store
 
-SOIL_CAPACITY           = float(state.get("input_number.soil_capacity_mm"))
-SOIL_OPTIMAL            = float(state.get("input_number.soil_optimal_mm"))
+from pyscript.modules.sprinkler.sprinkler_config import SENSOR_HYDRO_ETO, SENSOR_HYDRO_RAIN, SENSOR_HYDRO_SOIL, INPUT_SOIL_CAPACITY, INPUT_SOIL_OPTIMAL
+
+SOIL_CAPACITY           = float(state.get(INPUT_SOIL_CAPACITY))
+SOIL_OPTIMAL            = float(state.get(INPUT_SOIL_OPTIMAL))
 
 log_eto           = logging.getLogger("pyscript.etoengine")
 
@@ -547,6 +549,50 @@ class EToEngine:
     # -----------------------------
     # Projections
     # -----------------------------
+    def build_eto_explanation(self, eto, temperature, humidity, sun_hours):
+        # --- Level ---
+        if eto <= 1.2:
+            level_key = "low"
+            level_label = "Sehr geringer Wasserbedarf"
+        elif eto <= 3:
+            level_key = "medium"
+            level_label = "Mäßiger Wasserbedarf"
+        else:
+            level_key = "high"
+            level_label = "Hoher Wasserbedarf"
+
+        # --- Faktoren ---
+        if sun_hours > 6:
+            sun_label = "viel Sonne"
+        elif sun_hours > 2:
+            sun_label = "etwas Sonne"
+        else:
+            sun_label = "kaum Sonne"
+
+        if temperature > 20:
+            temp_label = "warm"
+        elif temperature > 10:
+            temp_label = "mild"
+        else:
+            temp_label = "kühl"
+
+        if humidity < 50:
+            humidity_label = "trockene Luft"
+        elif humidity < 75:
+            humidity_label = "normale Luftfeuchte"
+        else:
+            humidity_label = "hohe Luftfeuchte"
+
+        return {
+            "level": level_key,
+            "label": level_label,
+            "factors": [
+                sun_label,
+                temp_label,
+                humidity_label
+            ]
+        }
+
     def project_today_sensors(self):
 
         today = self.store.today.get("date")
@@ -576,23 +622,50 @@ class EToEngine:
             soil = SOIL_OPTIMAL
 
         # ------------------------
+        # Temperatur
+        # ------------------------
+
+        temp = self.store.get("global", "temp_c", "derived", "median", today)
+
+        # ------------------------
+        # Humidity
+        # ------------------------
+
+        hum = self.store.get("global", "humidity_pct", "derived", "median", today)
+
+        # ------------------------
+        # Humidity
+        # ------------------------
+
+        sun = self.store.get("global", "sun_hours", "derived", "median", today)
+        
+        # ------------------------
         # SENSOR WRITE
         # ------------------------
 
+        explanation = {}
+
+        if eto is not None and hum is not None and temp is not None and sun is not None:
+           explanation = self.build_eto_explanation(eto, temp, hum, sun)
+
         if eto is not None:
             state.set(
-                "sensor.irrigation_eto_median1",
+                SENSOR_HYDRO_ETO,
                 round(eto, 2),
                 {
                     "friendly_name": "ETo Median",
                     "unit_of_measurement": "mm",
-                    "state_class": "measurement"
+                    "state_class": "measurement",
+                    "temperature": temp,
+                    "humidity": hum,
+                    "sun_hours": sun,
+                    "explanation": explanation,
                 }
             )
 
         if rain is not None:
             state.set(
-                "sensor.irrigation_rain_median1",
+                SENSOR_HYDRO_RAIN,
                 round(rain, 2),
                 {
                     "friendly_name": "Rain Today",
@@ -603,7 +676,7 @@ class EToEngine:
 
         if soil is not None:
             state.set(
-                "sensor.irrigation_soil1",
+                SENSOR_HYDRO_SOIL,
                 round(soil, 2),
                 {
                     "friendly_name": "Soil Balance",
@@ -611,6 +684,7 @@ class EToEngine:
                     "state_class": "measurement"
                 }
             )
+      
 
     def project_chart_sensor(self, entity_id, series, unit):
 
@@ -652,6 +726,18 @@ class EToEngine:
 
 etoengine = EToEngine(hydro_store)
 
+@state_trigger(
+    "input_number.soil_capacity_mm",
+    "input_number.soil_optimal_mm"
+)
+def soil_params_changed(var_name=None, value=None, old_value=None):
+
+    log.info(f"[CONFIG] {var_name} changed: {old_value} → {value}")
+
+    SOIL_CAPACITY           = float(state.get(INPUT_SOIL_CAPACITY))
+    SOIL_OPTIMAL            = float(state.get(INPUT_SOIL_OPTIMAL))
+
+
 @time_trigger("cron(5 * * * *)")
 def etoengine_collecthourly():
     etoengine.prune()
@@ -664,6 +750,7 @@ def etoengine_collecthourly():
 
 @time_trigger("startup")
 def etoengine_startup():
+
     etoengine.prune()
 
     etoengine.collect_all_sources()
