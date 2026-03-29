@@ -986,7 +986,7 @@ class SprinklerCore():
         entries = self.active_queue.all()
 
         if not entries:
-            self._dirty_irrigation = False
+#            self._dirty_irrigation = False
             return
 
         # --------------------------------
@@ -1030,8 +1030,21 @@ class SprinklerCore():
                 round(irrigation_mm, 2)
             )
 
-        self._dirty_irrigation = False
+    #    self._dirty_irrigation = False
             
+    def compute_soil_all_zones(self, zone_store, hydro_store):
+
+        soil_min = self.context.soil_margins.get("minimum") or 0
+        soil_opt = self.context.soil_margins.get("optimal") or 20
+        soil_max = self.context.soil_margins.get("capacity") or 30
+
+        for zone in zone_store.all().values():
+            zone_id  = zone["zone_id"]
+            zone_key = f"zone:{zone_id}"
+
+            # Today and Forecast
+            hydro_store.compute_soil_all_days(soil_min, soil_opt, soil_max, zone_key, force_all = False) 
+
     def apply_irrigation_to_zone(self, zone_id: int, runtime_seconds: float):
 
         zone = zone_store.get(zone_id)
@@ -1200,7 +1213,7 @@ class SprinklerCore():
     # Scheduler-Tick
     # -------------------------------------------------
     async def tick(self, is_active: bool):
-        self._dirty_planned_irrigation = False
+        # self._dirty_irrigation = False
         # MIG global sprinkler_scheduler_running
         """
         Scheduler-Loop für die Bewässerungs-Queue
@@ -1243,6 +1256,7 @@ class SprinklerCore():
 
         if self._dirty_irrigation:
             self.rebuild_irrigation_forecast(forecast_days = 7)
+            self.compute_soil_all_zones(zone_store, hydro_store)
 
         # sort_active_queue()
 

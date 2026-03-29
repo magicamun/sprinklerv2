@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import math
 from pathlib import Path
 from datetime import date as dt_date, datetime, timedelta
 
@@ -132,58 +133,190 @@ class HydroStore:
         self._dirty = True
         self.save_today()
 
-    # ---------------------------------------------------------
-    # Soil berechnen "ab heute" Startwert gestern oder Default
-    # ---------------------------------------------------------
-    def compute_soil_all_days(self, scope, soil_min, soil_opt, soil_max):
+    # -----------------------------
+    # CORE: FAO-56-Light (Stub)
+    # -----------------------------
+    def calculate_eto_fao56_light(self, data: dict, latitude: float, day: str) -> float:
+        """
+        FAO-56-Light Reference Evapotranspiration (mm/day)
+        Uses temperature, humidity, sun hours, fixed wind.
+        """
+
+        # -----------------------------
+        # Input
+        # -----------------------------
+        t_mean = data["temp_c"]
+        rh_mean = data.get("humidity_pct", 60)
+        wind = data["wind_ms"]
+        sun_hours = data.get("sun_hours")
+
+        # -----------------------------
+        # Constants
+        # -----------------------------
+        G = 0.0  # soil heat flux (daily)
+        gamma = 0.066  # psychrometric constant (kPa/°C)
+        albedo = 0.23
+
+        # -----------------------------
+        # Saturation vapour pressure
+        # -----------------------------
+        es = 0.6108 * math.exp((17.27 * t_mean) / (t_mean + 237.3))
+        ea = es * (rh_mean / 100.0)
+        delta = (4098 * es) / ((t_mean + 237.3) ** 2)
+
+        # -----------------------------
+        # Extraterrestrial radiation
+        # -----------------------------
+        # day_of_year = datetime.now().timetuple().tm_yday
+        day_of_year = datetime.fromisoformat(day).timetuple().tm_yday
+        lat_rad = math.radians(latitude)
+
+        dr = 1 + 0.033 * math.cos(2 * math.pi / 365 * day_of_year)
+        solar_dec = 0.409 * math.sin(2 * math.pi / 365 * day_of_year - 1.39)
+        ws = math.acos(-math.tan(lat_rad) * math.tan(solar_dec))
+
+        ra = (
+            24 * 60 / math.pi
+            * 0.0820
+            * dr
+            * (
+                ws * math.sin(lat_rad) * math.sin(solar_dec)
+                + math.cos(lat_rad) * math.cos(solar_dec) * math.sin(ws)
+            )
+        )
+
+        # -----------------------------
+        # Solar radiation from sun hours
+        # -----------------------------
+        if sun_hours is not None:
+            n = sun_hours
+            N = 24 / math.pi * ws
+            rs = (0.25 + 0.5 * (n / N)) * ra
+        else:
+            rs = 0.75 * ra  # fallback
+
+        rns = (1 - albedo) * rs
+        rnl = 4.903e-9 * ((t_mean + 273.16) ** 4) * (0.34 - 0.14 * math.sqrt(ea))
+        rn = rns - rnl
+
+        # -----------------------------
+        # Penman-Monteith (reduced)
+        # -----------------------------
+        eto = (
+            (0.408 * delta * (rn - G))
+            + gamma * (900 / (t_mean + 273)) * wind * (es - ea)
+        ) / (delta + gamma * (1 + 0.34 * wind))
+
+        log_store.info(f"ETo inputs: T={t_mean} RH={rh_mean} Sun={sun_hours} Wind={wind}")
+        log_store.info(f"ETo result: {eto:.2f} mm")
+        
+        return max(0.0, eto)
+
+    def compute_eto_for_day(self, latitude: float, day):
+
+        scope = "global"
+        results = {}
+
+        # 🔥 bereits vorhandene direkte ETo holen
+        direct_eto = self.get(scope, "eto_mm", "observed", date=day)
+
+        if direct_eto:
+            results.setdefault("observed", {}).update(direct_eto)
+
+        # 🔥 klassische Berechnung für andere Quellen
+        variants = self.get_variants(scope, "temp_c", day)
+
+        for variant in variants:
+
+            sources = self.get_sources(scope, "temp_c", variant, day)
+
+            for source in sources:
+
+                # 🔥 skip wenn schon direct vorhanden
+                if source in results.get(variant, {}):
+                    continue
+
+                try:
+                    temp = self.get(scope, "temp_c", variant, source, day)
+                    hum  = self.get(scope, "humidity_pct", variant, source, day)
+                    wind = self.get(scope, "wind_ms", variant, source, day)
+                    sun  = self.get(scope, "sun_hours", variant, source, day)
+
+                    if temp is None or hum is None:
+                        continue
+
+                    eto = self.calculate_eto_fao56_light({
+                        "temp_c": temp,
+                        "humidity_pct": hum,
+                        "wind_ms": wind,
+                        "sun_hours": sun,
+                    }, latitude, day)
+
+                    results.setdefault(variant, {})[source] = round(eto, 3)
+
+                except Exception as e:
+                    log_store.error(f"ETo failed {day} {variant}/{source}: {e}")
+
+        # 🔥 WRITE BACK
+        for variant, sources in results.items():
+            for source, value in sources.items():
+                self.write("global", "eto_mm", variant, source, value, day)
+
+        return results
+        
+    def compute_eto_all_days(self, latitude, force_all: bool = False):
+
+        scope = "global"
+        today = dt_date.today().isoformat()
 
         days = self.get_days(scope)
 
-        if not days:
-            return
+        results = {}
 
-        days = sorted(days)
+        for day in sorted(days):
+            if day < today and not force_all:
+                continue
 
-        # ------------------------
-        # LOOP
-        # ------------------------
+            try:
+                results[day] = self.compute_eto_for_day(latitude, day)
 
-        for day in days:
+            except Exception as e:
+                log_store.error(f"ETo failed for day {day}: {e}")
+        
+        return results
+
+    def compute_soil_for_day(self, scope, soil_min, soil_opt, soil_max, day):
             prev_day = (datetime.fromisoformat(day).date() - timedelta(days=1)).isoformat()
 
             soil_prev = self.get(scope, "soil_mm", "derived", "model", prev_day)
+            log_store.info(f"Compute 0 {scope} Soil for day {day} P:{soil_prev}")
 
             if soil_prev is None:
                 soil_prev = soil_opt
+
             # ------------------------
             # ETo
             # ------------------------
-            eto = self.get(scope, "eto_mm", "derived", "current", day)
+            #eto = self.get(scope, "eto_mm", "derived", "current", day)
 
-            if eto is None:
-                eto = self.get(scope, "eto_mm", "derived", "median", day)
+            #if eto is None:
+            eto = self.get("global", "eto_mm", "derived", "median", day) or 0
 
             # ------------------------
             # Rain
             # ------------------------
-            rain = self.get(scope, "rain_mm", "derived", "median", day)
+            rain = self.get("global", "rain_mm", "derived", "median", day) or 0
 
             # ------------------------
             # Irrigation
             # ------------------------
-            irrigation = (
-                self.today
-                .get(day, {})
-                .get(scope, {})
-                .get("irrigation_mm", {})
-                .get(scope, 0)
-            )
+            irrigation = self.get(scope, "irrigation_mm", "derived", "median", prev_day) or 0
 
             # ------------------------
             # SKIP wenn kein ETo
             # ------------------------
             if eto is None:
-                continue
+                return
 
             # ------------------------
             # Compute
@@ -193,6 +326,22 @@ class HydroStore:
             soil = max(soil_min, min(soil, soil_max))
 
             self.write(scope, "soil_mm", "derived", "model", round(soil, 2), day)     
+
+    def compute_soil_all_days(self, soil_min, soil_opt, soil_max, scope: str = "global", force_all: bool = False):
+
+        today = dt_date.today().isoformat()
+
+        days = self.get_days(scope)
+
+        for day in sorted(days):
+            if day < today and not force_all:
+                continue
+            
+            try:
+                self.compute_soil_for_day(scope, soil_min, soil_opt, soil_max, day)
+
+            except Exception as e:
+                log_store.error(f"Soil {scope} failed for day {day}: {e}")
 
     # ------------------------------------------------
     # Zonen, Irrigation
@@ -589,7 +738,7 @@ class HydroStore:
     # ------------------------------------------------
     def build_series(self, scope, key, days=None, start=None, end=None):
 
-        result = []
+        result = {}
 
         all_days = self.get_days(scope)
         if not all_days:
@@ -621,8 +770,8 @@ class HydroStore:
             # ------------------------
             # TODAY → current
             # ------------------------
-            if day == today:
-                value = self.get(scope, key, "derived", "current", day)
+            #if day == today:
+            #    value = self.get(scope, key, "derived", "current", day)
 
             # ------------------------
             # FUTURE → median
@@ -653,99 +802,17 @@ class HydroStore:
                     if vals:
                         value = self._median(vals)
 
-            result.append({
-                "date": day,
-                "value": value
-            })
+            if value is not None:
+                result[day] = value
 
-        log_store.info(f"build_series: {result}")
+            #result.append({
+            #    "date": day,
+            #    "value": value
+            #})
+
+        log_store.info(f"build_series: {scope} {key} {result}")
         return result
-                        
-    def build_soil_series(self, zone_key, soil_min, soil_max, start=None, end=None):
-
-        from datetime import date as dt_date
-
-        today = dt_date.today().isoformat()
-
-        days = self.get_days("global")
-        days = sorted(days)
-
-        if start:
-            days = [d for d in days if d >= start]
-        if end:
-            days = [d for d in days if d <= end]
-
-        if not days:
-            return {}
-
-        # ------------------------
-        # STARTWERT = gestern
-        # ------------------------
-        soil = self.get_yesterday(zone_key, "soil_mm", "model")
-
-        if soil is None:
-            soil = self.get_yesterday("global", "soil_mm", "model")
-
-        if soil is None:
-            soil = soil_max  # fallback
-
-        series = {}
-
-        for d in days:
-
-            eto  = self.get("global", "eto_mm",  "derived", "median", d) or 0
-            rain = self.get("global", "rain_mm", "derived", "median", d) or 0
-            prob = self.get("global", "prob_pct","derived", "median", d) or 0
-
-            rain_eff = rain * (prob / 100)
-
-            irrigation_fc = self._sum_values(self.get(zone_key, "irrigation_mm", "forecast", None, d))
-
-            irrigation_obs = 0
-            if d == today:
-                irrigation_obs = self._sum_values(self.get(zone_key, "irrigation_mm", "observed", None, d))
-
-            irrigation = irrigation_fc + irrigation_obs
-
-            # ------------------------
-            # Simulation
-            # ------------------------
-            soil = soil + rain_eff + irrigation - eto
-            soil = max(soil_min, min(soil, soil_max))
-
-            series[d] = round(soil, 2)
-
-        return series
-
-    def build_irrigation_series(self, zone_key, start=None, end=None):
-
-        from datetime import date as dt_date
-
-        today = dt_date.today().isoformat()
-
-        days = self.get_days("global")
-        days = sorted(days)
-
-        if start:
-            days = [d for d in days if d >= start]
-        if end:
-            days = [d for d in days if d <= end]
-
-        series = {}
-
-        for d in days:
-
-            fc = self._sum_values(self.get(zone_key, "irrigation_mm", "forecast", None, d))
-
-            obs = 0
-            if d == today:
-                obs = self._sum_values(self.get(zone_key, "irrigation_mm", "observed", None, d))
-
-            series[d] = round(fc + obs, 2)
-
-        return series
-
-
+                    
 hydro_store = HydroStore()
 log_store.info("=== HYDROSTORE DEBUG ===")
 log_store.info(dir(hydro_store))

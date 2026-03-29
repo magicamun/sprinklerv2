@@ -1144,9 +1144,6 @@ def project_all_zone_charts(zone_store, hydro_store):
 
     zones = zone_store.all()
 
-    soil_min = float(state.get("input_number.soil_min_mm"))
-    soil_max = float(state.get("input_number.soil_capacity_mm"))
-
     today = date.today()
     start = (today - timedelta(days=9)).isoformat()
     end   = (today + timedelta(days=4)).isoformat()
@@ -1156,19 +1153,8 @@ def project_all_zone_charts(zone_store, hydro_store):
         zone_id = zone["zone_id"]
         zone_key = f"zone:{zone_id}"
 
-        soil_series = hydro_store.build_soil_series(
-            zone_key,
-            soil_min,
-            soil_max,
-            start,
-            end
-        )
-
-        irrigation_series = hydro_store.build_irrigation_series(
-            zone_key,
-            start,
-            end
-        )
+        soil_series = hydro_store.build_series(zone_key, "soil_mm", start=start, end=end)
+        irrigation_series = hydro_store.build_series(zone_key, "irrigation_mm", start=start, end=end)
 
         state.set(
             f"sensor.irrigation_chart_zone_{zone_id:02d}_soil",
@@ -1190,6 +1176,20 @@ def project_all_zone_charts(zone_store, hydro_store):
 
 
 # ----------- Soil, Deficit --------------
+@service  
+def rebuild_soil_all():
+    soil_min = scheduler_context.soil_margins.get("minimum") or 0
+    soil_opt = scheduler_context.soil_margins.get("optimal") or 20
+    soil_max = scheduler_context.soil_margins.get("capacity") or 30
+
+    days = hydro_store.get_days("global")
+
+    for day in sorted(days):
+        hydro_store.compute_soil_for_day("global", soil_min, soil_opt, soil_max, day)
+        for zone in zone_store.all().values():
+            zone_id  = zone["zone_id"]
+            zone_key = f"zone:{zone_id}"
+            hydro_store.compute_soil_for_day(zone_key, soil_min, soil_opt, soil_max, day)
 
 def apply_daily_balance_if_needed(zone_store, hydro_store):
 
@@ -1336,7 +1336,8 @@ def project_timeline():
 # -------------- ETo, Soil_Water, Deficit
 @time_trigger("cron(05 00 * * *)") # 00:05 täglich
 def irrigation_daily():
-    apply_daily_balance_if_needed(zone_store, hydro_store)
+    # apply_daily_balance_if_needed(zone_store, hydro_store)
+    sprinkler_core.compute_soil_all_zones(zone_store, hydro_store)
 
 def update_soil_margins():
     soil_margins = {
@@ -1423,7 +1424,8 @@ def sprinkler_startup():
     # 2️⃣ erste Projektionen
     project_all_zones(zone_store)
     
-    apply_daily_balance_if_needed(zone_store, hydro_store)
+    sprinkler_core.compute_soil_all_zones(zone_store, hydro_store)
+    # apply_daily_balance_if_needed(zone_store, hydro_store)
 
     project_all_programs(program_store, sprinkler_core)
     
@@ -1463,13 +1465,20 @@ async def sprinkler_scheduler_loop():
             if sprinkler_core:
                 sprinkler_core.update_context(scheduler_context)
 
+            sprinkler_core._dirty_irrigation = False
+
             await sprinkler_core.tick(is_active)
 
             project_sprinkler_core()
             project_all_zones(zone_store)
-            project_all_zone_charts(zone_store, hydro_store)
+                
             project_all_programs(program_store, sprinkler_core)
             project_timeline()
+
+            if sprinkler_core._dirty_irrigation:
+                project_all_zone_charts(zone_store, hydro_store)
+                sprinkler_core._dirty_irrigation = False
+
             # Debug Sensor
             # program_queue_debug()
             await task.sleep(1)

@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 LATITUDE  = hass.config.latitude
 LONGITUDE = hass.config.longitude
 
-ETO_TRIGGER_TIME = "23:55"
+
 ETO_MIN_MM = 1.0
 ETO_MAX_MM = 8.0
 
@@ -199,8 +199,6 @@ class EToEngine:
 
         # Weather integrations -> ISO datetime
         return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
-       
-    import math
 
     def rh_from_dewpoint(self, temp_c, dew_point_c):
 
@@ -383,170 +381,6 @@ class EToEngine:
             log_eto.error(f"Forecast collect failed: {e}")
 
     # -----------------------------
-    # CORE: FAO-56-Light (Stub)
-    # -----------------------------
-    def calculate_eto_fao56_light(self, data: dict, latitude: float) -> float:
-        """
-        FAO-56-Light Reference Evapotranspiration (mm/day)
-        Uses temperature, humidity, sun hours, fixed wind.
-        """
-
-        # -----------------------------
-        # Input
-        # -----------------------------
-        t_mean = data["temp_c"]
-        rh_mean = data.get("humidity_pct", 60)
-        wind = data["wind_ms"]
-        sun_hours = data.get("sun_hours")
-
-        # -----------------------------
-        # Constants
-        # -----------------------------
-        G = 0.0  # soil heat flux (daily)
-        gamma = 0.066  # psychrometric constant (kPa/°C)
-        albedo = 0.23
-
-        # -----------------------------
-        # Saturation vapour pressure
-        # -----------------------------
-        es = 0.6108 * math.exp((17.27 * t_mean) / (t_mean + 237.3))
-        ea = es * (rh_mean / 100.0)
-        delta = (4098 * es) / ((t_mean + 237.3) ** 2)
-
-        # -----------------------------
-        # Extraterrestrial radiation
-        # -----------------------------
-        day_of_year = datetime.now().timetuple().tm_yday
-        lat_rad = math.radians(latitude)
-
-        dr = 1 + 0.033 * math.cos(2 * math.pi / 365 * day_of_year)
-        solar_dec = 0.409 * math.sin(2 * math.pi / 365 * day_of_year - 1.39)
-        ws = math.acos(-math.tan(lat_rad) * math.tan(solar_dec))
-
-        ra = (
-            24 * 60 / math.pi
-            * 0.0820
-            * dr
-            * (
-                ws * math.sin(lat_rad) * math.sin(solar_dec)
-                + math.cos(lat_rad) * math.cos(solar_dec) * math.sin(ws)
-            )
-        )
-
-        # -----------------------------
-        # Solar radiation from sun hours
-        # -----------------------------
-        if sun_hours is not None:
-            n = sun_hours
-            N = 24 / math.pi * ws
-            rs = (0.25 + 0.5 * (n / N)) * ra
-        else:
-            rs = 0.75 * ra  # fallback
-
-        rns = (1 - albedo) * rs
-        rnl = 4.903e-9 * ((t_mean + 273.16) ** 4) * (0.34 - 0.14 * math.sqrt(ea))
-        rn = rns - rnl
-
-        # -----------------------------
-        # Penman-Monteith (reduced)
-        # -----------------------------
-        eto = (
-            (0.408 * delta * (rn - G))
-            + gamma * (900 / (t_mean + 273)) * wind * (es - ea)
-        ) / (delta + gamma * (1 + 0.34 * wind))
-
-        log_eto.info(f"ETo inputs: T={t_mean} RH={rh_mean} Sun={sun_hours} Wind={wind}")
-        log_eto.info(f"ETo result: {eto:.2f} mm")
-        
-        return max(0.0, eto)
-
-    def compute_eto_for_day(self, day):
-
-        scope = "global"
-        results = {}
-
-        # 🔥 bereits vorhandene direkte ETo holen
-        direct_eto = self.store.get(scope, "eto_mm", "observed", date=day)
-
-        if direct_eto:
-            results.setdefault("observed", {}).update(direct_eto)
-
-        # 🔥 klassische Berechnung für andere Quellen
-        variants = self.store.get_variants(scope, "temp_c", day)
-
-        for variant in variants:
-
-            sources = self.store.get_sources(scope, "temp_c", variant, day)
-
-            for source in sources:
-
-                # 🔥 skip wenn schon direct vorhanden
-                if source in results.get(variant, {}):
-                    continue
-
-                try:
-                    temp = self.store.get(scope, "temp_c", variant, source, day)
-                    hum  = self.store.get(scope, "humidity_pct", variant, source, day)
-                    wind = self.store.get(scope, "wind_ms", variant, source, day)
-                    sun  = self.store.get(scope, "sun_hours", variant, source, day)
-
-                    if temp is None or hum is None:
-                        continue
-
-                    eto = self.calculate_eto_fao56_light({
-                        "temp_c": temp,
-                        "humidity_pct": hum,
-                        "wind_ms": wind,
-                        "sun_hours": sun
-                    }, LATITUDE)
-
-                    results.setdefault(variant, {})[source] = round(eto, 3)
-
-                except Exception as e:
-                    log_eto.error(f"ETo failed {day} {variant}/{source}: {e}")
-
-        # 🔥 WRITE BACK
-        for variant, sources in results.items():
-            for source, value in sources.items():
-                self.store.write("global", "eto_mm", variant, source, value, day)
-
-        return results
-        
-    def compute_eto_all_days(self):
-
-        scope = "global"
-
-        days = self.store.get_days(scope)
-
-        results = {}
-
-        for day in sorted(days):
-
-            try:
-                results[day] = self.compute_eto_for_day(day)
-
-            except Exception as e:
-                log_eto.error(f"ETo failed for day {day}: {e}")
-
-    def compute_soil(self):
-
-        scope = "global"
-
-        soil_min = 0
-        soil_opt = SOIL_OPTIMAL
-        soil_max = SOIL_CAPACITY
-
-        try:
-            self.store.compute_soil_all_days(
-                scope,
-                soil_min,
-                soil_opt,
-                soil_max
-            )
-        except Exception as e:
-            log_eto.error(f"Soil computation failed: {e}")        
-
-    # -----------------------------
     # Projections
     # -----------------------------
     def build_eto_explanation(self, eto, temperature, humidity, sun_hours):
@@ -688,18 +522,18 @@ class EToEngine:
 
     def project_chart_sensor(self, entity_id, series, unit):
 
-        data = {
-            e["date"]: e["value"]
-            for e in series
-            if e and e.get("value") is not None
-        }
+        #data = {
+        #    e["date"]: e["value"]
+        #    for e in series
+        #    if e and e.get("value") is not None
+        #}
 
         state.set(
             entity_id,
             0,
             {
                 "unit_of_measurement": unit,
-                **data
+                **series
             }
         )
 
@@ -738,13 +572,15 @@ def soil_params_changed(var_name=None, value=None, old_value=None):
     SOIL_OPTIMAL            = float(state.get(INPUT_SOIL_OPTIMAL))
 
 
-@time_trigger("cron(5 * * * *)")
+# @time_trigger("cron(5 * * * *)")
 def etoengine_collecthourly():
     etoengine.prune()
 
     etoengine.collect_all_sources()
-    etoengine.compute_eto_all_days()
-    etoengine.compute_soil()
+
+    hydro_store.compute_eto_all_days(LATITUDE)
+    hydro_store.compute_soil_all_days(soil_min = 0, soil_opt = SOIL_OPTIMAL, soil_max = SOIL_CAPACITY, scope="global", force_all = False)
+
     etoengine.project_today_sensors()
     etoengine.project_global_chart_sensors()
 
@@ -754,7 +590,9 @@ def etoengine_startup():
     etoengine.prune()
 
     etoengine.collect_all_sources()
-    etoengine.compute_eto_all_days()
-    etoengine.compute_soil()
+
+    hydro_store.compute_eto_all_days(LATITUDE)
+    hydro_store.compute_soil_all_days(soil_min = 0, soil_opt = SOIL_OPTIMAL, soil_max = SOIL_CAPACITY, scope="global", force_all = False)
+
     etoengine.project_today_sensors()
     etoengine.project_global_chart_sensors()
