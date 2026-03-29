@@ -1453,6 +1453,7 @@ def sprinkler_scheduler_start():
 async def sprinkler_scheduler_loop():
     global sprinkler_scheduler_running
 
+    sprinkler_core._dirty_irrigation = True
     log_sprinkler.info("Scheduler started")
     sprinkler_scheduler_running = True
 
@@ -1464,8 +1465,6 @@ async def sprinkler_scheduler_loop():
             scheduler_context.soil_margins = update_soil_margins()
             if sprinkler_core:
                 sprinkler_core.update_context(scheduler_context)
-
-            sprinkler_core._dirty_irrigation = False
 
             await sprinkler_core.tick(is_active)
 
