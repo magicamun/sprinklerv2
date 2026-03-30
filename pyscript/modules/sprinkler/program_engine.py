@@ -119,7 +119,7 @@ class ProgramEngine:
             log_engine.info(f"Expand Zone, found id {zone_id}, {idx}")
             planned_duration = z["planned_duration"]
 
-            log_engine.info(f"ZONE_DATA: {zone}")
+            log_engine.debug(f"ZONE_DATA: {zone}")
 
             src = f"program:{program_id}:{day_str}:{idx}"
 
@@ -168,7 +168,7 @@ class ProgramEngine:
                 program_color = program.get("color")
             )
 
-            log_engine.info(f"Wetter - enabled: {qe.weather_enabled} {program_weather_enabled}, Load: {qe.load}")
+            log_engine.debug(f"Wetter - enabled: {qe.weather_enabled} {program_weather_enabled}, Load: {qe.load}")
 
             entries.append(qe)
 

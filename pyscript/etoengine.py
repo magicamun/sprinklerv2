@@ -572,7 +572,7 @@ def soil_params_changed(var_name=None, value=None, old_value=None):
     SOIL_OPTIMAL            = float(state.get(INPUT_SOIL_OPTIMAL))
 
 
-# @time_trigger("cron(5 * * * *)")
+@time_trigger("cron(5 * * * *)")
 def etoengine_collecthourly():
     etoengine.prune()
 

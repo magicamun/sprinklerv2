@@ -27,7 +27,7 @@ class HydroStore:
             os.write(fd, payload)
         finally:
             os.close(fd)
-            log_store.info(f"File {path} geschrieben")        
+            log_store.debug(f"File {path} geschrieben")        
 
     def _now_ts(self):
         return datetime.utcnow().isoformat() + "Z"
@@ -207,8 +207,8 @@ class HydroStore:
             + gamma * (900 / (t_mean + 273)) * wind * (es - ea)
         ) / (delta + gamma * (1 + 0.34 * wind))
 
-        log_store.info(f"ETo inputs: T={t_mean} RH={rh_mean} Sun={sun_hours} Wind={wind}")
-        log_store.info(f"ETo result: {eto:.2f} mm")
+        log_store.debug(f"ETo inputs: T={t_mean} RH={rh_mean} Sun={sun_hours} Wind={wind}")
+        log_store.debug(f"ETo result: {eto:.2f} mm")
         
         return max(0.0, eto)
 
@@ -289,7 +289,6 @@ class HydroStore:
             prev_day = (datetime.fromisoformat(day).date() - timedelta(days=1)).isoformat()
 
             soil_prev = self.get(scope, "soil_mm", "derived", "model", prev_day)
-            log_store.info(f"Compute 0 {scope} Soil for day {day} P:{soil_prev}")
 
             if soil_prev is None:
                 soil_prev = soil_opt
@@ -372,9 +371,7 @@ class HydroStore:
         changed = False
 
         for day, day_block in self.today.items():
-            log_store.info(f"Clear Forecst irrigaton")
             for scope, scope_block in day_block.items():
-                log_store.info(f"Clear Forecst irrigaton Scope {scope}")
                 irrigation = scope_block.get("irrigation_mm")
                 if not irrigation:
                     continue
@@ -810,11 +807,8 @@ class HydroStore:
             #    "value": value
             #})
 
-        log_store.info(f"build_series: {scope} {key} {result}")
+        log_store.debug(f"build_series: {scope} {key} {result}")
         return result
                     
 hydro_store = HydroStore()
-log_store.info("=== HYDROSTORE DEBUG ===")
-log_store.info(dir(hydro_store))
-log_store.info(hydro_store.__class__)
-log_store.info(hydro_store.__class__.__module__)
+
