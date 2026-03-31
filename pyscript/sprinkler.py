@@ -1464,7 +1464,7 @@ async def sprinkler_scheduler_loop():
         zone_id  = zone["zone_id"]
         zone_key = f"zone:{zone_id}"
 
-        hydro_store.mark_zone_dirty(self, zone_key)
+        hydro_store.mark_zone_dirty(zone_key)
 
     try:
         while sprinkler_scheduler_running:
