@@ -1453,7 +1453,7 @@ def sprinkler_scheduler_start():
 async def sprinkler_scheduler_loop():
     global sprinkler_scheduler_running
 
-    sprinkler_core._dirty_irrigation = True
+    # sprinkler_core._dirty_irrigation = True
     log_sprinkler.info("Scheduler started")
     sprinkler_scheduler_running = True
 
@@ -1474,9 +1474,13 @@ async def sprinkler_scheduler_loop():
             project_all_programs(program_store, sprinkler_core)
             project_timeline()
 
-            if sprinkler_core._dirty_irrigation:
+            dirty_zones = hydro_store.consume_dirty("zones")
+            if dirty_zones:
                 project_all_zone_charts(zone_store, hydro_store)
-                sprinkler_core._dirty_irrigation = False
+
+#            if sprinkler_core._dirty_irrigation:
+#                project_all_zone_charts(zone_store, hydro_store)
+#                sprinkler_core._dirty_irrigation = False
 
             # Debug Sensor
             # program_queue_debug()
