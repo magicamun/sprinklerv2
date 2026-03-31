@@ -1458,7 +1458,7 @@ async def sprinkler_scheduler_loop():
     sprinkler_scheduler_running = True
 
     # set store dirty
-    hydro_store.mark_global_dirty(self)
+    hydro_store.mark_global_dirty()
 
     for zone in zone_store.all().values():
         zone_id  = zone["zone_id"]
