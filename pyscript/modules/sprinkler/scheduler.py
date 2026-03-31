@@ -69,7 +69,7 @@ class SprinklerCore():
         self.program_engine = ProgramEngine(self.program_queue)
 
         self.used = 0
-        self._dirty_irrigation = True
+        # self._dirty_irrigation = True
 
         self.context = SchedulerContext(
             capacity = 1,
@@ -450,7 +450,7 @@ class SprinklerCore():
             entry = self.active_queue.get(qe_id)
             if entry:
                 await self._stop_zone(entry)     # <- neue Methode im Scheduler
-            self._dirty_irrigation = True
+            # self._dirty_irrigation = True
 
     async def _process_manual_enqueue(self):
         to_enqueue = []
@@ -480,7 +480,11 @@ class SprinklerCore():
             log_scheduler.info(
                 f"Queued QE {active_entry.qe_id} ({active_entry.zone_name})"
             )
-            self._dirty_irrigation = True
+
+            zone_key = f"zone:{entry.zone_id}"
+            hydro_store.mark_zone_dirty(zone_key)
+
+            # self._dirty_irrigation = True
 
     async def _process_running(self):
         now = aware_now()
@@ -724,7 +728,11 @@ class SprinklerCore():
         for e in entries:
             log_scheduler.info(f"[program-enqueue] zone {e.qe_id, e.zone_name, e.status} ")
             self.enqueue_strict_entry(e, delta)
-            self._dirty_irrigation = True
+
+            zone_key = f"zone:{e.zone_id}"
+            hydro_store.mark_zone_dirty(zone_key)
+
+            # self._dirty_irrigation = True
 
         self.program_queue.remove_block(block)
 
@@ -981,7 +989,7 @@ class SprinklerCore():
         # --------------------------------
         # 1. Forecast löschen
         # --------------------------------
-        hydro_store.clear_forecast_irrigation()
+        hydro_store.clear_forecast_irrigation_all_zones()
 
         entries = self.active_queue.all()
 
@@ -1254,9 +1262,21 @@ class SprinklerCore():
         # -------------------------
         await self._process_running()
 
-        if self._dirty_irrigation:
-            self.rebuild_irrigation_forecast(forecast_days = 7)
-            self.compute_soil_all_zones(zone_store, hydro_store)
+        dirty_zones = hydro_store.consume_dirty("zones")
+
+        if dirty_zones:
+            # 2. Forecast löschen
+            hydro_store.clear_forecast_irrigation_all_zones(dirty_zones)
+
+            # 3. neue Änderungen holen (durch clear entstanden)
+            dirty_zones = hydro_store.consume_dirty("zones")
+
+            if dirty_zones:
+                compute_soil_all_zones(zone_store, hydro_store)
+
+#        if self._dirty_irrigation:
+#            self.rebuild_irrigation_forecast(forecast_days = 7)
+#            self.compute_soil_all_zones(zone_store, hydro_store)
 
         # sort_active_queue()
 

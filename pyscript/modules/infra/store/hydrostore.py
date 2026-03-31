@@ -16,9 +16,68 @@ class HydroStore:
 
     def __init__(self):
         self.today = {}
-        self._dirty = False
+        self._dirty_persist = False
+        self._dirty_state = {
+            "global": False,
+            "zones": set()
+        }
         self._load_today()
 
+    def consume_dirty(self, kind=None):
+
+        if kind == "global":
+            val = self._dirty_state["global"]
+            self._dirty_state["global"] = False
+            return val
+
+        if kind == "zones":
+            zones = set(self._dirty_state["zones"])
+            self._dirty_state["zones"].clear()
+            return zones
+
+        # alles
+        global_dirty = self._dirty_state["global"]
+        zones = set(self._dirty_state["zones"])
+
+        self._dirty_state["global"] = False
+        self._dirty_state["zones"].clear()
+
+        return global_dirty, zones
+
+    def mark_zone_dirty(self, zone_key):
+
+        if not zone_key:
+            return
+
+        if zone_key not in self._dirty_state["zones"]:
+            self._dirty_state["zones"].add(zone_key)
+            log_store.debug(f"Zone dirty gesetzt: {zone_key}")
+
+    def mark_zones_dirty(self, zone_keys):
+
+        if not zone_keys:
+            return
+
+        for zone_key in zone_keys:
+            if zone_key not in self._dirty_state["zones"]:
+                self._dirty_state["zones"].add(zone_key)
+
+        log_store.debug(f"Zonen dirty gesetzt: {zone_keys}")
+
+    def mark_all_zones_dirty(self, zone_store):
+
+        zone_keys = [f"zone:{z['zone_id']}" for z in zone_store.all().values()]
+
+        self._dirty_state["zones"].update(zone_keys)
+
+        log_store.debug("Alle Zonen dirty gesetzt")
+
+    def mark_global_dirty(self):
+
+        if not self._dirty_state["global"]:
+            self._dirty_state["global"] = True
+            log_store.debug("Global dirty gesetzt")
+                        
     def _write_file(self, path: Path, payload: bytes, flags):
         fd = os.open(str(path), flags, 0o644)
         try:
@@ -93,13 +152,13 @@ class HydroStore:
             log_store.info(f"Store Today geschrieben")
 
     def save_today(self):
-        if not self._dirty:
+        if not self._dirty_persist:
                 return
         try:
             task.executor(self._save_today)
         except NameError:
             self._save_today()
-            self._dirty = False
+            self._dirty_persist = False
 
     def _median(self, values):
 
@@ -130,7 +189,7 @@ class HydroStore:
             if datetime.fromisoformat(d).date() >= cutoff
         }
 
-        self._dirty = True
+        self._dirty_persist = True
         self.save_today()
 
     # -----------------------------
@@ -286,45 +345,45 @@ class HydroStore:
         return results
 
     def compute_soil_for_day(self, scope, soil_min, soil_opt, soil_max, day):
-            prev_day = (datetime.fromisoformat(day).date() - timedelta(days=1)).isoformat()
+        prev_day = (datetime.fromisoformat(day).date() - timedelta(days=1)).isoformat()
 
-            soil_prev = self.get(scope, "soil_mm", "derived", "model", prev_day)
+        soil_prev = self.get(scope, "soil_mm", "derived", "model", prev_day)
 
-            if soil_prev is None:
-                soil_prev = soil_opt
+        if soil_prev is None:
+            soil_prev = soil_opt
 
-            # ------------------------
-            # ETo
-            # ------------------------
-            #eto = self.get(scope, "eto_mm", "derived", "current", day)
+        # ------------------------
+        # ETo
+        # ------------------------
+        #eto = self.get(scope, "eto_mm", "derived", "current", day)
 
-            #if eto is None:
-            eto = self.get("global", "eto_mm", "derived", "median", day) or 0
+        #if eto is None:
+        eto = self.get("global", "eto_mm", "derived", "median", day) or 0
 
-            # ------------------------
-            # Rain
-            # ------------------------
-            rain = self.get("global", "rain_mm", "derived", "median", day) or 0
+        # ------------------------
+        # Rain
+        # ------------------------
+        rain = self.get("global", "rain_mm", "derived", "median", day) or 0
 
-            # ------------------------
-            # Irrigation
-            # ------------------------
-            irrigation = self.get(scope, "irrigation_mm", "derived", "median", prev_day) or 0
+        # ------------------------
+        # Irrigation
+        # ------------------------
+        irrigation = self.get(scope, "irrigation_mm", "derived", "median", prev_day) or 0
 
-            # ------------------------
-            # SKIP wenn kein ETo
-            # ------------------------
-            if eto is None:
-                return
+        # ------------------------
+        # SKIP wenn kein ETo
+        # ------------------------
+        if eto is None:
+            return
 
-            # ------------------------
-            # Compute
-            # ------------------------
-            soil = soil_prev + (rain or 0) + irrigation - eto
+        # ------------------------
+        # Compute
+        # ------------------------
+        soil = soil_prev + (rain or 0) + irrigation - eto
 
-            soil = max(soil_min, min(soil, soil_max))
+        soil = max(soil_min, min(soil, soil_max))
 
-            self.write(scope, "soil_mm", "derived", "model", round(soil, 2), day)     
+        self.write(scope, "soil_mm", "derived", "model", round(soil, 2), day)     
 
     def compute_soil_all_days(self, soil_min, soil_opt, soil_max, scope: str = "global", force_all: bool = False):
 
@@ -345,6 +404,61 @@ class HydroStore:
     # ------------------------------------------------
     # Zonen, Irrigation
     # ------------------------------------------------
+    def clear_forecast_irrigation_for_zone(self, zone_key, day=None):
+
+        changed = False
+
+        days = [day] if day else list(self.today.keys())
+
+        for d in days:
+            day_block = self.today.get(d, {})
+            scope_block = day_block.get(zone_key)
+
+            if not scope_block:
+                continue
+
+            irrigation = scope_block.get("irrigation_mm")
+            if not irrigation:
+                continue
+
+            # ------------------------
+            # forecast löschen
+            # ------------------------
+            if "forecast" in irrigation:
+                del irrigation["forecast"]
+                changed = True
+
+            # ------------------------
+            # derived löschen (wichtig!)
+            # ------------------------
+            if "derived" in irrigation:
+                del irrigation["derived"]
+                changed = True
+
+            # optional: leere Struktur aufräumen
+            if not irrigation:
+                scope_block.pop("irrigation_mm", None)
+
+        if changed:
+            self._dirty_persist = True
+            self.mark_zone_dirty(zone_key)
+
+        return changed
+        
+    def clear_forecast_irrigation_all_zones(self, zone_keys, day=None):
+
+        any_changed = False
+
+        for zone_key in zone_keys:
+            changed = self.clear_forecast_irrigation_for_zone(zone_key, day=day)
+            if changed:
+                any_changed = True
+
+        if any_changed:
+            self.save_today()
+
+        return any_changed
+        
     def add_actual_irrigation(self, zone_key, value):
 
         today = dt_date.today().isoformat()
@@ -366,28 +480,35 @@ class HydroStore:
             today
         )
         
-    def clear_forecast_irrigation(self):
+    
+#    def clear_forecast_irrigation(self):
+#
+#        changed = False
+#
+#        for day, day_block in self.today.items():
+#            for scope, scope_block in day_block.items():
+#                irrigation = scope_block.get("irrigation_mm")
+#                if not irrigation:
+#                    continue
+#
+#                if "forecast" in irrigation:
+#                    del irrigation["forecast"]
+#                    changed = True
+#
+#                if "derived" in irrigation:
+#                    del irrigation["derived"]
+#                    changed = True
+#
+#
+#        if changed:
+#            self._dirty_persist = True
+#            self.save_today()
 
-        changed = False
-
-        for day, day_block in self.today.items():
-            for scope, scope_block in day_block.items():
-                irrigation = scope_block.get("irrigation_mm")
-                if not irrigation:
-                    continue
-
-                if "forecast" in irrigation:
-                    del irrigation["forecast"]
-                    changed = True
-
-                if "derived" in irrigation:
-                    del irrigation["derived"]
-                    changed = True
-
-
-        if changed:
-            self._dirty = True
-            self.save_today()
+        # 👉 fachliches dirty
+        #if scope == "global":
+        #    self._dirty_state["global"] = True
+        #else:
+        #    self._dirty_state["zones"].add(scope)
 
     def add_forecast_irrigation(self, forecast_date, zone_key, mm):
 
@@ -427,8 +548,14 @@ class HydroStore:
         self._update_derived_median(today, scope, key)
         self._update_derived_current(today, scope, key)
 
-        self._dirty = True
+        self._dirty_persist = True
         self.save_today()
+
+        # 👉 fachliches dirty
+        if scope == "global":
+            self.mark_global_dirty()
+        else:
+            self.mark_zone_dirty(zone_key)
 
     def write_forecast(self, forecast_date, scope, key, source, value):
 
@@ -444,8 +571,14 @@ class HydroStore:
         self._update_derived_median(forecast_date, scope, key)
         self._update_derived_current(forecast_date, scope, key)
 
-        self._dirty = True
+        self._dirty_persist = True
         self.save_today()
+
+        # 👉 fachliches dirty
+        if scope == "global":
+            self.mark_global_dirty()
+        else:
+            self.mark_zone_dirty(zone_key)
 
     def write(self, scope, key, variant, source, value, day):
 
@@ -467,8 +600,16 @@ class HydroStore:
         self._update_derived_median(day, scope, key)
         self._update_derived_current(day, scope, key)
 
-        self._dirty = True
+        # persist_dirty
+        self._dirty_persist = True
         self.save_today()
+
+        # 👉 fachliches dirty
+        if scope == "global":
+            self.mark_global_dirty()
+        else:
+            self.mark_zone_dirty(zone_key)
+
 
     def get(self, scope, key, kind, source=None, date=None):
 
@@ -645,7 +786,7 @@ class HydroStore:
             "ts": self._now_ts()
         }
 
-        self._dirty = True
+        self._dirty_persist = True
 
     def _compute_current(self, day, scope, key):
 
