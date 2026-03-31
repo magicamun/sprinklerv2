@@ -1457,6 +1457,15 @@ async def sprinkler_scheduler_loop():
     log_sprinkler.info("Scheduler started")
     sprinkler_scheduler_running = True
 
+    # set store dirty
+    hydro_store.mark_global_dirty(self)
+
+    for zone in zone_store.all().values():
+        zone_id  = zone["zone_id"]
+        zone_key = f"zone:{zone_id}"
+
+        hydro_store.mark_zone_dirty(self, zone_key)
+
     try:
         while sprinkler_scheduler_running:
             is_active = sprinkler_is_active()
