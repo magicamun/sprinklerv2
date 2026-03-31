@@ -70,6 +70,8 @@ class SprinklerCore():
 
         self.used = 0
         # self._dirty_irrigation = True
+        hydro_store.mark_global_dirty()
+
 
         self.context = SchedulerContext(
             capacity = 1,
@@ -1261,18 +1263,6 @@ class SprinklerCore():
         # 3) Running entries prüfen (Laufzeitende)
         # -------------------------
         await self._process_running()
-
-        dirty_zones = hydro_store.consume_dirty("zones")
-
-        if dirty_zones:
-            # 2. Forecast löschen
-            hydro_store.clear_forecast_irrigation_all_zones(dirty_zones)
-
-            # 3. neue Änderungen holen (durch clear entstanden)
-            dirty_zones = hydro_store.consume_dirty("zones")
-
-            if dirty_zones:
-                compute_soil_all_zones(zone_store, hydro_store)
 
 #        if self._dirty_irrigation:
 #            self.rebuild_irrigation_forecast(forecast_days = 7)

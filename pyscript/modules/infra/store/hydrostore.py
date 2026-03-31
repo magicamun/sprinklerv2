@@ -18,21 +18,26 @@ class HydroStore:
         self.today = {}
         self._dirty_persist = False
         self._dirty_state = {
-            "global": False,
-            "zones": set()
+            "global": {
+                "etoengine": False,
+                "sprinkler": False,
+            },
+            "zones": {
+                "sprinkler": set(),
+            }
         }
         self._load_today()
 
-    def consume_dirty(self, kind=None):
+    def consume_dirty(self, scope, consumer):
 
-        if kind == "global":
-            val = self._dirty_state["global"]
-            self._dirty_state["global"] = False
+        if scope == "global":
+            val = self._dirty_state["global"].get(consumer, False)
+            self._dirty_state["global"][consumer] = False
             return val
 
         if kind == "zones":
-            zones = set(self._dirty_state["zones"])
-            self._dirty_state["zones"].clear()
+            zones = set(self._dirty_state["zones"].get(consumer, set()))
+            self._dirty_state["zones"][consumer].clear()
             return zones
 
         # alles
@@ -50,7 +55,7 @@ class HydroStore:
             return
 
         if zone_key not in self._dirty_state["zones"]:
-            self._dirty_state["zones"].add(zone_key)
+            self._dirty_state["zones"]["sprinkler"].add(zone_key)
             log_store.debug(f"Zone dirty gesetzt: {zone_key}")
 
     def mark_zones_dirty(self, zone_keys):
@@ -73,10 +78,8 @@ class HydroStore:
         log_store.debug("Alle Zonen dirty gesetzt")
 
     def mark_global_dirty(self):
-
-        if not self._dirty_state["global"]:
-            self._dirty_state["global"] = True
-            log_store.debug("Global dirty gesetzt")
+        for consumer in self._dirty_state["global"]:
+            self._dirty_state["global"][consumer] = True
                         
     def _write_file(self, path: Path, payload: bytes, flags):
         fd = os.open(str(path), flags, 0o644)
@@ -445,8 +448,7 @@ class HydroStore:
 
         return changed
         
-    def clear_forecast_irrigation_all_zones(self, zone_keys, day=None):
-
+    def clear_forecast_irrigation_all_zones(self, zone_keys, day=None)
         any_changed = False
 
         for zone_key in zone_keys:

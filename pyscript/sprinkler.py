@@ -1457,13 +1457,12 @@ async def sprinkler_scheduler_loop():
     log_sprinkler.info("Scheduler started")
     sprinkler_scheduler_running = True
 
-    # set store dirty
+
     hydro_store.mark_global_dirty()
 
     for zone in zone_store.all().values():
         zone_id  = zone["zone_id"]
         zone_key = f"zone:{zone_id}"
-
         hydro_store.mark_zone_dirty(zone_key)
 
     try:
@@ -1477,15 +1476,29 @@ async def sprinkler_scheduler_loop():
 
             await sprinkler_core.tick(is_active)
 
+            dirty_global = hydro_store.consume_dirty("global", "sprinkler")
+            # ------------------------
+            # 1. Global → Soil
+            # ------------------------
+            if dirty_global:
+                dirty_zones = hydro_store.consume_dirty("zones", "sprinkler")
+                sprinkler_core.compute_soil_all_zones(zone_store, hydro_store)
+                project_all_zone_charts(zone_store, hydro_store)
+
+            # ------------------------
+            # 2. Zone → Soil
+            # ------------------------
+            dirty_zones = hydro_store.consume_dirty("zones", "sprinkler")
+            if dirty_zones:
+                project_all_zone_charts(zone_store, hydro_store)
+                
+
             project_sprinkler_core()
             project_all_zones(zone_store)
                 
             project_all_programs(program_store, sprinkler_core)
             project_timeline()
 
-            dirty_zones = hydro_store.consume_dirty("zones")
-            if dirty_zones:
-                project_all_zone_charts(zone_store, hydro_store)
 
 #            if sprinkler_core._dirty_irrigation:
 #                project_all_zone_charts(zone_store, hydro_store)
