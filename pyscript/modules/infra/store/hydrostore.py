@@ -555,7 +555,7 @@ class HydroStore:
         if scope == "global":
             self.mark_global_dirty()
         else:
-            self.mark_zone_dirty(zone_key)
+            self.mark_zone_dirty(scope)
 
     def write_forecast(self, forecast_date, scope, key, source, value):
 
@@ -578,7 +578,7 @@ class HydroStore:
         if scope == "global":
             self.mark_global_dirty()
         else:
-            self.mark_zone_dirty(zone_key)
+            self.mark_zone_dirty(scope)
 
     def write(self, scope, key, variant, source, value, day):
 
@@ -608,7 +608,7 @@ class HydroStore:
         if scope == "global":
             self.mark_global_dirty()
         else:
-            self.mark_zone_dirty(zone_key)
+            self.mark_zone_dirty(scope)
 
 
     def get(self, scope, key, kind, source=None, date=None):
