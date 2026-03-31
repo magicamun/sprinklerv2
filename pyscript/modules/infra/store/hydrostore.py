@@ -35,7 +35,7 @@ class HydroStore:
             self._dirty_state["global"][consumer] = False
             return val
 
-        if kind == "zones":
+        if scope == "zones":
             zones = set(self._dirty_state["zones"].get(consumer, set()))
             self._dirty_state["zones"][consumer].clear()
             return zones
@@ -448,7 +448,7 @@ class HydroStore:
 
         return changed
         
-    def clear_forecast_irrigation_all_zones(self, zone_keys, day=None)
+    def clear_forecast_irrigation_all_zones(self, zone_keys, day=None):
         any_changed = False
 
         for zone_key in zone_keys:
