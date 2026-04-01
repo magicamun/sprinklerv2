@@ -77,3 +77,5 @@ def today_at(time_str: str, day: datetime.date) -> datetime.datetime:
 
     return aware
 
+def start_of_day(dt):
+    return dt.replace(hour=0, minute=0, second=0, microsecond=0)

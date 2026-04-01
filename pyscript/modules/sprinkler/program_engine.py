@@ -17,7 +17,7 @@ from datetime import timedelta
 from pyscript.modules.infra.queues.program_block import ProgramBlock
 from pyscript.modules.infra.queues.queue_entry import QueueEntry
 from pyscript.modules.sprinkler.zones import zone_store
-from pyscript.modules.util.datetime_utils import today_at, aware_now
+from pyscript.modules.util.datetime_utils import today_at, aware_now, start_of_day
 
 WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 

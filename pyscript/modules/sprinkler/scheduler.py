@@ -15,7 +15,7 @@ import datetime
 
 from datetime import timedelta, date as dt_date
 
-from pyscript.modules.util.datetime_utils import aware_now
+from pyscript.modules.util.datetime_utils import aware_now, start_of_day
 from pyscript.modules.infra.queues.active_queue import ActiveQueue
 from pyscript.modules.infra.queues.program_queue import ProgramQueue
 from pyscript.modules.infra.queues.done_queue import DoneQueue
@@ -69,7 +69,6 @@ class SprinklerCore():
         self.program_engine = ProgramEngine(self.program_queue)
 
         self.used = 0
-        # self._dirty_irrigation = True
         hydro_store.mark_global_dirty()
 
 
@@ -116,7 +115,7 @@ class SprinklerCore():
     # -------------------------------------------------
     # Program-Queue Init und Program Reschedule
     # -------------------------------------------------
-    def _schedule_single_program(self, raw_program: dict, adHoc: bool = False):
+    def _schedule_single_program(self, raw_program: dict, adHoc: bool = False, from_day=None):
         capacity = self.context.capacity
 
         name = raw_program.get("name")
@@ -128,6 +127,8 @@ class SprinklerCore():
             return
 
         now = aware_now()
+        if from_day:
+            now = from_day
 
         engine_zones = []
 
@@ -228,9 +229,13 @@ class SprinklerCore():
             return
 
         for raw_program in program_store.all().values():
-            self._schedule_single_program(raw_program, False)
+            self._schedule_single_program(raw_program, adHoc=False, from_day = None)
 
-    async def _maybe_reschedule_program(self, program_id: int):
+    async def _maybe_reschedule_program(self, program_id: int, from_day = None):
+
+        # Ab wann reschedule (Nach Programmende des Tages kommt hier "tomorrow", sonst ab heute)
+        if from_day is None:
+            from_day = aware_now()
 
         raw_program = self.program_store.get(program_id)
         if not raw_program:
@@ -240,7 +245,7 @@ class SprinklerCore():
             f"[program] program finished → reschedule {program_id}"
         )
 
-        self._schedule_single_program(raw_program, False)
+        self._schedule_single_program(raw_program, adHoc=False, from_day=from_day)
 
     # -------------------------------------------------
     # Internal
@@ -359,9 +364,11 @@ class SprinklerCore():
             is_last_run = entry.program_run_index == entry.program_run_count
             log_scheduler.info(f"Entry-Source: {entry.zone_name} {entry.source} {entry.zone_index} {entry.zone_count} {is_last_zone} {entry.program_run_index} {entry.program_run_count} {is_last_run}")
             if is_last_zone and is_last_run:        
-                await self._maybe_reschedule_program(entry.program_id)
+                now = aware_now()
+                tomorrow = start_of_day(now + timedelta(days=1))
+                await self._maybe_reschedule_program(entry.program_id, from_day=tomorrow)
                 log_scheduler.info(
-                    f"[program] final run finished → reschedule program {entry.program_id}"
+                    f"[program] final run finished → reschedule program {entry.program_id} from {tomorrow}"
                 )
 
     def _sorted_active_entries(self):
@@ -452,7 +459,7 @@ class SprinklerCore():
             entry = self.active_queue.get(qe_id)
             if entry:
                 await self._stop_zone(entry)     # <- neue Methode im Scheduler
-            # self._dirty_irrigation = True
+
 
     async def _process_manual_enqueue(self):
         to_enqueue = []
@@ -485,8 +492,6 @@ class SprinklerCore():
 
             zone_key = f"zone:{entry.zone_id}"
             hydro_store.mark_zone_dirty(zone_key)
-
-            # self._dirty_irrigation = True
 
     async def _process_running(self):
         now = aware_now()
@@ -733,8 +738,6 @@ class SprinklerCore():
 
             zone_key = f"zone:{e.zone_id}"
             hydro_store.mark_zone_dirty(zone_key)
-
-            # self._dirty_irrigation = True
 
         self.program_queue.remove_block(block)
 
@@ -996,7 +999,6 @@ class SprinklerCore():
         entries = self.active_queue.all()
 
         if not entries:
-#            self._dirty_irrigation = False
             return
 
         # --------------------------------
@@ -1039,8 +1041,6 @@ class SprinklerCore():
                 zone_key,
                 round(irrigation_mm, 2)
             )
-
-    #    self._dirty_irrigation = False
             
     def compute_soil_all_zones(self, zone_store, hydro_store):
 
@@ -1183,7 +1183,7 @@ class SprinklerCore():
     def start_program_now(self, program_id: int):
         program = self.program_store.get(program_id)
 
-        self._schedule_single_program(program, True)
+        self._schedule_single_program(program, adHoc=True, from_day=None)
         
     def request_cancel_program_run(self, program_run_id):
 
@@ -1223,7 +1223,6 @@ class SprinklerCore():
     # Scheduler-Tick
     # -------------------------------------------------
     async def tick(self, is_active: bool):
-        # self._dirty_irrigation = False
         # MIG global sprinkler_scheduler_running
         """
         Scheduler-Loop für die Bewässerungs-Queue
@@ -1263,10 +1262,6 @@ class SprinklerCore():
         # 3) Running entries prüfen (Laufzeitende)
         # -------------------------
         await self._process_running()
-
-#        if self._dirty_irrigation:
-#            self.rebuild_irrigation_forecast(forecast_days = 7)
-#            self.compute_soil_all_zones(zone_store, hydro_store)
 
         # sort_active_queue()
 
