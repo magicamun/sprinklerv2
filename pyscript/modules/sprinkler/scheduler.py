@@ -1042,13 +1042,18 @@ class SprinklerCore():
                 round(irrigation_mm, 2)
             )
             
-    def compute_soil_all_zones(self, zone_store, hydro_store):
+    def compute_soil_all_zones(self, zone_store, hydro_store, zone_keys=None):
 
         soil_min = self.context.soil_margins.get("minimum") or 0
         soil_opt = self.context.soil_margins.get("optimal") or 20
         soil_max = self.context.soil_margins.get("capacity") or 30
 
-        for zone in zone_store.all().values():
+        zones = zone_store.all().values()
+
+        if zone_keys:
+            zones = [z for z in zones if f"zone:{z['zone_id']}" in zone_keys]
+
+        for zone in zones:
             zone_id  = zone["zone_id"]
             zone_key = f"zone:{zone_id}"
 

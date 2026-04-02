@@ -515,6 +515,7 @@ class HydroStore:
     def add_forecast_irrigation(self, forecast_date, zone_key, mm):
 
         day = str(forecast_date)
+        log_store.info(f"add forecast irrigation {zone_key} {forecast_date} {day}")
 
         existing = self.get(zone_key, "irrigation_mm", "forecast", date=day)
 
