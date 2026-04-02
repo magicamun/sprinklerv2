@@ -1138,17 +1138,19 @@ def remove_zone_states(zone_id: int):
                     }
                 )
 
-def project_all_zone_charts(zone_store, hydro_store):
+def project_all_zone_charts(zone_store, hydro_store, zone_keys = None):
 
     from datetime import date, timedelta
 
-    zones = zone_store.all()
+    zones = zone_store.all().values()
+    if zone_keys:
+        zones = [z for z in zones if f"zone:{z['zone_id']}" in zone_keys]
 
     today = date.today()
     start = (today - timedelta(days=9)).isoformat()
     end   = (today + timedelta(days=4)).isoformat()
 
-    for zone in zones.values():
+    for zone in zones:
 
         zone_id = zone["zone_id"]
         zone_key = f"zone:{zone_id}"
@@ -1453,7 +1455,6 @@ def sprinkler_scheduler_start():
 async def sprinkler_scheduler_loop():
     global sprinkler_scheduler_running
 
-    # sprinkler_core._dirty_irrigation = True
     log_sprinkler.info("Scheduler started")
     sprinkler_scheduler_running = True
 
@@ -1490,7 +1491,9 @@ async def sprinkler_scheduler_loop():
             # ------------------------
             dirty_zones = hydro_store.consume_dirty("zones", "sprinkler")
             if dirty_zones:
-                project_all_zone_charts(zone_store, hydro_store)
+                sprinkler_core.compute_soil_all_zones(zone_store, hydro_store, dirty_zones)
+                dirty_zones = hydro_store.consume_dirty("zones", "sprinkler")
+                project_all_zone_charts(zone_store, hydro_store, dirty_zones)
                 
 
             project_sprinkler_core()
@@ -1498,11 +1501,6 @@ async def sprinkler_scheduler_loop():
                 
             project_all_programs(program_store, sprinkler_core)
             project_timeline()
-
-
-#            if sprinkler_core._dirty_irrigation:
-#                project_all_zone_charts(zone_store, hydro_store)
-#                sprinkler_core._dirty_irrigation = False
 
             # Debug Sensor
             # program_queue_debug()
