@@ -95,6 +95,7 @@ class QueueEntry:
     zone_precipitation_rate: float | None = None
     runtime_deficit_mm: float | None = None
     runtime_reason: RuntimeReason | None = None
+    irrigation_mm: float | None = None
 
 
     # ---------------------------------
@@ -177,7 +178,8 @@ class QueueEntry:
             weather_enabled=self.weather_enabled,
             program_color = self.program_color,
 
-            zone_precipitation_rate=None,
-            runtime_deficit_mm=None,
-            runtime_reason=None
+            zone_precipitation_rate = self.zone_precipitation_rate,
+            runtime_deficit_mm = None,
+            runtime_reason = None,
+            irrigation_mm = self.zone_precipitation_rate * self.planned_duration / 3600
         )

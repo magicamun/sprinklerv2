@@ -12,9 +12,9 @@ if TYPE_CHECKING:
 
 import logging
 import datetime
+import math
 
-from datetime import timedelta, date as dt_date
-
+from datetime import timedelta, date as dt_date, date
 from pyscript.modules.util.datetime_utils import aware_now, start_of_day
 from pyscript.modules.infra.queues.active_queue import ActiveQueue
 from pyscript.modules.infra.queues.program_queue import ProgramQueue
@@ -301,6 +301,7 @@ class SprinklerCore():
         reason = entry.status
         now = aware_now()
         runtime = 0
+        zone_key = f"zone:{entry.zone_id}"
 
         # -------------------------
         # 2) Status finalisieren
@@ -340,12 +341,21 @@ class SprinklerCore():
         # 3) Runtime / Soil
         # -------------------------
         if runtime > 0:
-            self.apply_irrigation_to_zone(entry.zone_id, runtime)
+            entry.irrigation_mm = runtime * entry.zone_precipitation_rate / 3600
+            hydro_store.add_actual_irrigation(
+                zone_key,
+                round(entry.irrigation_mm, 2)
+            )
+
+            log_scheduler.info(
+                f"[IRRIGATION] Zone {entry.zone_id}: {entry.irrigation_mm:.2f}mm"
+            )
 
         # -------------------------
         # 4) Historie
         # -------------------------
         if entry.status != "removed":
+
             self.done_queue.append(entry)
 
         # -------------------------
@@ -354,6 +364,8 @@ class SprinklerCore():
 
         self.active_queue.remove(entry.qe_id)
 
+        hydro_store.mark_zone_dirty(zone_key)
+        
         log_scheduler.info(
             f"Stopped, Removed, Cancelled QE {entry.qe_id} "
             f"({entry.zone_name}) reason={reason}"
@@ -835,6 +847,8 @@ class SprinklerCore():
                     
                     new_duration = self.calculate_zone_seconds(zone, deficit)
 
+                    entry.irrigation_mm = entry.zone_precipitation * new_duration / 3600
+
                     if details:
                         forecast_items = [
                             ForecastContribution(**f)
@@ -1060,29 +1074,6 @@ class SprinklerCore():
             # Today and Forecast
             hydro_store.compute_soil_all_days(soil_min, soil_opt, soil_max, zone_key, force_all = False) 
 
-    def apply_irrigation_to_zone(self, zone_id: int, runtime_seconds: float):
-
-        zone = zone_store.get(zone_id)
-        if not zone:
-            return
-
-        zone_key = f"zone:{zone_id}"
-
-        mm_per_hour = zone.get("precipitation_rate_mm_per_hour")
-        if not mm_per_hour:
-            return
-
-        irrigation_mm = mm_per_hour * (runtime_seconds / 3600)
-
-        hydro_store.add_actual_irrigation(
-            zone_key,
-            round(irrigation_mm, 2)
-        )
-
-        log_scheduler.info(
-            f"[IRRIGATION] Zone {zone_id}: +{irrigation_mm:.2f}mm"
-        )
-
     def _group_entries_by_run(self, entries):
         runs = {}
 
@@ -1223,6 +1214,128 @@ class SprinklerCore():
                 e.status = "skip"
 
         return True
+
+    def build_irrigation_series_from_queue(self, zone_id, start, end):
+
+        start_d = dt_date.fromisoformat(start)
+        end_d   = dt_date.fromisoformat(end)
+
+        irrigation_per_day = {}
+
+        # 👉 stumpf über gesamte Queue
+        for entry in self.active_queue.all():
+
+            # ------------------------
+            # Zone filtern
+            # ------------------------
+            if entry.zone_id != zone_id:
+                continue
+
+            # ------------------------
+            # Nur aktive Einträge
+            # ------------------------
+            if entry.status not in ("queued", "running"):
+                continue
+
+            # ------------------------
+            # Datum bestimmen
+            # ------------------------
+            if not entry.scheduled_start:
+                continue  # safety
+
+            day = entry.scheduled_start.date().isoformat()
+
+            # ------------------------
+            # Aggregation
+            # ------------------------
+            log_scheduler.warning(
+                f"[irrigation_mm] zone={zone_id} type={type(entry.irrigation_mm)} value={entry.irrigation_mm}"
+            )
+            log_scheduler.info(f"Zone: {zone_id}, Irrigation: {entry.irrigation_mm}")
+            irrigation_per_day.setdefault(day, 0)
+            irrigation_per_day[day] += entry.irrigation_mm or 0
+
+        log_scheduler.info(f"[queue-irrigation] zone {zone_id}: {irrigation_per_day}")
+
+        # ------------------------
+        # Series bauen
+        # ------------------------
+        result = {}
+
+        d = start_d
+        while d <= end_d:
+
+            day = d.isoformat()
+
+            value = irrigation_per_day.get(day)
+
+            if value is not None:
+                result[day] = value
+
+            d += timedelta(days=1)
+
+        return result
+        
+    def build_soil_series_from_queue(self, zone_id, irrigation_forecast, start, end):
+
+        zone_key = f"zone:{zone_id}"
+
+        start_d = dt_date.fromisoformat(start)
+        end_d   = dt_date.fromisoformat(end)
+
+        yesterday = (start_d - timedelta(days=1)).isoformat()
+
+        # ------------------------
+        # Startwert
+        # ------------------------
+        soil = hydro_store.get(
+            zone_key,
+            "soil_mm",
+            "derived",
+            "model",
+            yesterday
+        )
+
+        if soil is None:
+            soil = self.context.soil_margins.get("optimal", 20)
+
+        soil_min = self.context.soil_margins.get("minimum", 0)
+        soil_max = self.context.soil_margins.get("capacity", 30)
+
+        # ------------------------
+        # globale Daten
+        # ------------------------
+        eto  = hydro_store.build_series("global", "eto_mm", start=start, end=end)
+        rain = hydro_store.build_series("global", "rain_mm", start=start, end=end)
+
+        result = {}
+
+        d = start_d
+
+        while d <= end_d:
+
+            day = d.isoformat()
+
+            eto_val  = eto.get(day, 0) or 0
+            rain_val = rain.get(day, 0) or 0
+            irr_val  = irrigation_forecast.get(day, 0) or 0
+
+            # ------------------------
+            # Wasserbilanz
+            # ------------------------
+            soil = soil - eto_val + rain_val + irr_val
+
+            # clamp
+            if soil < soil_min:
+                soil = soil_min
+            elif soil > soil_max:
+                soil = soil_max
+
+            result[day] = round(soil, 2)
+
+            d += timedelta(days=1)
+
+        return result
 
     # -------------------------------------------------
     # Scheduler-Tick

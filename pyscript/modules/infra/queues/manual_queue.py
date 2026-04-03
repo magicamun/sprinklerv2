@@ -63,7 +63,12 @@ class ManualQueue(BaseQueue):
 
             weather_enabled     = False,
 
-            program_color       = MANUAL_COLOR 
+            program_color       = MANUAL_COLOR,
+            
+            zone_precipitation_rate=zone.get("precipitation_rate_mm_per_hour", 10),
+            runtime_deficit_mm  = None,
+            runtime_reason      = None,
+            irrigation_mm       = zone.get("default_duration", 0) * zone.get("precipitation_rate_mm_per_hour", 10) / 3600
         )
 
         return qe

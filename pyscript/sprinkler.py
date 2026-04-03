@@ -107,7 +107,7 @@ def get_capacity():
             return 1
         return int(float(val))
     except Exception as e:
-        log_sprinkler.warning(f"Invalid capacity value: {val} ({e})")
+        log_sprinkler.error(f"Invalid capacity value: {val} ({e})")
         return 1
 
 def zone_entity(zone_id: int) -> str:
@@ -1138,6 +1138,18 @@ def remove_zone_states(zone_id: int):
                     }
                 )
 
+def merge_series(past, future):
+
+    log_sprinkler.warning(
+        f"Merge past={past} type={type(past)} future={future} type={type(future)}"
+    )
+
+    # 👉 dict merge (future überschreibt past bei gleichen Tagen)
+    return {
+        **past,
+        **future
+    }
+
 def project_all_zone_charts(zone_store, hydro_store, zone_keys = None):
 
     from datetime import date, timedelta
@@ -1149,14 +1161,34 @@ def project_all_zone_charts(zone_store, hydro_store, zone_keys = None):
     today = date.today()
     start = (today - timedelta(days=9)).isoformat()
     end   = (today + timedelta(days=4)).isoformat()
+    yesterday = (today - timedelta(days=1)).isoformat()
+
+    log_sprinkler.info(f"Star: {start} End: {end} Today: {today} Yesterday: {yesterday}")
 
     for zone in zones:
 
         zone_id = zone["zone_id"]
         zone_key = f"zone:{zone_id}"
 
-        soil_series = hydro_store.build_series(zone_key, "soil_mm", start=start, end=end)
-        irrigation_series = hydro_store.build_series(zone_key, "irrigation_mm", start=start, end=end)
+
+        irrigation_series_past = hydro_store.build_series(zone_key, "irrigation_mm", start=start, end=yesterday)
+        irrigation_series_forecast = sprinkler_core.build_irrigation_series_from_queue(zone_id, start=today.isoformat(), end=end)
+        irrigation_series = merge_series(irrigation_series_past, irrigation_series_forecast)
+        log_sprinkler.info(f"Zone : {zone_id} Irrigation Series: {irrigation_series}")
+
+        soil_series_past = hydro_store.build_series(zone_key, "soil_mm", start=start, end=yesterday)
+        soil_series_forecast = sprinkler_core.build_soil_series_from_queue(zone_id, irrigation_series_forecast, start = today.isoformat(), end=end)
+        soil_series = merge_series(soil_series_past, soil_series_forecast)
+        log_sprinkler.info(f"Zone : {zone_id} Soil Series: {soil_series}")
+
+        state.set(
+            f"sensor.irrigation_chart_zone_{zone_id:02d}_irrigation",
+            0,
+            {
+                "unit_of_measurement": "mm",
+                **irrigation_series
+            }
+        )
 
         state.set(
             f"sensor.irrigation_chart_zone_{zone_id:02d}_soil",
@@ -1167,14 +1199,6 @@ def project_all_zone_charts(zone_store, hydro_store, zone_keys = None):
             }
         )
 
-        state.set(
-            f"sensor.irrigation_chart_zone_{zone_id:02d}_irrigation",
-            0,
-            {
-                "unit_of_measurement": "mm",
-                **irrigation_series
-            }
-        )
 
 
 # ----------- Soil, Deficit --------------
@@ -1192,51 +1216,6 @@ def rebuild_soil_all():
             zone_id  = zone["zone_id"]
             zone_key = f"zone:{zone_id}"
             hydro_store.compute_soil_for_day(zone_key, soil_min, soil_opt, soil_max, day)
-
-def apply_daily_balance_if_needed(zone_store, hydro_store):
-
-    yesterday = (dt_date.today() - timedelta(days=1)).isoformat()
-    today     = dt_date.today().isoformat()
-
-    eto  = hydro_store.get("global", "eto_mm",  "derived", "median", yesterday) or 0
-    rain = hydro_store.get("global", "rain_mm", "derived", "median", yesterday) or 0
-
-    log_irrigation.info(f"Apply Daily Balance: ETo={eto}, Rain={rain}")
-
-    for zone in zone_store.all().values():
-
-        zone_id  = zone["zone_id"]
-        zone_key = f"zone:{zone_id}"
-
-        soil_capacity = safe_float(INPUT_SOIL_CAPACITY, 30)
-        soil_optimal  = safe_float(INPUT_SOIL_OPTIMAL, 0)
-
-        # ------------------------
-        # GLOBAL SOIL (gestern)
-        # ------------------------
-        global_soil = hydro_store.get(None, "soil_mm", "derived", "median", yesterday)
-
-        if global_soil is None:
-            global_soil = soil_optimal
-
-        # ------------------------
-        # IRRIGATION (gestern)
-        # ------------------------
-        irrigation = hydro_store.get(zone_key, "irrigation_mm", "actual", None, yesterday) or 0
-
-        # ------------------------
-        # Compute
-        # ------------------------
-        new_soil = global_soil - eto + rain + irrigation
-        new_soil = max(0, min(soil_capacity, new_soil))
-
-        # 👉 wichtig: heute schreiben!
-        hydro_store.write(zone_key, "soil_mm", "derived", "model", round(new_soil, 2), today)
-
-        log_irrigation.info(
-            f"Soil: old={global_soil}, new={new_soil}, "
-            f"ETo={eto}, rain={rain}, irrigation={irrigation}"
-        )
 
 # ----------- Timeline -------------------
 
@@ -1338,7 +1317,6 @@ def project_timeline():
 # -------------- ETo, Soil_Water, Deficit
 @time_trigger("cron(05 00 * * *)") # 00:05 täglich
 def irrigation_daily():
-    # apply_daily_balance_if_needed(zone_store, hydro_store)
     sprinkler_core.compute_soil_all_zones(zone_store, hydro_store)
 
 def update_soil_margins():
@@ -1427,7 +1405,6 @@ def sprinkler_startup():
     project_all_zones(zone_store)
     
     sprinkler_core.compute_soil_all_zones(zone_store, hydro_store)
-    # apply_daily_balance_if_needed(zone_store, hydro_store)
 
     project_all_programs(program_store, sprinkler_core)
     

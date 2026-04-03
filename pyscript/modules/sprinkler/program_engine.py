@@ -126,6 +126,8 @@ class ProgramEngine:
             if adHoc:
                 src = f"adhoc:{program_id}:{day_str}:{idx}"
 
+            precipitation_rate = zone.get("precipitation_rate_mm_per_hour", 10)
+
             qe = QueueEntry(
                 qe_id=None,  # will be assigned on injection
                 program_id=program_id,
@@ -165,7 +167,11 @@ class ProgramEngine:
 
                 weather_enabled = program_weather_enabled,
 
-                program_color = program.get("color")
+                program_color = program.get("color"),
+                zone_precipitation_rate=precipitation_rate,
+                runtime_deficit_mm=None,
+                runtime_reason=None,
+                irrigation_mm = precipitation_rate * planned_duration / 3600
             )
 
             log_engine.debug(f"Wetter - enabled: {qe.weather_enabled} {program_weather_enabled}, Load: {qe.load}")
