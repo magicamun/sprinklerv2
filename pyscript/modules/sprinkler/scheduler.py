@@ -365,7 +365,7 @@ class SprinklerCore():
         self.active_queue.remove(entry.qe_id)
 
         hydro_store.mark_zone_dirty(zone_key)
-        
+
         log_scheduler.info(
             f"Stopped, Removed, Cancelled QE {entry.qe_id} "
             f"({entry.zone_name}) reason={reason}"
@@ -847,7 +847,7 @@ class SprinklerCore():
                     
                     new_duration = self.calculate_zone_seconds(zone, deficit)
 
-                    entry.irrigation_mm = entry.zone_precipitation * new_duration / 3600
+                    entry.irrigation_mm = entry.zone_precipitation_rate * new_duration / 3600
 
                     if details:
                         forecast_items = [
@@ -1072,7 +1072,7 @@ class SprinklerCore():
             zone_key = f"zone:{zone_id}"
 
             # Today and Forecast
-            hydro_store.compute_soil_all_days(soil_min, soil_opt, soil_max, zone_key, force_all = False) 
+            hydro_store.compute_soil_all_days(0, soil_opt, soil_max, zone_key, force_all = False) 
 
     def _group_entries_by_run(self, entries):
         runs = {}
@@ -1248,14 +1248,11 @@ class SprinklerCore():
             # ------------------------
             # Aggregation
             # ------------------------
-            log_scheduler.warning(
-                f"[irrigation_mm] zone={zone_id} type={type(entry.irrigation_mm)} value={entry.irrigation_mm}"
-            )
-            log_scheduler.info(f"Zone: {zone_id}, Irrigation: {entry.irrigation_mm}")
+
             irrigation_per_day.setdefault(day, 0)
             irrigation_per_day[day] += entry.irrigation_mm or 0
 
-        log_scheduler.info(f"[queue-irrigation] zone {zone_id}: {irrigation_per_day}")
+        log_scheduler.info(f"[queue-irrigation] zone {zone_id}: +{irrigation_per_day}")
 
         # ------------------------
         # Series bauen
@@ -1299,7 +1296,6 @@ class SprinklerCore():
         if soil is None:
             soil = self.context.soil_margins.get("optimal", 20)
 
-        soil_min = self.context.soil_margins.get("minimum", 0)
         soil_max = self.context.soil_margins.get("capacity", 30)
 
         # ------------------------
@@ -1315,10 +1311,12 @@ class SprinklerCore():
         while d <= end_d:
 
             day = d.isoformat()
-
+            log_scheduler.info(f"Zone: {zone_id}, {day}")
             eto_val  = eto.get(day, 0) or 0
             rain_val = rain.get(day, 0) or 0
             irr_val  = irrigation_forecast.get(day, 0) or 0
+            soil_old = soil
+
 
             # ------------------------
             # Wasserbilanz
@@ -1326,10 +1324,9 @@ class SprinklerCore():
             soil = soil - eto_val + rain_val + irr_val
 
             # clamp
-            if soil < soil_min:
-                soil = soil_min
-            elif soil > soil_max:
-                soil = soil_max
+            soil = max(0, min(soil, soil_max))
+
+            log_scheduler.info(f"Zone: {zone_id}, {day} Soil_old: {soil_old}, ETo: -{eto_val}, Rain: +{rain_val}, Irrigation: +{irr_val} -> Soil New {soil}")
 
             result[day] = round(soil, 2)
 

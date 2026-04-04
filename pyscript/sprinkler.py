@@ -1140,7 +1140,7 @@ def remove_zone_states(zone_id: int):
 
 def merge_series(past, future):
 
-    log_sprinkler.warning(
+    log_sprinkler.debug(
         f"Merge past={past} type={type(past)} future={future} type={type(future)}"
     )
 
@@ -1163,7 +1163,7 @@ def project_all_zone_charts(zone_store, hydro_store, zone_keys = None):
     end   = (today + timedelta(days=4)).isoformat()
     yesterday = (today - timedelta(days=1)).isoformat()
 
-    log_sprinkler.info(f"Star: {start} End: {end} Today: {today} Yesterday: {yesterday}")
+    log_sprinkler.debug(f"Star: {start} End: {end} Today: {today} Yesterday: {yesterday}")
 
     for zone in zones:
 
@@ -1174,12 +1174,12 @@ def project_all_zone_charts(zone_store, hydro_store, zone_keys = None):
         irrigation_series_past = hydro_store.build_series(zone_key, "irrigation_mm", start=start, end=yesterday)
         irrigation_series_forecast = sprinkler_core.build_irrigation_series_from_queue(zone_id, start=today.isoformat(), end=end)
         irrigation_series = merge_series(irrigation_series_past, irrigation_series_forecast)
-        log_sprinkler.info(f"Zone : {zone_id} Irrigation Series: {irrigation_series}")
+        log_sprinkler.debug(f"Zone : {zone_id} Irrigation Series: {irrigation_series}")
 
         soil_series_past = hydro_store.build_series(zone_key, "soil_mm", start=start, end=yesterday)
         soil_series_forecast = sprinkler_core.build_soil_series_from_queue(zone_id, irrigation_series_forecast, start = today.isoformat(), end=end)
         soil_series = merge_series(soil_series_past, soil_series_forecast)
-        log_sprinkler.info(f"Zone : {zone_id} Soil Series: {soil_series}")
+        log_sprinkler.debug(f"Zone : {zone_id} Soil Series: {soil_series}")
 
         state.set(
             f"sensor.irrigation_chart_zone_{zone_id:02d}_irrigation",
