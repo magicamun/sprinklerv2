@@ -14,7 +14,7 @@ from collections import defaultdict
 from pyscript.openmeteo import fetch_openmeteo
 from pyscript.modules.infra.store.hydrostore import hydro_store
 
-from pyscript.modules.sprinkler.sprinkler_config import SENSOR_HYDRO_ETO, SENSOR_HYDRO_RAIN, SENSOR_HYDRO_SOIL, INPUT_SOIL_CAPACITY, INPUT_SOIL_OPTIMAL
+from pyscript.modules.sprinkler.sprinkler_config import SENSOR_HYDRO_ETO, SENSOR_HYDRO_RAIN, SENSOR_HYDRO_SOIL, INPUT_SOIL_CAPACITY, INPUT_SOIL_OPTIMAL, CHART_DAYS_PAST, CHART_DAYS_FUTURE
 
 SOIL_CAPACITY           = float(state.get(INPUT_SOIL_CAPACITY))
 SOIL_OPTIMAL            = float(state.get(INPUT_SOIL_OPTIMAL))
@@ -540,8 +540,8 @@ class EToEngine:
     def project_global_chart_sensors(self):
         today = date.today()
 
-        start = (today - timedelta(days=9)).isoformat()
-        end   = (today + timedelta(days=4)).isoformat()
+        start = (today - timedelta(days=CHART_DAYS_PAST)).isoformat()
+        end   = (today + timedelta(days=CHART_DAYS_FUTURE)).isoformat()
 
         # ------------------------------------------------
 

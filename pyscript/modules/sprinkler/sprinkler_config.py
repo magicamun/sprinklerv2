@@ -28,14 +28,18 @@ DEFAULT_DEFICIT_MM      = 0.0
 # Storage
 # ------------------------------------------------
 CONFIG_DIR              = Path("/config/sprinkler")
-
 HYDRO_FILE              = CONFIG_DIR / "hydro.json"
-
 DONE_FILE               = CONFIG_DIR / "done_queue.jsonl"
 ZONE_FILE               = CONFIG_DIR / "zonesv2.json"
 PROGRAM_FILE            = CONFIG_DIR / "programs.json"
-
 MAX_HISTORY_DAYS        = 28
+
+# ------------------------------------------------
+# Chart
+# ------------------------------------------------
+CHART_DAYS_PAST         = 9
+CHART_DAYS_FUTURE       = 4
+
 
 def ensure_config_dir():
     CONFIG_DIR.mkdir(parents=True, exist_ok = True)

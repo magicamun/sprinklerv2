@@ -45,7 +45,7 @@ from pyscript.modules.sprinkler.sprinkler_config import (
     SENSOR_PREFIX_PROGRAMS, SENSOR_PREFIX_ZONE, 
     SENSOR_TIMELINE, SENSOR_PROGRAMS_DEBUG,
     SENSOR_DEFICIT_KIND, SENSOR_SOIL_KIND, DEFAULT_SOIL_MM, DEFAULT_DEFICIT_MM, INPUT_SOIL_CAPACITY, INPUT_SOIL_OPTIMAL,
-    DONE_FILE
+    DONE_FILE, CHART_DAYS_PAST, CHART_DAYS_FUTURE
 )
 
 log_sprinkler           = logging.getLogger("pyscript.sprinkler.sprinkler")
@@ -1159,8 +1159,8 @@ def project_all_zone_charts(zone_store, hydro_store, zone_keys = None):
         zones = [z for z in zones if f"zone:{z['zone_id']}" in zone_keys]
 
     today = date.today()
-    start = (today - timedelta(days=9)).isoformat()
-    end   = (today + timedelta(days=4)).isoformat()
+    start = (today - timedelta(days=CHART_DAYS_PAST)).isoformat()
+    end   = (today + timedelta(days=CHJART_DAYS_FUTURE)).isoformat()
     yesterday = (today - timedelta(days=1)).isoformat()
 
     log_sprinkler.debug(f"Star: {start} End: {end} Today: {today} Yesterday: {yesterday}")
