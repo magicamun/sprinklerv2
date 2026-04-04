@@ -1160,7 +1160,7 @@ def project_all_zone_charts(zone_store, hydro_store, zone_keys = None):
 
     today = date.today()
     start = (today - timedelta(days=CHART_DAYS_PAST)).isoformat()
-    end   = (today + timedelta(days=CHJART_DAYS_FUTURE)).isoformat()
+    end   = (today + timedelta(days=CHART_DAYS_FUTURE)).isoformat()
     yesterday = (today - timedelta(days=1)).isoformat()
 
     log_sprinkler.debug(f"Star: {start} End: {end} Today: {today} Yesterday: {yesterday}")
