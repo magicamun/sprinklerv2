@@ -385,10 +385,10 @@ class EToEngine:
     # -----------------------------
     def build_eto_explanation(self, eto, temperature, humidity, sun_hours):
         # --- Level ---
-        if eto <= 1.2:
+        if eto <= 3:
             level_key = "low"
             level_label = "Sehr geringer Wasserbedarf"
-        elif eto <= 3:
+        elif eto <= 8:
             level_key = "medium"
             level_label = "Mäßiger Wasserbedarf"
         else:
