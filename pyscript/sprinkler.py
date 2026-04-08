@@ -1163,21 +1163,35 @@ def project_all_zone_charts(zone_store, hydro_store, zone_keys = None):
     end   = (today + timedelta(days=CHART_DAYS_FUTURE)).isoformat()
     yesterday = (today - timedelta(days=1)).isoformat()
 
-    log_sprinkler.debug(f"Star: {start} End: {end} Today: {today} Yesterday: {yesterday}")
+    log_sprinkler.warning(f"Star: {start} End: {end} Today: {today} Yesterday: {yesterday}")
 
     for zone in zones:
 
         zone_id = zone["zone_id"]
         zone_key = f"zone:{zone_id}"
 
-
+        irrigation_today_store = (
+            hydro_store.get(zone_key, "irrigation_mm", "derived", "median", today.isoformat())
+            or 0
+        )
+        
         irrigation_series_past = hydro_store.build_series(zone_key, "irrigation_mm", start=start, end=yesterday)
         irrigation_series_forecast = sprinkler_core.build_irrigation_series_from_queue(zone_id, start=today.isoformat(), end=end)
-        irrigation_series = merge_series(irrigation_series_past, irrigation_series_forecast)
-        log_sprinkler.debug(f"Zone : {zone_id} Irrigation Series: {irrigation_series}")
 
         soil_series_past = hydro_store.build_series(zone_key, "soil_mm", start=start, end=yesterday)
         soil_series_forecast = sprinkler_core.build_soil_series_from_queue(zone_id, irrigation_series_forecast, start = today.isoformat(), end=end)
+
+        # Patch irrigation_forecast mit Store-Value
+        today_str = today.isoformat()
+
+        irrigation_series_forecast[today_str] = (
+            irrigation_series_forecast.get(today_str, 0)
+            + irrigation_today_store
+        )
+        
+        irrigation_series = merge_series(irrigation_series_past, irrigation_series_forecast)
+        log_sprinkler.debug(f"Zone : {zone_id} Irrigation Series: {irrigation_series}")
+
         soil_series = merge_series(soil_series_past, soil_series_forecast)
         log_sprinkler.debug(f"Zone : {zone_id} Soil Series: {soil_series}")
 

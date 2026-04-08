@@ -1315,14 +1315,13 @@ class SprinklerCore():
             eto_val  = eto.get(day, 0) or 0
             rain_val = rain.get(day, 0) or 0
             irr_val  = irrigation_forecast.get(day, 0) or 0
-            soil_old = soil
-
 
             # ------------------------
             # Wasserbilanz
             # ------------------------
+            soil_old = soil
             soil = soil - eto_val + rain_val + irr_val
-
+            
             # clamp
             soil = max(0, min(soil, soil_max))
 
