@@ -371,7 +371,7 @@ class HydroStore:
         # ------------------------
         # Irrigation
         # ------------------------
-        irrigation = self.get(scope, "irrigation_mm", "derived", "median", prev_day) or 0
+        irrigation = self.get(scope, "irrigation_mm", "derived", "median", day) or 0
 
         # ------------------------
         # SKIP wenn kein ETo

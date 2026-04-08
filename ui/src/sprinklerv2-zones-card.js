@@ -189,25 +189,43 @@ class SprinklerZonesCardBase extends HTMLElement {
 
 
   set hass(hass) {
+      this._hass = hass;
+
+      const prefix = this._getZonePrefix();
+      if (!prefix) return;
+
+      const zones = Object.values(hass.states)
+          .filter(e => e.entity_id.startsWith(prefix + "_"))
+          .map(z => ({
+              id: z.attributes.zone_id,
+              state: z.state,
+              qe: z.attributes.qe_id,
+              soil: z.attributes.soil_mm,
+              enabled: z.attributes.enabled
+          }));
+
+      const hash = JSON.stringify(zones);
+
+      if (hash === this._lastHash) return;
+      this._lastHash = hash;
+
+      if (!this._initialized) {
+          this._initialized = true;
+          this.render();
+      }
+
+      this.update();
+  }
+  /*
+  set hass(hass) {
     this._hass = hass;
 
-    /*
-    requestAnimationFrame(() => {
-      const w = this.getBoundingClientRect().width;
-      this.style.width = `${w}px`;
-    });
-    */
     requestAnimationFrame(() => {
       const card = this.querySelector("ha-card");
       const w = card.getBoundingClientRect().width;
       card.style.maxWidth = `${w}px`;
     });
-
-    if (!this._initialized) {
-        this.render();
-        this._initialized = true;
-    }
-
+  
     if (!this._feedbackRegistered && hass) {
       registerSprinklerFeedback(hass);
 //      this._feedbackRegistered = true;
@@ -216,7 +234,24 @@ class SprinklerZonesCardBase extends HTMLElement {
     if (!this._zonePrefix) {
       this._zonePrefix = this._getZonePrefix();
     }
+
+    if (!this._initialized) {
+        this._initialized = true;
+        this.render();
+    }
+
     this.update();
+  }
+*/
+
+  _relayout() {
+    const card = this.querySelector("ha-card");
+    if (!card) return;
+
+    // zwingt echten Reflow
+    card.style.display = "none";
+    card.offsetHeight; // force reflow
+    card.style.display = "";
   }
 
   connectedCallback() {
@@ -228,14 +263,20 @@ class SprinklerZonesCardBase extends HTMLElement {
       this.style.width = `${w}px`;
     });
     */
+   /*
     requestAnimationFrame(() => {
       const card = this.querySelector("ha-card");
       const w = card.getBoundingClientRect().width;
       card.style.maxWidth = `${w}px`;
     });
+*/
 
     this._connected = true;
-
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        this._relayout();
+      });
+    });
     this._hass.connection.subscribeEvents(
         (event) => {
 
@@ -968,6 +1009,11 @@ class SprinklerZonesCardBase extends HTMLElement {
     this._container.innerHTML = zones.map(z => this.renderRow(z)).join("");
 
     this.attachEvents();
+
+    
+    requestAnimationFrame(() => {
+      window.dispatchEvent(new Event("resize"));
+    });
   }
 
   getDisplayedDuration(zoneId, zone) {
@@ -1248,6 +1294,7 @@ class SprinklerZonesCardBase extends HTMLElement {
         ha-card {
           background: #f6f7f8;   /* sehr helles Grau */
           padding: 10px;
+          width: 100%;
         }
 
         .card-header {
@@ -1310,6 +1357,7 @@ class SprinklerZonesCardBase extends HTMLElement {
           align-items: center;
           gap: 12px;
           min-width: 0;
+          width: 100%;
 
           padding: 8px 14px;
           margin-bottom: 8px;
