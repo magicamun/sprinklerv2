@@ -1290,7 +1290,7 @@ class SprinklerCore():
             "soil_mm",
             "derived",
             "model",
-            yesterday
+            start_d
         )
 
         if soil is None:
