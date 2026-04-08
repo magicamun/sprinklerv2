@@ -1072,7 +1072,7 @@ class SprinklerCore():
             zone_key = f"zone:{zone_id}"
 
             # Today and Forecast
-            hydro_store.compute_soil_all_days(0, soil_opt, soil_max, zone_key, force_all = False) 
+            hydro_store.compute_soil_all_days(0, soil_opt, soil_max, zone_key, force_all = True) 
 
     def _group_entries_by_run(self, entries):
         runs = {}
