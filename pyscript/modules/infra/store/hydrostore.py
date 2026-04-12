@@ -115,10 +115,16 @@ class HydroStore:
         k = s.setdefault(key, {})
         k.setdefault(kind, {})
         
+    def _ensure_meta(self):
+        if not hasattr(self, "meta") or self.meta is None:
+            self.meta = {}
+            
     def get_anchor(self, scope):
+        self._ensure_meta()
         return self.meta.get(scope, {}).get("soil_anchor")
 
     def set_anchor(self, scope, value):
+        self._ensure_meta()
         self.meta.setdefault(scope, {})["soil_anchor"] = value
 
     def _get_all_scopes(self):
@@ -129,6 +135,29 @@ class HydroStore:
                 scopes.add(scope)
 
         return scopes
+    
+    def _migrate_meta_from_today(self):
+
+        if not self.today:
+            return
+
+        days_sorted = sorted(self.today.keys())
+        first_day = days_sorted[0]
+
+        for scope in self._get_all_scopes():
+
+            val = (
+                self.today.get(first_day, {})
+                .get(scope, {})
+                .get("soil_mm", {})
+                .get("derived", {})
+                .get("model", {})
+                .get("value")
+            )
+
+            if val is not None:
+                self.set_anchor(scope, val)
+
     # ------------------------------------------------
     # LOAD TODAY STORE
     # ------------------------------------------------
@@ -148,20 +177,41 @@ class HydroStore:
 
         if not data:
             self.today = {}
+            self.meta = {}
             return
 
-        self.today = json.loads(data.decode("utf-8"))
+        raw = json.loads(data.decode("utf-8"))
 
-        today_str = dt_date.today().isoformat()
+        # ------------------------
+        # MIGRATION
+        # ------------------------
+
+        if "today" in raw:
+            # ✅ neues Format
+            self.today = raw.get("today", {})
+            self.meta  = raw.get("meta", {})
+        else:
+            # 🔥 altes Format → MIGRATION
+            self.today = raw
+            self.meta = {}
+
+            self._migrate_meta_from_today()
+
+        # ------------------------
+        # PRUNE danach
+        # ------------------------
 
         self.prune()
-
+        
     # ------------------------------------------------
     # SAVE TODAY STORE
     # ------------------------------------------------
     def _save_today(self):
 
-        payload = json.dumps(self.today, indent=2).encode("utf-8")
+        payload = json.dumps({
+            "today": self.today,
+            "meta": getattr(self, "meta", {})
+        }, indent=2).encode("utf-8")
 
         try:
             self._write_file(HYDRO_FILE, payload, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
@@ -404,7 +454,7 @@ class HydroStore:
 
         if soil_prev is None:
             soil_prev = self.get_anchor(scope)
-            
+
         if soil_prev is None:
             soil_prev = soil_opt
 
