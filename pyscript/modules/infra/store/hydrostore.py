@@ -115,6 +115,20 @@ class HydroStore:
         k = s.setdefault(key, {})
         k.setdefault(kind, {})
         
+    def get_anchor(self, scope):
+        return self.meta.get(scope, {}).get("soil_anchor")
+
+    def set_anchor(self, scope, value):
+        self.meta.setdefault(scope, {})["soil_anchor"] = value
+
+    def _get_all_scopes(self):
+        scopes = set()
+
+        for day in self.today.values():
+            for scope in day.keys():
+                scopes.add(scope)
+
+        return scopes
     # ------------------------------------------------
     # LOAD TODAY STORE
     # ------------------------------------------------
@@ -186,6 +200,42 @@ class HydroStore:
     def prune(self, days=MAX_HISTORY_DAYS):
 
         cutoff = dt_date.today() - timedelta(days=days)
+
+        # ------------------------
+        # 1. Anchor bestimmen
+        # ------------------------
+
+        # sortierte Tage
+        days_sorted = sorted(self.today.keys())
+
+        for scope in self._get_all_scopes():
+
+            last_value = None
+
+            for d in days_sorted:
+                day_date = datetime.fromisoformat(d).date()
+
+                if day_date >= cutoff:
+                    break  # wir sind im Fenster angekommen
+
+                val = (
+                    self.today.get(d, {})
+                    .get(scope, {})
+                    .get("soil_mm", {})
+                    .get("derived", {})
+                    .get("model", {})
+                    .get("value")
+                )
+
+                if val is not None:
+                    last_value = val
+
+            if last_value is not None:
+                self.set_anchor(scope, last_value)
+
+        # ------------------------
+        # 2. Jetzt erst prune
+        # ------------------------
 
         self.today = {
             d: v for d, v in self.today.items()
@@ -352,6 +402,9 @@ class HydroStore:
 
         soil_prev = self.get(scope, "soil_mm", "derived", "model", prev_day)
 
+        if soil_prev is None:
+            soil_prev = self.get_anchor(scope)
+            
         if soil_prev is None:
             soil_prev = soil_opt
 
