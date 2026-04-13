@@ -122,46 +122,40 @@ function _generateRequestId() {
     return "req-" + Date.now() + "-" + Math.random().toString(16).slice(2);
 }
 
-function startRequestTimeout(card, requestId, timeout = 8000) {
+export function callServiceWithRequest(card, service, payload = {}, {
+    closeDialog = true
+} = {}) {
 
-  const timer = setTimeout(() => {
+    const requestId = _generateRequestId()
 
-    if (card._pendingRequestId === requestId) {
+    card._lastRequestId = requestId;
 
-      card._pendingRequestId = null;
-
-      showSnackbar("Keine Rückmeldung vom Backend", "error");
-
-      if (card._closeActiveDialog)
-        card._closeActiveDialog();
+    // 🔥 sicherstellen dass Map existiert
+    if (!card._pendingRequests) {
+        card._pendingRequests = new Map();
     }
 
-  }, timeout);
+    // 🔥 Timeout
+    const timeout = setTimeout(() => {
 
-  return timer;
-}
+        card._pendingRequests.delete(requestId);
 
-export function callServiceWithRequest(card, service, payload = {}, {
-        closeDialog = true
-    } = {}) {
+        card._handleRequestTimeout?.(requestId);
 
-    
-    console.log("callServiceWithRequest Start")
+    }, 5000);
 
-    const requestId = _generateRequestId();
-    
-    card._pendingRequestId = requestId;
+    // 🔥 speichern (NEU!)
+    card._pendingRequests.set(requestId, { timeout });
 
+    // 🔥 Service Call
     card._hass.callService("pyscript", service, {
         ...payload,
         request_id: requestId
     });
 
-    card._requestTimeout = startRequestTimeout(card, requestId);
-
     if (closeDialog) {
-       card._closeActiveDialog(card);
+        card._closeActiveDialog?.();
     }
-    console.log("callServiceWithRequest End");
+
     return requestId;
 }
