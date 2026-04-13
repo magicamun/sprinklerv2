@@ -17,6 +17,7 @@ export default defineConfig({
       input: {
         "sprinklerv2-timeline-card": resolve(__dirname, "src/sprinklerv2-timeline-card.js"),
         "sprinklerv2-zones-card": resolve(__dirname, "src/sprinklerv2-zones-card.js"),
+        "sprinklerv2-zones-card-v2": resolve(__dirname, "src/sprinklerv2-zones-card-v2.js"),
         "sprinklerv2-programs-card": resolve(__dirname, "src/sprinklerv2-programs-card.js"),
         "sprinklerv2-eto-card": resolve(__dirname, "src/sprinklerv2-eto-card.js"),
       },
