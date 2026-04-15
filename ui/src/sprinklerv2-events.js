@@ -79,39 +79,6 @@ function showSnackbar(message, status = "info") {
   );
 }
 
-let listenerRegistered = false;
-let feedbackRegistered = false;
-
-export function registerSprinklerFeedback(hass) {
-
-    if (!hass || listenerRegistered)
-        return;
-
-    listenerRegistered = true;
-    feedbackRegistered = true;
-
-    hass.connection.subscribeEvents(event => {
-
-      if (event.event_type !== "sprinkler_ui_feedback")
-        return;
-
-      const data = event.data;
-
-      const handler = UI_TEXT[data.code];
-      if (!handler) return;
-
-      const payload = {
-        ...data,
-        ...(data.data || {})
-      };
-
-      const message = handler(payload);
-
-      showSnackbar(message, data.status);
-
-    }, "sprinkler_ui_feedback");
-}
-
 function _generateRequestId() {
     // Moderne Browser
     if (window.crypto && crypto.randomUUID) {
@@ -158,4 +125,77 @@ export function callServiceWithRequest(card, service, payload = {}, {
     }
 
     return requestId;
+}
+
+export function handleSprinklerFeedbackEvent(event) {
+
+    if (event.event_type !== "sprinkler_ui_feedback")
+        return;
+
+    const data = event.data;
+
+    const handler = UI_TEXT[data.code];
+    if (!handler) return;
+
+    const payload = {
+        ...data,
+        ...(data.data || {})
+    };
+
+    const message = handler(payload);
+
+    showSnackbar(message, data.status);
+}
+
+_handleRequestTimeout(requestId) {
+    console.warn("Request timeout", requestId);
+
+    const ha = document.querySelector("home-assistant");
+    if (!ha) return;
+
+    ha.dispatchEvent(
+        new CustomEvent("hass-notification", {
+            bubbles: true,
+            composed: true,
+            detail: {
+                message: "Keine Rückmeldung vom System",
+                type: "error"
+            }
+        })
+    );
+}
+
+
+// 🔥 LEGACY – remove when all cards use BaseCard feedback
+let listenerRegistered = false;
+let feedbackRegistered = false;
+
+export function registerSprinklerFeedback(hass) {
+
+    if (!hass || listenerRegistered)
+        return;
+
+    listenerRegistered = true;
+    feedbackRegistered = true;
+
+    hass.connection.subscribeEvents(event => {
+
+      if (event.event_type !== "sprinkler_ui_feedback")
+        return;
+
+      const data = event.data;
+
+      const handler = UI_TEXT[data.code];
+      if (!handler) return;
+
+      const payload = {
+        ...data,
+        ...(data.data || {})
+      };
+
+      const message = handler(payload);
+
+      showSnackbar(message, data.status);
+
+    }, "sprinkler_ui_feedback");
 }

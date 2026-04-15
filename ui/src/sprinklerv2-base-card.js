@@ -1,3 +1,5 @@
+import { handleSprinklerFeedbackEvent } from "./sprinklerv2-events.js";
+
 export class SprinklerBaseCard extends HTMLElement {
 
     constructor() {
@@ -45,21 +47,29 @@ export class SprinklerBaseCard extends HTMLElement {
         }
     }
 
+    _handleRequestSuccess(data) {
+        // default noop
+    }
+    
     _handleFeedback(event) {
 
+        // 🔥 1. Snackbar über dein bestehendes Modul
+        handleSprinklerFeedbackEvent(event);
+
         const data = event.data;
+        if (!data) return;
+
         if (!data?.request_id) return;
 
         const entry = this._pendingRequests?.get(data.request_id);
         if (!entry) return;
 
-        // ✅ Timeout stoppen
         clearTimeout(entry.timeout);
-
         this._pendingRequests.delete(data.request_id);
 
         this._handleRequestSuccess?.(data);
     }
+
     // ----------------------------
     // INTERNAL RENDER
     // ----------------------------
