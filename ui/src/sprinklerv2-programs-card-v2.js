@@ -13,6 +13,7 @@ class SprinklerProgramsCardV2 extends SprinklerBaseCard {
         this._isNewProgram = false;
         this._validationErrors = {};
         this._activeDialog = null;
+        this._showDisabled = false;
     }
 
     // ----------------------------
@@ -802,6 +803,12 @@ class SprinklerProgramsCardV2 extends SprinklerBaseCard {
 
         const admin = isAdmin(this._hass);
 
+        let filtered = programs;
+
+        if (!this._showDisabled) {
+            filtered = programs.filter(p => p.enabled);
+        }
+
         const titleBase =
             this._config?.title ||
             this._hass.states[this._config?.entity]?.attributes?.friendly_name ||
@@ -811,19 +818,35 @@ class SprinklerProgramsCardV2 extends SprinklerBaseCard {
             ? `${titleBase} (DEV)`
             : titleBase;
 
+        const toggle = `
+            <div class="show-disabled">
+                <ha-switch id="showDisabledSwitch" ${this._showDisabled ? "checked" : ""}></ha-switch>
+                <span>Disabled</span>
+            </div>
+        `;
+
         return `
             <div class="card-header">
                 <div class="title">${title}</div>
 
-                ${admin ? `
-                    <div class="add-btn" id="addProgramBtn">
-                        <ha-icon icon="mdi:plus-circle-outline"></ha-icon>
+                <div class="header-actions">
+
+                    <div class="show-disabled">
+                        <ha-switch id="showDisabledSwitch" ${this._showDisabled ? "checked" : ""}></ha-switch>
+                        <span>Disabled</span>
                     </div>
-                ` : ""}
+
+                    ${admin ? `
+                        <div class="add-btn" id="addProgramBtn">
+                            <ha-icon icon="mdi:plus-circle-outline"></ha-icon>
+                        </div>
+                    ` : ""}
+
+                </div>
             </div>
 
             <div class="programs">
-                ${programs.map(p => this.renderRow(p)).join("")}
+                ${filtered.map(p => this.renderRow(p)).join("")}
             </div>
         `;
     }
@@ -1390,6 +1413,13 @@ class SprinklerProgramsCardV2 extends SprinklerBaseCard {
                     }
                 });
             });
+        });
+
+        this.querySelector("#showDisabledSwitch")?.addEventListener("change", e => {
+
+            this._showDisabled = e.target.checked;
+
+            this._renderInternal(this.getData());
         });
 
         // ADD
