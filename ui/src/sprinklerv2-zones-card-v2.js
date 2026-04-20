@@ -1,5 +1,4 @@
 import { SprinklerBaseCard } from "./sprinklerv2-base-card.js";
-import { registerSprinklerFeedback } from "./sprinklerv2-events.js";
 import { openConfirmDialog } from "./sprinklerv2-utils.js";
 import { callServiceWithRequest } from "./sprinklerv2-events.js";
 import { isAdmin } from "./sprinklerv2-utils.js";
@@ -122,6 +121,7 @@ class SprinklerZonesCardV2 extends SprinklerBaseCard {
         if (this._view === "edit") {
             return this.renderEditView();   // 🔥 DAS fehlt bei dir
         }
+        const admin = isAdmin(this._hass);
 
         const zones = Array.isArray(data) ? data : [];    
 
@@ -137,15 +137,16 @@ class SprinklerZonesCardV2 extends SprinklerBaseCard {
 
                 <div class="header-actions">
 
-                    <div class="show-disabled">
+                    ${admin ? `<div class="show-disabled">
                         <ha-switch id="toggleDisabled" ${this._showDisabled ? "checked" : ""}></ha-switch>
                         <span>Disabled</span>
                     </div>
+                    `: ""}
 
-                    <div class="add-btn" id="addZoneBtn">
+                    ${admin ? `<div class="add-btn" id="addZoneBtn">
                         <ha-icon icon="mdi:plus-circle-outline"></ha-icon>
                     </div>
-
+                    `: ""}
                 </div>
 
             </div>
@@ -159,6 +160,7 @@ class SprinklerZonesCardV2 extends SprinklerBaseCard {
     renderRow(zone) {
         const state = zone.state;
         const attrs = zone.attributes;
+        const admin = isAdmin(this._hass);
 
         const zc = this._getZoneConfig(zone);
 
@@ -217,15 +219,21 @@ class SprinklerZonesCardV2 extends SprinklerBaseCard {
 
             <!-- LEFT -->
             <div class="zone-left">
+                ${admin ? `
                 <div class="icon-btn zone-delete" data-zone="${zoneId}">
                 <ha-icon icon="mdi:trash-can-outline"></ha-icon>
                 </div>
+                ` : ""}
+                ${admin ? `
                 <div class="icon-btn zone-edit" data-zone="${zoneId}">
                 <ha-icon icon="mdi:cog-outline"></ha-icon>
                 </div>
+                ` : ""}
+                ${admin ? `
                 <div class="icon-btn zone-reset" data-zone="${zoneId}">
                 <ha-icon icon="mdi:water-sync"></ha-icon>
                 </div>
+                `: ""}
             </div>
 
             <!-- CENTER -->

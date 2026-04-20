@@ -831,10 +831,11 @@ class SprinklerProgramsCardV2 extends SprinklerBaseCard {
 
                 <div class="header-actions">
 
-                    <div class="show-disabled">
+                    ${admin ? `<div class="show-disabled">
                         <ha-switch id="showDisabledSwitch" ${this._showDisabled ? "checked" : ""}></ha-switch>
                         <span>Disabled</span>
                     </div>
+                    `: ""}
 
                     ${admin ? `
                         <div class="add-btn" id="addProgramBtn">
@@ -1312,6 +1313,10 @@ class SprinklerProgramsCardV2 extends SprinklerBaseCard {
                 offset === 0 ? "" : (offset > 0 ? `+${offset}m` : `${offset}m`);
         }
 
+
+        // ---------- WEATHER ----------
+        const weatherEnabled = program.weather?.enabled === true;
+        
         const weekdayOrder = ["mon","tue","wed","thu","fri","sat","sun"];
 
         const labels = {
@@ -1354,6 +1359,14 @@ class SprinklerProgramsCardV2 extends SprinklerBaseCard {
 
                         <ha-icon icon="${scheduleIcon}"></ha-icon>
                         <span>${scheduleText}</span>
+
+                        ${weatherEnabled ? `
+                            <span class="separator">•</span>
+                            <ha-icon 
+                                icon="mdi:weather-rainy"
+                                class="weather-active">
+                            </ha-icon>
+                        ` : ""}
 
                         ${weekdayText ? `
                             <span class="separator">•</span>
