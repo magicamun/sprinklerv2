@@ -27,6 +27,7 @@ home-assistant.log*
 sprinkler/*.json
 sprinkler/*.jsonl
 configuration.yaml
+custom_components/*
 
 # www
 www/*

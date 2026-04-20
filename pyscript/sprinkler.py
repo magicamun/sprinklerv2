@@ -359,7 +359,7 @@ def sprinkler_ui_program_delete(program_id=None, request_id: str = None, context
         raise
 
 @service
-def sprinkler_ui_program_start(program_id=None, request_id: str = None, context=None):
+def sprinkler_ui_program_start(program_id: int = None, request_id: str = None, context=None):
 
     try:
         if program_id is None:
@@ -400,9 +400,12 @@ def sprinkler_ui_program_start(program_id=None, request_id: str = None, context=
         raise
 
 @service
-def sprinkler_ui_program_stop(program_run_id: str, request_id: str = None, context=None):
+def sprinkler_ui_program_stop(program_run_id: str = None, request_id: str = None, context=None):
 
     log_sprinkler.info(f"UI Stop Program Run {program_run_id}")
+
+    if not program_run_id:
+        raise ValueError("Missing program_run_id")
 
     queue = sprinkler_core.active_queue
 
@@ -452,7 +455,10 @@ def sprinkler_ui_program_stop(program_run_id: str, request_id: str = None, conte
     )
 
 @service
-def sprinkler_ui_program_skip(program_id: int, request_id: str = None, context=None):
+def sprinkler_ui_program_skip(program_id: int = None, request_id: str = None, context=None):
+
+    if program_id is None:
+        raise ValueError("Missing program_id")
 
     log_sprinkler.info(f"UI Skip Program Run {program_id}")
 

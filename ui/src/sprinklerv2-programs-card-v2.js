@@ -142,10 +142,23 @@ class SprinklerProgramsCardV2 extends SprinklerBaseCard {
                 opacity: 1;
             }
 
-            .program-action ha-icon {
+            .program-action.running ha-icon {
                 color: #e53935;
                 --mdc-icon-size: 28px;
             }
+            
+            .program-action.queued ha-icon {
+                color: #fb8c00;
+            }
+
+            .program-row.running {
+                border-color: #e53935;
+            }
+
+            .program-row.queued {
+                border-color: #fb8c00;
+            }
+
             .program-edit:hover,
             .program-delete:hover,
             .program-action:hover {
@@ -154,6 +167,11 @@ class SprinklerProgramsCardV2 extends SprinklerBaseCard {
             .program-action.running:hover ha-icon {
                 color: #c62828;
             }
+
+            .program-action:active {
+                transform: scale(0.92);
+            }
+
             .program-meta {
                 display: flex;
                 justify-content: center;
@@ -701,6 +719,84 @@ class SprinklerProgramsCardV2 extends SprinklerBaseCard {
     // ----------------------------
     // LIST VIEW
     // ----------------------------
+    _formatNextRun(program) {
+
+        const runtime = program.runtime;
+        if (!runtime) return "";
+
+        const state = runtime.state;
+
+        // ----------------------------
+        // RUNNING → Endzeit anzeigen
+        // ----------------------------
+        if (state === "running" && runtime.planned_end) {
+
+            const end = new Date(runtime.planned_end);
+
+            const time = end.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+
+            return `· bis ${time}`;
+        }
+
+        // ----------------------------
+        // QUEUED → Startzeit anzeigen
+        // ----------------------------
+        if (state !== "queued" || !runtime.planned_start) {
+            return "";
+        }
+
+        const start = new Date(runtime.planned_start);
+        const now = new Date();
+
+        const diffMs = start - now;
+        if (diffMs <= 0) return "";
+
+        const minutes = Math.round(diffMs / 60000);
+
+        const time = start.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+
+        const today = now.toDateString();
+
+        const tomorrowDate = new Date(now);
+        tomorrowDate.setDate(now.getDate() + 1);
+        const tomorrow = tomorrowDate.toDateString();
+
+        // ----------------------------
+        // < 60 Minuten
+        // ----------------------------
+        if (minutes < 60) {
+            return `· in ${minutes} min`;
+        }
+
+        // ----------------------------
+        // heute
+        // ----------------------------
+        if (start.toDateString() === today) {
+            return `· heute ${time}`;
+        }
+
+        // ----------------------------
+        // morgen
+        // ----------------------------
+        if (start.toDateString() === tomorrow) {
+            return `· morgen ${time}`;
+        }
+
+        // ----------------------------
+        // fallback → weekday
+        // ----------------------------
+        const weekday = start.toLocaleDateString("de-DE", {
+            weekday: "short"
+        });
+
+        return `· ${weekday} ${time}`;
+    }
 
     renderList(programs = []) {
 
@@ -1150,6 +1246,21 @@ class SprinklerProgramsCardV2 extends SprinklerBaseCard {
         const admin = isAdmin(this._hass);
         const color = program.color || "#9e9e9e";
         const disabledClass = program.enabled ? "" : "disabled";
+        const state = program.runtime?.state || "idle";
+
+        const isRunning = state === "running";
+        const isQueued  = state === "queued";
+        const runtime = program.runtime || {};
+
+        let icon = "mdi:play-circle-outline";
+        let actionClass = "";
+
+        if (isRunning) {
+            icon = "mdi:stop-circle-outline";
+            actionClass = "running";
+        }
+
+        const nextText = this._formatNextRun(program);
 
         const modeIcon =
             program.mode === "finish_at"
@@ -1226,13 +1337,16 @@ class SprinklerProgramsCardV2 extends SprinklerBaseCard {
                             <ha-icon icon="mdi:calendar"></ha-icon>
                             <span>${weekdayText}</span>
                         ` : ""}
-
+                        ${nextText}
                     </div>
 
                 </div>
 
-                <div class="program-action" data-id="${program.id}">
-                    <ha-icon icon="mdi:play-circle-outline"></ha-icon>
+                <div class="program-action ${actionClass}"
+                    data-id="${program.id}"
+                    data-state="${state}"
+                    data-run-id="${runtime.program_run_id || ""}">
+                    <ha-icon icon="${icon}"></ha-icon>
                 </div>
             </div>
         `;
@@ -1301,6 +1415,116 @@ class SprinklerProgramsCardV2 extends SprinklerBaseCard {
 
             this._renderInternal(this.getData());
         });
+
+        // ----------------------------
+        // PROGRAM ACTION (PLAY / STOP)
+        // ----------------------------
+        this.querySelectorAll(".program-action").forEach(el => {
+
+            let pressTimer = null;
+            let longPressTriggered = false;
+            const LONG_PRESS_MS = 500;
+            const state = el.dataset.state;
+            const runId = el.dataset.runId;
+
+            // ----------------------------
+            // LONG PRESS START
+            // ----------------------------
+            const startPress = () => {
+                const id = Number(el.dataset.id);
+                longPressTriggered = false;
+
+                pressTimer = setTimeout(() => {
+
+                    // 👉 nur bei queued sinnvoll
+                    if (state === "queued" && runId) {
+
+                        longPressTriggered = true;
+
+                        callServiceWithRequest(
+                            this,
+                            "sprinkler_ui_program_skip",
+                            { program_id: id }
+                        );
+
+                    }
+
+                }, LONG_PRESS_MS);
+            };
+
+            // ----------------------------
+            // PRESS END
+            // ----------------------------
+            const cancelPress = () => {
+                if (pressTimer) {
+                    clearTimeout(pressTimer);
+                    pressTimer = null;
+                }
+            };
+
+            // ----------------------------
+            // CLICK (nur wenn kein long press)
+            // ----------------------------
+            el.addEventListener("click", e => {
+                if (longPressTriggered) {
+                    return; // 👉 verhindert doppelte Aktion
+                }
+                const id = Number(el.dataset.id);
+                const state = el.dataset.state;
+                const runId = el.dataset.runId;
+                // optional: Name holen (nice UX)
+                const entityId = this.config?.entity;
+                const sensor = this._hass.states[entityId];
+                const program = sensor?.attributes?.programs?.find(p => p.id === id);
+                const name = program?.name;
+
+                if (!runId) this.return;
+
+                if (state === "running") {
+                    openConfirmDialog({
+                        title: "Programm stoppen",
+                        text: "Programm wirklich stoppen?",
+                        entityName: name,
+                        confirmText: "Stoppen",
+                        danger: true,
+                        parent: document.body,
+                        onConfirm: () => {
+
+                            callServiceWithRequest(
+                                this,
+                                "sprinkler_ui_program_stop",
+                                { program_run_id: runId }
+                            );
+
+                        }
+                    });
+                    // 🔴 STOP
+                    callServiceWithRequest(
+                        this,
+                        "sprinkler_ui_program_stop",
+                        { program_id: id }
+                    );
+
+                } else {
+
+                    // 🟢 START (auch bei queued = adhoc!)
+                    callServiceWithRequest(
+                        this,
+                        "sprinkler_ui_program_start",
+                        { program_id: id }
+                    );
+                }
+            });
+            // ----------------------------
+            // POINTER EVENTS (wichtig für mobile!)
+            // ----------------------------
+            el.addEventListener("pointerdown", startPress);
+            el.addEventListener("pointerup", cancelPress);
+            el.addEventListener("pointerleave", cancelPress);
+            el.addEventListener("pointercancel", cancelPress);
+        });
+
+
     }
 
     _attachEditEvents() {

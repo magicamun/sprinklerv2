@@ -147,7 +147,7 @@ export function handleSprinklerFeedbackEvent(event) {
     showSnackbar(message, data.status);
 }
 
-_handleRequestTimeout(requestId) {
+function _handleRequestTimeout(requestId) {
     console.warn("Request timeout", requestId);
 
     const ha = document.querySelector("home-assistant");
