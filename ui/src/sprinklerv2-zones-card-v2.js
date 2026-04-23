@@ -157,6 +157,55 @@ class SprinklerZonesCardV2 extends SprinklerBaseCard {
         `;
     }
 
+    _updateRuntime(data) {
+
+        const zones = Array.isArray(data) ? data : [];
+
+        zones.forEach(zone => {
+
+            const zoneId = zone.attributes?.zone_id;
+            if (zoneId == null) return;
+
+            const durationEl = this.querySelector(
+                `.zone-duration[data-zone="${zoneId}"]`
+            );
+
+            if (!durationEl) return;
+
+            const newDuration = this.getDisplayedDuration(zone);
+
+            if (durationEl.textContent !== newDuration) {
+                durationEl.textContent = newDuration;
+            }
+
+            // 🔥 optional: icon + color live updaten
+            const actionIcon = this.querySelector(
+                `.zone-action[data-zone="${zoneId}"] ha-icon`
+            );
+
+            if (actionIcon) {
+
+                const state = zone.state;
+
+                const icon =
+                    (state === "running" || state === "queued" || state === "enqueue")
+                    ? "mdi:stop-circle-outline"
+                    : "mdi:play-circle-outline";
+
+                const color =
+                    state === "running"
+                    ? "#e53935"
+                    : state === "queued"
+                        ? "#fb8c00"
+                        : "#9e9e9e";
+
+                actionIcon.setAttribute("icon", icon);
+                actionIcon.style.color = color;
+            }
+
+        });
+    }
+
     renderRow(zone) {
         const state = zone.state;
         const attrs = zone.attributes;
@@ -239,7 +288,12 @@ class SprinklerZonesCardV2 extends SprinklerBaseCard {
             <!-- CENTER -->
             <div class="center">
                 <div class="name">${name}</div>
-                <div class="sub">Laufzeit: ${duration}</div>
+                <div class="sub">
+                    Laufzeit:
+                    <span class="zone-duration" data-zone="${zoneId}">
+                        ${duration}
+                    </span>
+                </div>
                 ${soilText}
             </div>
 
@@ -250,7 +304,6 @@ class SprinklerZonesCardV2 extends SprinklerBaseCard {
 
             </div>
         `;
-        this.attachEvents();
     }
 
     attachEvents() {

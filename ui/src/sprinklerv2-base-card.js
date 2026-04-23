@@ -26,10 +26,19 @@ export class SprinklerBaseCard extends HTMLElement {
         }
 
         const data = this.getData?.();
-        const hash = JSON.stringify(data);
 
-        if (hash === this._lastHash) return;
+        // 🔥 runtime ignorieren für Vergleich
+        const hash = JSON.stringify(this._stripRuntime(data));
 
+        // 👉 FALL 1: nichts strukturell geändert
+        if (hash === this._lastHash) {
+
+            // 🔥 nur Runtime updaten (kein Re-Render!)
+            this._updateRuntime?.(data);
+            return;
+        }
+
+        // 👉 FALL 2: echter Datenwechsel
         this._lastHash = hash;
 
         this._renderInternal(data);
@@ -95,6 +104,28 @@ export class SprinklerBaseCard extends HTMLElement {
         }
     }
 
+    _stripRuntime(data) {
+
+        if (!Array.isArray(data)) return data;
+
+        return data.map(item => {
+
+            return {
+                entity_id: item.entity_id,
+                state: item.state,
+
+                // 🔥 nur stabile Attribute!
+                enabled: item.attributes?.enabled,
+                zone_id: item.attributes?.zone_id,
+                zone_name: item.attributes?.zone_name,
+                deleted: item.attributes?.deleted,
+
+                // optional falls relevant
+                soil: item.attributes?.soil_mm,
+                deficit: item.attributes?.deficit_mm
+            };
+        });
+    }
     // ----------------------------
     // BASE STYLES (shared!)
     // ----------------------------
