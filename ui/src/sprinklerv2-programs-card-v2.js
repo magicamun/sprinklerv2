@@ -1265,6 +1265,58 @@ class SprinklerProgramsCardV2 extends SprinklerBaseCard {
     // ----------------------------
     // ROW
     // ----------------------------
+    _updateRuntime(data) {
+
+        this._renderInternal(data);
+
+    }
+
+    _getRenderState(programs) {
+
+        return programs.map(p => ({
+
+            id: p.id,
+
+            name: p.name,
+
+            enabled: p.enabled,
+
+            mode: p.mode,
+
+            repeat: p.repeat,
+
+            pause: p.pause_minutes,
+
+            weekdays: (p.weekdays || []).join(","),
+
+            schedule: [
+
+                p.schedule?.type,
+
+                p.schedule?.time,
+
+                p.schedule?.event,
+
+                p.schedule?.offset_minutes
+
+            ].join("|"),
+
+            zones: (p.zones || [])
+
+                .map(z => `${z.zone_id}:${z.duration}`)
+
+                .join("|"),
+
+            weather: p.weather?.enabled,
+
+            // 👇 bewusst minimal!
+
+            runtime_state: p.runtime?.state
+
+        }));
+
+    }
+
     renderRow(program) {
 
         const admin = isAdmin(this._hass);

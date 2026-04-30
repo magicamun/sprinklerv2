@@ -27,20 +27,15 @@ export class SprinklerBaseCard extends HTMLElement {
 
         const data = this.getData?.();
 
-        // 🔥 runtime ignorieren für Vergleich
-        const hash = JSON.stringify(this._stripRuntime(data));
+        const renderState = this._getRenderState?.(data) ?? data;
+        const hash = JSON.stringify(renderState);
 
-        // 👉 FALL 1: nichts strukturell geändert
         if (hash === this._lastHash) {
-
-            // 🔥 nur Runtime updaten (kein Re-Render!)
             this._updateRuntime?.(data);
             return;
         }
 
-        // 👉 FALL 2: echter Datenwechsel
         this._lastHash = hash;
-
         this._renderInternal(data);
     }
 

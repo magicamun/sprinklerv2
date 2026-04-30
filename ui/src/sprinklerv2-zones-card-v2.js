@@ -50,6 +50,39 @@ class SprinklerZonesCardV2 extends SprinklerBaseCard {
         `;
     }
 
+    _getRenderState(zones) {
+
+        return zones.map(z => {
+
+            const attrs = z.attributes || {};
+
+            return {
+
+                id: attrs.zone_id,
+
+                name: attrs.zone_name,
+
+                enabled: attrs.enabled,
+
+                // wichtig für Icon / Button
+
+                state: z.state,
+
+                // sichtbar im UI
+
+                soil: attrs.soil_mm,
+
+                deficit: attrs.deficit_mm,
+
+                // wichtig für Strukturänderungen
+
+                deleted: attrs.deleted
+
+            };
+
+        });
+
+    }
     getData() {
 
 
