@@ -265,7 +265,7 @@ class HydroStore:
             for d in days_sorted:
                 day_date = datetime.fromisoformat(d).date()
 
-                if day_date >= cutoff:
+                if day_date > cutoff:
                     break  # wir sind im Fenster angekommen
 
                 val = (
@@ -495,7 +495,7 @@ class HydroStore:
 
         today = dt_date.today().isoformat()
 
-        days = self.get_days(scope)
+        days = sorted(self.today.keys())
 
         for day in sorted(days):
             if day < today and not force_all:
