@@ -23,7 +23,7 @@ import{i as e,n as t,r as n,t as r}from"./sprinklerv2-utils.js";var i={lawn:`Ras
                 opacity: 0.45;
             }
             </style>
-        `}getData(){if(!this._hass||!this._config?.entity)return[];let e=this._config.entity.replace(/_\d+$/,``);return Object.values(this._hass.states).filter(t=>t.entity_id.startsWith(e+`_`)).filter(e=>e.attributes?.zone_id!==void 0).filter(e=>!e.attributes.deleted).filter(e=>this._showDisabled||e.attributes.enabled===!0).sort((e,t)=>e.entity_id.localeCompare(t.entity_id))}_getZonePrefix(){return this._config?.entity?this._config.entity.replace(/_\d+$/,``):null}_getZoneConfig(e){return e?.attributes?.zone||{}}formatDuration(e){e=Number(e)||0;let t=Math.floor(e/3600),n=Math.floor(e%3600/60),r=e%60;return`${t.toString().padStart(2,`0`)}:${n.toString().padStart(2,`0`)}:${r.toString().padStart(2,`0`)}`}getDisplayedDuration(e){let t=e.attributes,n=t.zone_id,r=this._getZonePrefix();if(!r)return``;let i=`${r}_${String(n).padStart(2,`0`)}_remaining`,a=this._hass.states[i]?.state;if(a!=null&&a!==``)return this.formatDuration(a);let o=(t.zone||{}).default_duration||0;return this.formatDuration(o)}render(e){if(this._view===`edit`)return this.renderEditView();let t=r(this._hass),n=Array.isArray(e)?e:[];return`
+        `}_getRenderState(e){return e.map(e=>{let t=e.attributes||{};return{id:t.zone_id,name:t.zone_name,enabled:t.enabled,state:e.state,soil:t.soil_mm,deficit:t.deficit_mm,deleted:t.deleted}})}getData(){if(!this._hass||!this._config?.entity)return[];let e=this._config.entity.replace(/_\d+$/,``);return Object.values(this._hass.states).filter(t=>t.entity_id.startsWith(e+`_`)).filter(e=>e.attributes?.zone_id!==void 0).filter(e=>!e.attributes.deleted).filter(e=>this._showDisabled||e.attributes.enabled===!0).sort((e,t)=>e.entity_id.localeCompare(t.entity_id))}_getZonePrefix(){return this._config?.entity?this._config.entity.replace(/_\d+$/,``):null}_getZoneConfig(e){return e?.attributes?.zone||{}}formatDuration(e){e=Number(e)||0;let t=Math.floor(e/3600),n=Math.floor(e%3600/60),r=e%60;return`${t.toString().padStart(2,`0`)}:${n.toString().padStart(2,`0`)}:${r.toString().padStart(2,`0`)}`}getDisplayedDuration(e){let t=e.attributes,n=t.zone_id,r=this._getZonePrefix();if(!r)return``;let i=`${r}_${String(n).padStart(2,`0`)}_remaining`,a=this._hass.states[i]?.state;if(a!=null&&a!==``)return this.formatDuration(a);let o=(t.zone||{}).default_duration||0;return this.formatDuration(o)}render(e){if(this._view===`edit`)return this.renderEditView();let t=r(this._hass),n=Array.isArray(e)?e:[];return`
             <div class="card-header">
 
                 <div class="title">${this._config?.title||this._hass?.states[this._config.entity]?.attributes?.title||`Zonen`}</div>
@@ -47,7 +47,7 @@ import{i as e,n as t,r as n,t as r}from"./sprinklerv2-utils.js";var i={lawn:`Ras
             <div class="zones">
                 ${n.map(e=>this.renderRow(e)).join(``)}
             </div>
-        `}renderRow(e){let t=e.state,n=e.attributes,i=r(this._hass),a=this._getZoneConfig(e),o=n.zone_id,s=n.enabled,c=a.name||n.zone_name||`Zone ${o}`,l=s?``:`disabled`,u=t===`running`||t===`queued`||t===`enqueue`?`mdi:stop-circle-outline`:`mdi:play-circle-outline`,d=t===`running`?`#e53935`:t===`queued`?`#fb8c00`:`#9e9e9e`,f=this.getDisplayedDuration(e),p=n.soil_mm??null,m=n.deficit_mm??null,h=``;if(p!==null&&m!==null){let e=m===0?`#43a047`:m>5?`#fb8c00`:`#e53935`;h=`
+        `}_updateRuntime(e){(Array.isArray(e)?e:[]).forEach(e=>{let t=e.attributes?.zone_id;if(t==null)return;let n=this.querySelector(`.zone-duration[data-zone="${t}"]`);if(!n)return;let r=this.getDisplayedDuration(e);n.textContent!==r&&(n.textContent=r);let i=this.querySelector(`.zone-action[data-zone="${t}"] ha-icon`);if(i){let t=e.state,n=t===`running`||t===`queued`||t===`enqueue`?`mdi:stop-circle-outline`:`mdi:play-circle-outline`,r=t===`running`?`#e53935`:t===`queued`?`#fb8c00`:`#9e9e9e`;i.setAttribute(`icon`,n),i.style.color=r}})}renderRow(e){let t=e.state,n=e.attributes,i=r(this._hass),a=this._getZoneConfig(e),o=n.zone_id,s=n.enabled,c=a.name||n.zone_name||`Zone ${o}`,l=s?``:`disabled`,u=t===`running`||t===`queued`||t===`enqueue`?`mdi:stop-circle-outline`:`mdi:play-circle-outline`,d=t===`running`?`#e53935`:t===`queued`?`#fb8c00`:`#9e9e9e`,f=this.getDisplayedDuration(e),p=n.soil_mm??null,m=n.deficit_mm??null,h=``;if(p!==null&&m!==null){let e=m===0?`#43a047`:m>5?`#fb8c00`:`#e53935`;h=`
             <div class="zone-soil">
                 <ha-icon icon="mdi:water"></ha-icon>
                 ${p.toFixed(1)}
@@ -80,7 +80,12 @@ import{i as e,n as t,r as n,t as r}from"./sprinklerv2-utils.js";var i={lawn:`Ras
             <!-- CENTER -->
             <div class="center">
                 <div class="name">${c}</div>
-                <div class="sub">Laufzeit: ${f}</div>
+                <div class="sub">
+                    Laufzeit:
+                    <span class="zone-duration" data-zone="${o}">
+                        ${f}
+                    </span>
+                </div>
                 ${h}
             </div>
 
