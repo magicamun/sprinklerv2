@@ -92,8 +92,7 @@ ETO_SOURCES = {
                 "entity": "sensor.openweather_humidity_avg"
             },
             "sun_hours": {
-                "entity": None,
-                "default": 0.0
+                "entity": None
             },
             "wind_ms": {
                 "entity": "sensor.openweather_wind_speed_ms",
@@ -116,8 +115,9 @@ ETO_SOURCES = {
                 "entity": "sensor.dwd_humidity_avg"
             },
             "sun_hours": {
-                "entity": "sensor.dwd_sun_hours_today",
-                "default": 0.0
+# liefert immer 0!                "entity": "sensor.dwd_sun_hours_today",
+#                "default": 0.0
+                "entity": None
             },
             "wind_ms": {
                 "entity": "sensor.dwd_wind_speed_ms",
@@ -200,6 +200,27 @@ class EToEngine:
         # Weather integrations -> ISO datetime
         return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
 
+    def normalize_wind(value, source=None, mode=None):
+
+        # mode: "daily" / "hourly"
+
+        if value is None:
+            return None
+
+        # Heuristik + bekannte Fälle
+        if mode == "daily":
+            return value / 3.6   # km/h → m/s
+
+        if mode == "hourly":
+            return value         # already m/s
+
+        # fallback safety
+        if value > 20:           # unrealistisch für m/s im Alltag
+            return value / 3.6
+
+        return value
+
+
     def rh_from_dewpoint(self, temp_c, dew_point_c):
 
         if temp_c is None or dew_point_c is None:
@@ -268,6 +289,8 @@ class EToEngine:
                 
     def collect_forecast_for_source(self, source, cfg):
 
+        mode = "daily"
+
         if not cfg.get("forecast_id"):
             return
 
@@ -278,7 +301,7 @@ class EToEngine:
                 blocking=True,
                 return_response=True,
                 entity_id=cfg["forecast_id"],
-                type="daily"
+                type=mode
             )
 
             forecasts = result[cfg["forecast_id"]]["forecast"]
@@ -305,6 +328,7 @@ class EToEngine:
                     self.store.write("global", "humidity_pct", "forecast", source, float(hum), date)
 
                 if wind is not None:
+                    wind = normalize_wind(wind, source, mode)
                     self.store.write("global", "wind_ms", "forecast", source, float(wind), date)
 
                 if rain is not None:
@@ -334,7 +358,7 @@ class EToEngine:
             else:
                 val = None
 
-            if val is None:
+            if val is None and default is not None:
                 val = default
 
             # 👉 HIER
