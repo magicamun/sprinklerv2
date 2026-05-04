@@ -404,7 +404,7 @@ class HydroStore:
                     wind = self.get(scope, "wind_ms", variant, source, day)
                     sun  = self.get(scope, "sun_hours", variant, source, day)
 
-                    if temp is None or hum is None:
+                    if None in (temp, hum, wind, sun):
                         continue
 
                     eto = self.calculate_eto_fao56_light({
