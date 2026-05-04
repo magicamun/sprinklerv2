@@ -328,7 +328,7 @@ class EToEngine:
                     self.store.write("global", "humidity_pct", "forecast", source, float(hum), date)
 
                 if wind is not None:
-                    wind = self.normalize_wind(wind, source, mode)
+                    wind = round(self.normalize_wind(wind, source, mode), 3)
                     self.store.write("global", "wind_ms", "forecast", source, float(wind), date)
 
                 if rain is not None:
