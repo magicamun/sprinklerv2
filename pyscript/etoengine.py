@@ -200,7 +200,7 @@ class EToEngine:
         # Weather integrations -> ISO datetime
         return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
 
-    def normalize_wind(value, source=None, mode=None):
+    def normalize_wind(self, value, source=None, mode=None):
 
         # mode: "daily" / "hourly"
 
