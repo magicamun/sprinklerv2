@@ -722,6 +722,14 @@ class HydroStore:
         if date is None:
             date = dt_date.today().isoformat()
 
+        # 🔥 FIX: normalize date
+
+        if not isinstance(date, str):
+            try:
+                date = date.isoformat()
+            except Exception:
+                return None
+
         block = (
             self.today
             .get(date, {})
