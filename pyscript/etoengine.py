@@ -351,9 +351,11 @@ class EToEngine:
 
             if entity:
                 try:
-                    val = state.get(entity)
-                    val = float(val) if val is not None else None
-                except Exception:
+                    raw_val = state.get(entity)
+                    log_eto.info(f"[COLLECT] entity={entity} key={key} raw={raw_val}")
+                    val = float(raw_val) if raw_val is not None else None
+                except Exception as e:
+                    log_eto.warning(f"[COLLECT] entity={entity} key={key} conversion failed: {e}")
                     val = None
             else:
                 val = None
@@ -367,6 +369,7 @@ class EToEngine:
                 
             data[key] = val
 
+        log_eto.info(f"[COLLECT] source_data={data}")
         return data
 
     def collect_weather_source(self, source, cfg):
