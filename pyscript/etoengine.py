@@ -593,7 +593,7 @@ etoengine = EToEngine(hydro_store)
 )
 def soil_params_changed(var_name=None, value=None, old_value=None):
 
-    log.info(f"[CONFIG] {var_name} changed: {old_value} → {value}")
+    log_eto.info(f"[CONFIG] {var_name} changed: {old_value} → {value}")
 
     SOIL_CAPACITY           = float(state.get(INPUT_SOIL_CAPACITY))
     SOIL_OPTIMAL            = float(state.get(INPUT_SOIL_OPTIMAL))
