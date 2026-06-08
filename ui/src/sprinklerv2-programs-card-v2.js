@@ -1267,6 +1267,10 @@ class SprinklerProgramsCardV2 extends SprinklerBaseCard {
     // ----------------------------
     _updateRuntime(data) {
 
+        if (this._view == "edit") {
+            return;
+        }
+
         this._renderInternal(data);
 
     }
@@ -1658,10 +1662,11 @@ class SprinklerProgramsCardV2 extends SprinklerBaseCard {
             this._validationErrors = this._validateProgram(p);
 
             if (Object.keys(this._validationErrors).length > 0) {
-                this.renderDetail();   // 🔥 Fehler anzeigen
+                // this.renderDetail();   // 🔥 Fehler anzeigen
+                this._renderInternal(this.getData());
                 return;
             }
-            console.log(p)
+            console.log(p);
             try {
                 if (this._isNewProgram) {
                     callServiceWithRequest(this, "sprinkler_ui_program_add", { program: p });
@@ -1848,7 +1853,8 @@ class SprinklerProgramsCardV2 extends SprinklerBaseCard {
         this.querySelectorAll(".zone-delete").forEach(el => {
             el.addEventListener("click", e => {
 
-                const index = Number(e.target.dataset.index);
+                // const index = Number(e.target.dataset.index);
+                const index = Number(e.currentTarget.dataset.index);
 
                 this._workingProgram.zones.splice(index, 1);
                 this._renderInternal(this.getData());
