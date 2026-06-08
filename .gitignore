@@ -36,3 +36,4 @@ www/*
 .ha_run.lock
 
 homematicip_local/cache
+.HA_VERSION
