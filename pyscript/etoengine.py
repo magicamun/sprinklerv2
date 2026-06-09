@@ -77,57 +77,16 @@ log_eto.info(f"[CONFIG] ETO_CONFIG={ETO_CONFIG}")
 
 ETO_DEFAULTS = ETO_CONFIG.get("defaults", {})
 ETO_SOURCES  = ETO_CONFIG.get("sources", {})
-ETO_SETTINGS = ETO_CONFIG.get("settings", {})
+ETO_SETTINGS = ETO_CONFIG.get("eto", {})
 
 class EToEngine:
 
     def __init__(self, store):
         self.store = store
 
-        self.wind_default = ETO_DEFAULTS.get("wind_ms", 2.0)
         self.eto_min_mm = ETO_SETTINGS.get("min_mm", 1.0)
         self.eto_max_mm = ETO_SETTINGS.get("max_mm", 8.0)
         self.solar_saturation = ETO_SETTINGS.get("solar_saturation", 0.7)
-
-    def build_env(self, source_cfg):
-
-        result = {}
-
-        for key, meta in source_cfg.get("fields", {}).items():
-
-            entity = meta.get("entity")
-            default = meta.get("default")
-
-            val = None
-
-            # ------------------------
-            # SENSOR SOURCE
-            # ------------------------
-            if source_cfg.get("type") == "sensor":
-
-                if entity:
-                    try:
-                        val = float(state.get(entity))
-                    except (TypeError, ValueError):
-                        val = None
-
-            # ------------------------
-            # DIRECT SOURCE
-            # ------------------------
-            elif source_cfg.get("type") == "direct":
-                # wird später extern befüllt
-                val = None
-
-            # ------------------------
-            # DEFAULT FALLBACK
-            # ------------------------
-            if val is None:
-                val = default
-
-            if val is not None:
-                result[key] = val
-
-        return result
 
     def _normalize_forecast_date(self, value):
 
