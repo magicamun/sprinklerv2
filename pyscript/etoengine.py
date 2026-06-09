@@ -10,11 +10,15 @@ import logging
 import urllib.request
 import json
 from collections import defaultdict
+import yaml
+import os
 
 from pyscript.openmeteo import fetch_openmeteo
 from pyscript.modules.infra.store.hydrostore import hydro_store
 
 from pyscript.modules.sprinkler.sprinkler_config import SENSOR_HYDRO_ETO, SENSOR_HYDRO_RAIN, SENSOR_HYDRO_SOIL, INPUT_SOIL_CAPACITY, INPUT_SOIL_OPTIMAL, CHART_DAYS_PAST, CHART_DAYS_FUTURE
+
+ETO_CONFIG_FILE = "/config/sprinkler/eto.yaml"
 
 SOIL_CAPACITY           = float(state.get(INPUT_SOIL_CAPACITY))
 SOIL_OPTIMAL            = float(state.get(INPUT_SOIL_OPTIMAL))
@@ -39,114 +43,51 @@ LATITUDE  = hass.config.latitude
 LONGITUDE = hass.config.longitude
 
 
-ETO_MIN_MM = 1.0
-ETO_MAX_MM = 8.0
+# ETO_MIN_MM = 1.0
+#ETO_MAX_MM = 8.0
 
-DEFAULT_WIND_MS = 2.0  # fixer Wind, später ersetzbar
-SOLAR_SATURATION = 0.7  # Deckelung Sonnenanteil
+#DEFAULT_WIND_MS = 2.0  # fixer Wind, später ersetzbar
+#SOLAR_SATURATION = 0.7  # Deckelung Sonnenanteil
 
-# Quellen
-SOURCE_LOCAL        = "local"
-SOURCE_OWD          = "openweather"
-SOURCE_DWD          = "dwd"
-SOURCE_OPENMETEO    = "openmeteo"
+def load_eto_config():
 
-ETO_SOURCES = {
-    SOURCE_LOCAL: {
-        "friendly_name": "Lokal (Weatherman)",
-        "type": "sensor",
+    log_eto.info(f"[CONFIG] loading {ETO_CONFIG_FILE}")
 
-        "fields": {
-            "temp_c": {
-                "entity": "sensor.local_temperature_avg"
-            },
-            "humidity_pct": {
-                "entity": "sensor.local_humidity_avg"
-            },
-            "sun_hours": {
-                "entity": "sensor.sonnenstunden_heute",
-                "default": 0.0
-            },
-            "rain_mm": {
-                "entity": "sensor.regen_mm_heute",
-                "default": 0.0
-            },
-            "wind_ms": {
-                "entity": None,
-                "default": DEFAULT_WIND_MS
-            }
-        },
+    fd = os.open(ETO_CONFIG_FILE, os.O_RDONLY)
 
-        "forecast_id": None
-    },
+    try:
 
-    SOURCE_OWD: {
-        "friendly_name": "OpenWeather",
-        "type": "sensor",
+        content = os.read(fd, 1024 * 1024).decode("utf-8")
 
-        "fields": {
-            "temp_c": {
-                "entity": "sensor.openweather_temperature_avg"
-            },
-            "humidity_pct": {
-                "entity": "sensor.openweather_humidity_avg"
-            },
-            "sun_hours": {
-                "entity": None
-            },
-            "wind_ms": {
-                "entity": "sensor.openweather_wind_speed_ms",
-                "default": DEFAULT_WIND_MS
-            }
-        },
+    finally:
 
-        "forecast_id": "weather.openweathermap"
-    },
+        os.close(fd)
 
-    SOURCE_DWD: {
-        "friendly_name": "Deutscher Wetterdienst",
-        "type": "sensor",
+    log_eto.info(f"[CONFIG] bytes={len(content)}")
 
-        "fields": {
-            "temp_c": {
-                "entity": "sensor.dwd_temperature_avg"
-            },
-            "humidity_pct": {
-                "entity": "sensor.dwd_humidity_avg"
-            },
-            "sun_hours": {
-# liefert immer 0!                "entity": "sensor.dwd_sun_hours_today",
-#                "default": 0.0
-                "entity": None
-            },
-            "wind_ms": {
-                "entity": "sensor.dwd_wind_speed_ms",
-                "default": DEFAULT_WIND_MS
-            }
-        },
+    cfg = yaml.safe_load(content)
 
-        "forecast_id": "weather.donaueschingen_land"
-    },
+    log_eto.info(f"[CONFIG] parsed={cfg}")
 
-    SOURCE_OPENMETEO: {
-        "friendly_name": "OpenMeteo",
-        "type": "direct",
+    return cfg or {}
+        
+ETO_CONFIG = load_eto_config() or {}
 
-        "fields": {
-            "temp_c": {"default": None},
-            "humidity_pct": {"default": None},
-            "sun_hours": {"default": None},
-            "wind_ms": {"default": None}
-        },
+log_eto.info(f"[CONFIG] ETO_CONFIG={ETO_CONFIG}")
 
-        "forecast_id": None
-    }
-}
+ETO_DEFAULTS = ETO_CONFIG.get("defaults", {})
+ETO_SOURCES  = ETO_CONFIG.get("sources", {})
+ETO_SETTINGS = ETO_CONFIG.get("settings", {})
 
 class EToEngine:
 
     def __init__(self, store):
         self.store = store
+
+        self.wind_default = ETO_DEFAULTS.get("wind_ms", 2.0)
+        self.eto_min_mm = ETO_SETTINGS.get("min_mm", 1.0)
+        self.eto_max_mm = ETO_SETTINGS.get("max_mm", 8.0)
+        self.solar_saturation = ETO_SETTINGS.get("solar_saturation", 0.7)
 
     def build_env(self, source_cfg):
 
@@ -219,7 +160,6 @@ class EToEngine:
             return value / 3.6
 
         return value
-
 
     def rh_from_dewpoint(self, temp_c, dew_point_c):
 
@@ -347,7 +287,7 @@ class EToEngine:
         for key, conf in cfg.get("fields", {}).items():
 
             entity = conf.get("entity")
-            default = conf.get("default", None)
+            default = conf.get("default", ETO_DEFAULTS.get(key))
 
             if entity:
                 try:
@@ -613,6 +553,16 @@ def etoengine_collecthourly():
 
 @time_trigger("startup")
 def etoengine_startup():
+
+    for source, cfg in ETO_SOURCES.items():
+
+        log_eto.info(
+
+            f"[CONFIG] Loaded ETo source: {source} "
+
+            f"({cfg.get('friendly_name')})"
+
+        )
 
     etoengine.prune()
 
