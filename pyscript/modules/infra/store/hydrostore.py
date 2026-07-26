@@ -4,13 +4,77 @@ import logging
 import math
 from pathlib import Path
 from datetime import date as dt_date, datetime, timedelta
+from dataclasses import dataclass
 
+from typing import Optional
 
 from pyscript.modules.sprinkler.sprinkler_config import (
     HYDRO_FILE, MAX_HISTORY_DAYS
 )
 
 log_store           = logging.getLogger("pyscript.sprinkler.hydrostore")
+@dataclass(slots=True)
+
+class EToResult:
+
+    eto: float
+
+    # Eingabedaten
+    temp_c: float
+    humidity_pct: float
+    wind_ms: float
+    sun_hours: Optional[float]
+
+    # Standort
+    latitude: float
+    elevation: float
+    day_of_year: int
+
+    # Zwischenwerte
+    es: float
+    ea: float
+    delta: float
+    gamma: float
+    dr: float
+    solar_declination: float
+    sunset_hour_angle: float
+    ra: float
+    rso: float
+    rs: float
+    rns: float
+    rnl: float
+    rn: float
+    cloud_factor: float
+
+    def __str__(self) -> str:
+
+        def fmt(v, digits=2):
+            if v is None:
+                return "-"
+
+            return f"{v:.{digits}f}"
+
+        return (
+            f"ETo={fmt(self.eto)} mm | "
+            f"T={fmt(self.temp_c,1)}°C "
+            f"RH={fmt(self.humidity_pct,0)}% "
+            f"Wind={fmt(self.wind_ms,1)}m/s "
+            f"Sun={fmt(self.sun_hours,1)}h | "
+            f"Lat={fmt(self.latitude,4)} "
+            f"Elev={fmt(self.elevation,0)}m "
+            f"DOY={self.day_of_year} | "
+            f"es={fmt(self.es,3)} "
+            f"ea={fmt(self.ea,3)} "
+            f"Δ={fmt(self.delta,3)} "
+            f"γ={fmt(self.gamma,3)} | "
+            f"Ra={fmt(self.ra)} "
+            f"Rs={fmt(self.rs)} "
+            f"Rso={fmt(self.rso)} "
+            f"Rns={fmt(self.rns)} "
+            f"Rnl={fmt(self.rnl)} "
+            f"Rn={fmt(self.rn)} "
+            f"Cloud={fmt(self.cloud_factor,3)}"
+        )
 
 class HydroStore:
 
@@ -27,7 +91,16 @@ class HydroStore:
             }
         }
         self._load_today()
+        self.longitude = None
+        self.latitude = None
+        self.elevation = None
 
+
+    def configure_site(self, latitude: float, longitude: float, elevation: float):
+        self.latitude = latitude
+        self.longitude = longitude
+        self.elevation = elevation
+        
     def consume_dirty(self, scope, consumer):
 
         if scope == "global":
@@ -298,7 +371,7 @@ class HydroStore:
     # -----------------------------
     # CORE: FAO-56-Light (Stub)
     # -----------------------------
-    def calculate_eto_fao56_light(self, data: dict, latitude: float, day: str) -> float:
+    def calculate_eto_fao56_light(self, data: dict, day: str) -> EToResult:
         """
         FAO-56-Light Reference Evapotranspiration (mm/day)
         Uses temperature, humidity, sun hours, fixed wind.
@@ -331,7 +404,7 @@ class HydroStore:
         # -----------------------------
         # day_of_year = datetime.now().timetuple().tm_yday
         day_of_year = datetime.fromisoformat(day).timetuple().tm_yday
-        lat_rad = math.radians(latitude)
+        lat_rad = math.radians(self.latitude)
 
         dr = 1 + 0.033 * math.cos(2 * math.pi / 365 * day_of_year)
         solar_dec = 0.409 * math.sin(2 * math.pi / 365 * day_of_year - 1.39)
@@ -348,6 +421,11 @@ class HydroStore:
         )
 
         # -----------------------------
+        # Clear sky radiation
+        # -----------------------------
+        rso = (0.75 + 2e-5 * self.elevation) * ra
+
+        # -----------------------------
         # Solar radiation from sun hours
         # -----------------------------
         if sun_hours is not None:
@@ -357,8 +435,20 @@ class HydroStore:
         else:
             rs = 0.75 * ra  # fallback
 
+        # Net shortwave radiation
         rns = (1 - albedo) * rs
-        rnl = 4.903e-9 * ((t_mean + 273.16) ** 4) * (0.34 - 0.14 * math.sqrt(ea))
+
+        # Net longwave radiation (FAO-56)
+        cloud_factor = max(0.05, min(1.0, 1.35 * (rs / rso) - 0.35))
+
+        rnl = (
+            4.903e-9
+            * ((t_mean + 273.16) ** 4)
+            * (0.34 - 0.14 * math.sqrt(ea))
+            * cloud_factor
+        )
+
+        # Net radiation
         rn = rns - rnl
 
         # -----------------------------
@@ -369,12 +459,38 @@ class HydroStore:
             + gamma * (900 / (t_mean + 273)) * wind * (es - ea)
         ) / (delta + gamma * (1 + 0.34 * wind))
 
-        log_store.debug(f"ETo inputs: T={t_mean} RH={rh_mean} Sun={sun_hours} Wind={wind}")
-        log_store.debug(f"ETo result: {eto:.2f} mm")
-        
-        return max(0.0, eto)
+        #log_store.info(f"ETo inputs: T={t_mean} RH={rh_mean} Sun={sun_hours} Wind={wind}, Latitude={self.latitude}, Elevation={self.elevation}")
+        #log_store.info(f"Ra={ra:.2f} Rs={rs:.2f} Rso={rso:.2f} Cloud={cloud_factor:.2f} Rn={rn:.2f}")
+        #log_store.info(f"ETo result: {eto:.2f} mm")
+                
+        eto = max(0.0, eto)
 
-    def compute_eto_for_day(self, latitude: float, day):
+        return EToResult(
+            eto=eto,
+            temp_c=t_mean,
+            humidity_pct=rh_mean,
+            wind_ms=wind,
+            sun_hours=sun_hours,
+            latitude=self.latitude,
+            elevation=self.elevation,
+            day_of_year=day_of_year,
+            es=es,
+            ea=ea,
+            delta=delta,
+            gamma=gamma,
+            dr=dr,
+            solar_declination=solar_dec,
+            sunset_hour_angle=ws,
+            ra=ra,
+            rso=rso,
+            rs=rs,
+            rns=rns,
+            rnl=rnl,
+            rn=rn,
+            cloud_factor=cloud_factor,
+        )
+
+    def compute_eto_for_day(self, day):
 
         scope = "global"
         results = {}
@@ -407,14 +523,17 @@ class HydroStore:
                     if None in (temp, hum, wind, sun):
                         continue
 
-                    eto = self.calculate_eto_fao56_light({
+                    result = self.calculate_eto_fao56_light({
                         "temp_c": temp,
                         "humidity_pct": hum,
                         "wind_ms": wind,
                         "sun_hours": sun,
-                    }, latitude, day)
+                    }, day)
 
-                    results.setdefault(variant, {})[source] = round(eto, 3)
+                    results.setdefault(variant, {})[source] = round(result.eto, 3)
+                    log_store.info(
+                        f"[ETO] {day} {variant}/{source}: {result}"
+                    )
 
                 except Exception as e:
                     log_store.error(f"ETo failed {day} {variant}/{source}: {e}")
@@ -426,7 +545,7 @@ class HydroStore:
 
         return results
         
-    def compute_eto_all_days(self, latitude, force_all: bool = False):
+    def compute_eto_all_days(self, force_all: bool = False):
 
         scope = "global"
         today = dt_date.today().isoformat()
@@ -440,7 +559,7 @@ class HydroStore:
                 continue
 
             try:
-                results[day] = self.compute_eto_for_day(latitude, day)
+                results[day] = self.compute_eto_for_day(day)
 
             except Exception as e:
                 log_store.error(f"ETo failed for day {day}: {e}")
@@ -585,36 +704,6 @@ class HydroStore:
             today
         )
         
-    
-#    def clear_forecast_irrigation(self):
-#
-#        changed = False
-#
-#        for day, day_block in self.today.items():
-#            for scope, scope_block in day_block.items():
-#                irrigation = scope_block.get("irrigation_mm")
-#                if not irrigation:
-#                    continue
-#
-#                if "forecast" in irrigation:
-#                    del irrigation["forecast"]
-#                    changed = True
-#
-#                if "derived" in irrigation:
-#                    del irrigation["derived"]
-#                    changed = True
-#
-#
-#        if changed:
-#            self._dirty_persist = True
-#            self.save_today()
-
-        # 👉 fachliches dirty
-        #if scope == "global":
-        #    self._dirty_state["global"] = True
-        #else:
-        #    self._dirty_state["zones"].add(scope)
-
     def add_forecast_irrigation(self, forecast_date, zone_key, mm):
 
         day = str(forecast_date)

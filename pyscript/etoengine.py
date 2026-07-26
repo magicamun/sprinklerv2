@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 # -----------------------------
 LATITUDE  = hass.config.latitude
 LONGITUDE = hass.config.longitude
-
+ELEVATION = hass.config.elevation
 
 # ETO_MIN_MM = 1.0
 #ETO_MAX_MM = 8.0
@@ -485,6 +485,7 @@ class EToEngine:
         self.store.prune()
 
 etoengine = EToEngine(hydro_store)
+hydro_store.configure_site(LATITUDE, LONGITUDE, ELEVATION)
 
 @state_trigger(
     "input_number.soil_capacity_mm",
@@ -504,7 +505,7 @@ def etoengine_collecthourly():
 
     etoengine.collect_all_sources()
 
-    hydro_store.compute_eto_all_days(LATITUDE)
+    hydro_store.compute_eto_all_days()
     hydro_store.compute_soil_all_days(soil_min = 0, soil_opt = SOIL_OPTIMAL, soil_max = SOIL_CAPACITY, scope="global", force_all = False)
 
     etoengine.project_today_sensors()
@@ -527,7 +528,7 @@ def etoengine_startup():
 
     etoengine.collect_all_sources()
 
-    hydro_store.compute_eto_all_days(LATITUDE)
+    hydro_store.compute_eto_all_days()
     hydro_store.compute_soil_all_days(soil_min = 0, soil_opt = SOIL_OPTIMAL, soil_max = SOIL_CAPACITY, scope="global", force_all = False)
 
     etoengine.project_today_sensors()
