@@ -231,8 +231,9 @@ class SprinklerCore():
         for raw_program in program_store.all().values():
             self._schedule_single_program(raw_program, adHoc=False, from_day = None)
 
-    async def _maybe_reschedule_program(self, program_id: int, from_day = None):
+    async def _maybe_reschedule_program(self, program_id: int, from_day = None, reason = "Unknown"):
 
+        log_scheduler.info(f"[RESCHEDULE] reason={reason} program={program_id} from_day={from_day}")
         # Ab wann reschedule (Nach Programmende des Tages kommt hier "tomorrow", sonst ab heute)
         if from_day is None:
             from_day = aware_now()
@@ -375,10 +376,10 @@ class SprinklerCore():
             is_last_zone = entry.zone_index == entry.zone_count
             is_last_run = entry.program_run_index == entry.program_run_count
             log_scheduler.info(f"Entry-Source: {entry.zone_name} {entry.source} {entry.zone_index} {entry.zone_count} {is_last_zone} {entry.program_run_index} {entry.program_run_count} {is_last_run}")
-            if is_last_zone and is_last_run:        
+            if is_last_zone and is_last_run and reason != "remove":        
                 now = aware_now()
                 tomorrow = start_of_day(now + timedelta(days=1))
-                await self._maybe_reschedule_program(entry.program_id, from_day=tomorrow)
+                await self._maybe_reschedule_program(entry.program_id, from_day=tomorrow, reason="Last Zone finished")
                 log_scheduler.info(
                     f"[program] final run finished → reschedule program {entry.program_id} from {tomorrow}"
                 )
@@ -1159,7 +1160,7 @@ class SprinklerCore():
         }
 
     async def add_program(self, program_id: int):
-        await self._maybe_reschedule_program(program_id)
+        await self._maybe_reschedule_program(program_id, reason="Program added")
             
     def delete_program(self, program_id: int):
 
@@ -1174,7 +1175,7 @@ class SprinklerCore():
             return
 
         self.active_queue.remove_by_program(program_id)
-        await self._maybe_reschedule_program(program_id)
+        await self._maybe_reschedule_program(program_id, reason="Program Updated")
 
     def start_program_now(self, program_id: int):
         program = self.program_store.get(program_id)
