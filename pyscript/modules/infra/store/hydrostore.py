@@ -165,7 +165,7 @@ class HydroStore:
             log_store.debug(f"File {path} geschrieben")        
 
     def _now_ts(self):
-        return datetime.utcnow().isoformat() + "Z"
+        return datetime.now().astimezone().isoformat(timespec="seconds")
 
     def _val(self, v):
         if isinstance(v, dict):
