@@ -490,61 +490,91 @@ class HydroStore:
             cloud_factor=cloud_factor,
         )
 
+    def _compute_eto_variant(self, day, variant, source):
+
+        scope = "global"
+
+        temp = self.get(scope, "temp_c", variant, source, day)
+        hum  = self.get(scope, "humidity_pct", variant, source, day)
+        wind = self.get(scope, "wind_ms", variant, source, day)
+        sun  = self.get(scope, "sun_hours", variant, source, day)
+
+        if None in (temp, hum, wind, sun):
+            return None
+
+        result = self.calculate_eto_fao56_light({
+            "temp_c": temp,
+            "humidity_pct": hum,
+            "wind_ms": wind,
+            "sun_hours": sun,
+        }, day)
+
+        return round(result.eto, 3), result
+
     def compute_eto_for_day(self, day):
 
         scope = "global"
         results = {}
 
-        # 🔥 bereits vorhandene direkte ETo holen
-        direct_eto = self.get(scope, "eto_mm", "observed", date=day)
+        # ----------------------------------
+        # explizit definierte Varianten
+        # ----------------------------------
 
-        if direct_eto:
-            results.setdefault("observed", {}).update(direct_eto)
+        variants = {
+            "observed": self.get_sources(scope, "temp_c", "observed", day),
+            "forecast": self.get_sources(scope, "temp_c", "forecast", day),
+            "derived":  ["median", "current"],
+        }
 
-        # 🔥 klassische Berechnung für andere Quellen
-        variants = self.get_variants(scope, "temp_c", day)
+        # vorhandene direkte Beobachtungen übernehmen
+        direct = self.get(scope, "eto_mm", "observed", date=day)
 
-        for variant in variants:
+        if direct:
+            results["observed"] = dict(direct)
 
-            sources = self.get_sources(scope, "temp_c", variant, day)
+        # ----------------------------------
+        # berechnen
+        # ----------------------------------
+
+        for variant, sources in variants.items():
 
             for source in sources:
 
-                # 🔥 skip wenn schon direct vorhanden
                 if source in results.get(variant, {}):
                     continue
 
                 try:
-                    temp = self.get(scope, "temp_c", variant, source, day)
-                    hum  = self.get(scope, "humidity_pct", variant, source, day)
-                    wind = self.get(scope, "wind_ms", variant, source, day)
-                    sun  = self.get(scope, "sun_hours", variant, source, day)
 
-                    if None in (temp, hum, wind, sun):
+                    eto = self._compute_eto_variant(day, variant, source)
+
+                    if eto is None:
                         continue
 
-                    result = self.calculate_eto_fao56_light({
-                        "temp_c": temp,
-                        "humidity_pct": hum,
-                        "wind_ms": wind,
-                        "sun_hours": sun,
-                    }, day)
+                    value, details = eto
 
-                    results.setdefault(variant, {})[source] = round(result.eto, 3)
+                    results.setdefault(variant, {})[source] = value
+
+                    self.write(
+                        scope,
+                        "eto_mm",
+                        variant,
+                        source,
+                        value,
+                        day
+                    )
+
                     log_store.info(
-                        f"[ETO] {day} {variant}/{source}: eto={result.eto:.3f} result={result}"
+                        f"[ETO] {day} {variant}/{source}: "
+                        f"eto={value:.3f} result={details}"
                     )
 
                 except Exception as e:
-                    log_store.error(f"ETo failed {day} {variant}/{source}: {e}")
-
-        # 🔥 WRITE BACK
-        for variant, sources in results.items():
-            for source, value in sources.items():
-                self.write("global", "eto_mm", variant, source, value, day)
+                    log_store.error(
+                        f"ETo failed {day} {variant}/{source}: {e}"
+                    )
 
         return results
-        
+
     def compute_eto_all_days(self, force_all: bool = False):
 
         scope = "global"
@@ -792,9 +822,10 @@ class HydroStore:
             "ts": self._now_ts()
         }
 
-        self._update_derived_median(day, scope, key)
-        self._update_derived_current(day, scope, key)
-
+        if variant in ("observed", "forecast"):
+            self._update_derived_median(day, scope, key)
+            self._update_derived_current(day, scope, key)
+    
         # persist_dirty
         self._dirty_persist = True
         self.save_today()
