@@ -532,7 +532,7 @@ class HydroStore:
 
                     results.setdefault(variant, {})[source] = round(result.eto, 3)
                     log_store.info(
-                        f"[ETO] {day} {variant}/{source}: {result}"
+                        f"[ETO] {day} {variant}/{source}: eto={result.eto:.3f} result={result}"
                     )
 
                 except Exception as e:
