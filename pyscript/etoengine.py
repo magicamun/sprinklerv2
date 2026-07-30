@@ -87,8 +87,15 @@ class EToEngine:
     def __init__(self, store):
         self.store = store
 
-        self.provider_ctx = ProviderContext(self)
-        self.provider_manager = ProviderManager(self.provider_ctx)
+        self.provider_ctx = ProviderContext(
+            store=self.store,
+            defaults=ETO_DEFAULTS,
+            state_get=state.get,
+            service_call=service.call,
+            task_executor=task.executor,
+            logger=log_eto,
+        )
+        self.provider_manager = ProviderManager(self.provider_ctx, ETO_SOURCES)
 
         self.eto_min_mm = ETO_SETTINGS.get("min_mm", 1.0)
         self.eto_max_mm = ETO_SETTINGS.get("max_mm", 8.0)
@@ -520,6 +527,7 @@ def etoengine_collecthourly():
 @time_trigger("startup")
 def etoengine_startup():
 
+    etoengine.provider_manager.update_observed()
     for source, cfg in ETO_SOURCES.items():
 
         log_eto.info(

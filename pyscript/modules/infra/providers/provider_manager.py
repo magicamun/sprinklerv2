@@ -1,9 +1,14 @@
+from pyscript.modules.infra.providers.provider_local import LocalProvider
+
 class ProviderManager:
 
-    def __init__(self, ctx):
+    def __init__(self, ctx, sources):
 
         self.ctx = ctx
         self.providers = []
+
+        for name, config in sources.items():
+            self.providers.append(LocalProvider(ctx, name, config))
 
     def register(self, provider):
 

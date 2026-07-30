@@ -1,31 +1,32 @@
+from pyscript.modules.infra.providers.provider_base import ProviderBase
+
 class LocalProvider(ProviderBase):
 
-    def __init__(self, ctx, source, cfg):
-        super().__init__(ctx)
-
-        self.source = source
-        self.cfg = cfg
-
+    def __init__(self, ctx, name, config):
+        super().__init__(ctx, name, config)
 
     # -----------------------------
     # Weather Data Collection
     # -----------------------------
-    def collect_weather_data_for_source(self, cfg):
+    def collect_weather_data_for_source(self):
 
         data = {}
 
-        for key, conf in cfg.get("fields", {}).items():
+        for key, conf in self.config.get("fields", {}).items():
 
             entity = conf.get("entity")
-            default = conf.get("default", ETO_DEFAULTS.get(key))
+            default = conf.get(
+                "default",
+                self.ctx.defaults.get(key)
+            )
 
             if entity:
                 try:
-                    raw_val = state.get(entity)
-                    log_eto.info(f"[COLLECT] entity={entity} key={key} raw={raw_val}")
+                    raw_val = state.stx.state_get(entity)
+                    self.ctx.logger.info(f"[COLLECT] entity={entity} key={key} raw={raw_val}")
                     val = float(raw_val) if raw_val is not None else None
                 except Exception as e:
-                    log_eto.warning(f"[COLLECT] entity={entity} key={key} conversion failed: {e}")
+                    self.ctx.logger.warning(f"[COLLECT] entity={entity} key={key} conversion failed: {e}")
                     val = None
             else:
                 val = None
@@ -39,16 +40,16 @@ class LocalProvider(ProviderBase):
                 
             data[key] = val
 
-        log_eto.info(f"[COLLECT] source_data={data}")
+        self.ctx.logger.info(f"[COLLECT] source_data={data}")
         return data
 
-    def collect_weather_source(self, source, cfg):
+    def collect_weather_source(self):
 
-        weather = self.collect_weather_data_for_source(cfg)
+        weather = self.collect_weather_data_for_source()
 
         # 🔥 CASE: direct ETo
         if weather.get("eto_mm") is not None:
-            self.store.write_observed("global", "eto_mm", source, weather["eto_mm"])
+            self.ctx.store.write_observed("global", "eto_mm", self.name, weather["eto_mm"])
             return
 
         # 🔥 GENERIC WRITE
@@ -57,4 +58,13 @@ class LocalProvider(ProviderBase):
             if value is None:
                 continue
 
-            self.store.write_observed("global", key, source, value)
+            self.ctx.store.write_observed("global", key, self.name, value)
+
+    def update_observed(self):
+        self.ctx.logger.info(f"Provider Local for {self.name}")
+
+        value = self.ctx.state_get("sensor.local_temperature_avg")
+
+        self.ctx.logger.info(
+            f"[TEST] state_get() funktioniert: sensor.local_temperature_avg = {value}"
+        )
