@@ -1,4 +1,5 @@
 from pyscript.modules.infra.providers.provider_homeassistant import HomeAssistantProvider
+from pyscript.modules.infra.providers.provider_openmeteo import OpenMeteoProvider
 
 class ProviderManager:
 
@@ -8,7 +9,15 @@ class ProviderManager:
         self.providers = []
 
         for name, config in sources.items():
-            self.providers.append(HomeAssistantProvider(ctx, name, config))
+            provider = config.get("provider", "homeassistant")
+            self.ctx.logger.info(f"Source={name}, provider={provider}")
+            
+            if provider == "homeassistant":
+                self.providers.append(HomeAssistantProvider(ctx, name, config))
+            elif provider == "openmeteo":
+                self.providers.append(OpenMeteoProvider(ctx, name, config))
+            else:
+                raise ValueError(f"Unknown provider '{provider}' for source '{name}'")
 
     def register(self, provider):
 
@@ -16,8 +25,8 @@ class ProviderManager:
 
     def update_observed(self):
 
-        for p in self.providers:
-            p.update_observed()
+        for provider in self.providers:
+            provider.update_observed()
 
     def update_forecast(self):
 

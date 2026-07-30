@@ -22,7 +22,7 @@ class HomeAssistantProvider(ProviderBase):
 
             if entity:
                 try:
-                    raw_val = state.stx.state_get(entity)
+                    raw_val = self.ctx.state_get(entity)
                     self.ctx.logger.info(f"[COLLECT] entity={entity} key={key} raw={raw_val}")
                     val = float(raw_val) if raw_val is not None else None
                 except Exception as e:
@@ -54,7 +54,11 @@ class HomeAssistantProvider(ProviderBase):
 
         # 🔥 GENERIC WRITE
         for key, value in weather.items():
+            self.ctx.logger.info(
 
+                f"{self.name}: {key} -> {value}"
+
+            )
             if value is None:
                 continue
 
@@ -62,9 +66,5 @@ class HomeAssistantProvider(ProviderBase):
 
     def update_observed(self):
         self.ctx.logger.info(f"Provider Local for {self.name}")
-
-        value = self.ctx.state_get("sensor.local_temperature_avg")
-
-        self.ctx.logger.info(
-            f"[TEST] state_get() funktioniert: sensor.local_temperature_avg = {value}"
-        )
+        self.collect_weather_source()
+        
