@@ -18,6 +18,9 @@ from pyscript.modules.infra.store.hydrostore import hydro_store
 
 from pyscript.modules.sprinkler.sprinkler_config import SENSOR_HYDRO_ETO, SENSOR_HYDRO_RAIN, SENSOR_HYDRO_SOIL, INPUT_SOIL_CAPACITY, INPUT_SOIL_OPTIMAL, CHART_DAYS_PAST, CHART_DAYS_FUTURE
 
+from pyscript.modules.infra.providers.provider_context import ProviderContext
+from pyscript.modules.infra.providers.provider_manager import ProviderManager
+
 ETO_CONFIG_FILE = "/config/sprinkler/eto.yaml"
 
 SOIL_CAPACITY           = float(state.get(INPUT_SOIL_CAPACITY))
@@ -83,6 +86,9 @@ class EToEngine:
 
     def __init__(self, store):
         self.store = store
+
+        self.provider_ctx = ProviderContext(self)
+        self.provider_manager = ProviderManager(self.provider_ctx)
 
         self.eto_min_mm = ETO_SETTINGS.get("min_mm", 1.0)
         self.eto_max_mm = ETO_SETTINGS.get("max_mm", 8.0)
