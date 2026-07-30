@@ -1,6 +1,6 @@
 from pyscript.modules.infra.providers.provider_base import ProviderBase
 
-class LocalProvider(ProviderBase):
+class HomeAssistantProvider(ProviderBase):
 
     def __init__(self, ctx, name, config):
         super().__init__(ctx, name, config)

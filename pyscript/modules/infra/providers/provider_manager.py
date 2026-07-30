@@ -1,4 +1,4 @@
-from pyscript.modules.infra.providers.provider_local import LocalProvider
+from pyscript.modules.infra.providers.provider_homeassistant import HomeAssistantProvider
 
 class ProviderManager:
 
@@ -8,7 +8,7 @@ class ProviderManager:
         self.providers = []
 
         for name, config in sources.items():
-            self.providers.append(LocalProvider(ctx, name, config))
+            self.providers.append(HomeAssistantProvider(ctx, name, config))
 
     def register(self, provider):
 
