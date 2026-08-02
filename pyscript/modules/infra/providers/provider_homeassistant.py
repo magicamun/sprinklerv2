@@ -2,6 +2,9 @@ from pyscript.modules.infra.providers.provider_base import ProviderBase
 
 class HomeAssistantProvider(ProviderBase):
 
+    supports_observed = True
+    supports_forecast = False
+
     def __init__(self, ctx, name, config):
         super().__init__(ctx, name, config)
 

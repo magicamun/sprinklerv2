@@ -1,5 +1,6 @@
 from pyscript.modules.infra.providers.provider_base import ProviderBase
 from datetime import datetime
+import json
 
 OPENMETEO_FIELDS = {
     "temp_c": {
@@ -24,9 +25,17 @@ OPENMETEO_FIELDS = {
     },
 }
 
+OPENMETEO_FORECAST_FIELDS = {
+    "eto_mm": "et0_fao_evapotranspiration",
+    "rain_mm": "precipitation_sum",
+    "prob_pct": "precipitation_probability_max",
+}
+
 
 class OpenMeteoProvider(ProviderBase):
     BASE_URL = "https://api.open-meteo.com/v1/forecast"
+    supports_observed = True
+    supports_forecast = True
 
     def __init__(self, ctx, name, config):
 
@@ -34,7 +43,7 @@ class OpenMeteoProvider(ProviderBase):
 
     async def update_observed(self):
 
-        data = await self._fetch()
+        data = await self._fetch("observed")
         observed = self._aggregate_today(data["hourly"])
 
         self.ctx.logger.debug(
@@ -49,9 +58,31 @@ class OpenMeteoProvider(ProviderBase):
             f"fields={','.join(observed)}"
         )
 
-    def update_forecast(self):
-        self.ctx.logger.info(f"Provider OpenMeteo forecast for {self.name}")
-        # kommt im nächsten Schritt
+    async def update_forecast(self):
+        data = await self._fetch("forecast")
+        forecast = self._normalize_forecast(data["daily"])
+
+        self.ctx.logger.debug(
+            f"provider={self.name} action=normalize_forecast values={forecast}"
+        )
+
+        written_fields = []
+        for forecast_date, values in forecast.items():
+            for key, value in values.items():
+                self.ctx.store.write_forecast(
+                    forecast_date,
+                    "global",
+                    key,
+                    self.name,
+                    value,
+                )
+                if key not in written_fields:
+                    written_fields.append(key)
+
+        self.ctx.logger.info(
+            f"provider={self.name} action=forecast_updated "
+            f"fields={','.join(written_fields)}"
+        )
 
     # ----------------------------------------------------------
     # OpenMeteo
@@ -76,13 +107,18 @@ class OpenMeteoProvider(ProviderBase):
             "precipitation_probability_max"
         )
 
-    async def _fetch(self):
+    async def _fetch(self, kind):
         url = self._build_url()
         self.ctx.logger.debug(
-            f"provider={self.name} action=fetch_observed url={url}"
+            f"provider={self.name} action=fetch_{kind} url={url}"
         )
 
-        return await self.ctx.http.get_json(url)
+        data = await self.ctx.http.get_json(url)
+        self.ctx.logger.debug(
+            f"provider={self.name} action=fetch_{kind}_response "
+            f"json={json.dumps(data, ensure_ascii=False)}"
+        )
+        return data
 
     def _aggregate_today(self, hourly):
         now = datetime.now()
@@ -109,3 +145,26 @@ class OpenMeteoProvider(ProviderBase):
             result[target_field] = round(value, 2)
 
         return result
+
+    def _normalize_forecast(self, daily):
+        forecast = {}
+        dates = daily.get("time", [])
+
+        for index, forecast_date in enumerate(dates):
+            values = {}
+
+            for key, api_field in OPENMETEO_FORECAST_FIELDS.items():
+                source_values = daily.get(api_field, [])
+                if index >= len(source_values):
+                    continue
+
+                value = source_values[index]
+                if value is None:
+                    continue
+
+                values[key] = round(float(value), 2)
+
+            if values:
+                forecast[str(forecast_date)] = values
+
+        return forecast

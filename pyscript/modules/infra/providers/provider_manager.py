@@ -33,6 +33,13 @@ class ProviderManager:
     async def update_observed(self):
 
         for provider in self.providers:
+            if not provider.supports_observed:
+                self.ctx.logger.debug(
+                    f"provider={provider.name} action=update_observed_skipped "
+                    "reason=unsupported"
+                )
+                continue
+
             self.ctx.logger.debug(
                 f"provider={provider.name} action=update_observed_dispatched"
             )
@@ -41,7 +48,20 @@ class ProviderManager:
             if inspect.isawaitable(result):
                 await result
 
-    def update_forecast(self):
+    async def update_forecast(self):
 
-        for p in self.providers:
-            p.update_forecast()
+        for provider in self.providers:
+            if not provider.supports_forecast:
+                self.ctx.logger.debug(
+                    f"provider={provider.name} action=update_forecast_skipped "
+                    "reason=unsupported"
+                )
+                continue
+
+            self.ctx.logger.debug(
+                f"provider={provider.name} action=update_forecast_dispatched"
+            )
+            result = provider.update_forecast()
+
+            if inspect.isawaitable(result):
+                await result

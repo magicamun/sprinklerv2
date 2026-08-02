@@ -1,6 +1,8 @@
 class ProviderBase:
 
     provider = "base"
+    supports_observed = False
+    supports_forecast = False
 
     def __init__(self, ctx, name, config):
         self.ctx = ctx
