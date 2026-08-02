@@ -20,14 +20,14 @@ OPENMETEO_FIELDS = {
         "api": "precipitation",
         "aggregate": "sum",
     },
-    "eto_mm": {
+    "eto_ref_mm": {
         "api": "et0_fao_evapotranspiration",
         "aggregate": "sum",
     },
 }
 
 OPENMETEO_FORECAST_FIELDS = {
-    "eto_mm": {
+    "eto_ref_mm": {
         "api": "et0_fao_evapotranspiration",
     },
     "rain_mm": {
