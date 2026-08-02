@@ -14,6 +14,7 @@ OPENMETEO_FIELDS = {
     "wind_ms": {
         "api": "wind_speed_10m",
         "aggregate": "mean",
+        "factor": 1 / 3.6,
     },
     "rain_mm": {
         "api": "precipitation",
@@ -142,6 +143,8 @@ class OpenMeteoProvider(ProviderBase):
                     f"Unknown aggregation {cfg['aggregate']}"
 
                 )
+            value *= cfg.get("factor", 1.0)
+            
             result[target_field] = round(value, 2)
 
         return result
