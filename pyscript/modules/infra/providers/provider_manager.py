@@ -1,5 +1,6 @@
 from pyscript.modules.infra.providers.provider_homeassistant import HomeAssistantProvider
 from pyscript.modules.infra.providers.provider_openmeteo import OpenMeteoProvider
+import inspect
 
 class ProviderManager:
 
@@ -23,10 +24,19 @@ class ProviderManager:
 
         self.providers.append(provider)
 
-    def update_observed(self):
+    def get_provider(self, provider_type):
+        for provider in self.providers:
+            if isinstance(provider, provider_type):
+                return provider
+        return None
+        
+    async def update_observed(self):
 
         for provider in self.providers:
-            provider.update_observed()
+            result = provider.update_observed()
+
+            if inspect.isawaitable(result):
+                await result
 
     def update_forecast(self):
 

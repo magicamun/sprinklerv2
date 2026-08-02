@@ -8,10 +8,12 @@ from datetime import datetime, date, timedelta
 import math
 import logging
 import urllib.request
+import requests
 import json
 from collections import defaultdict
 import yaml
 import os
+from pyscript.modules.infra.providers.provider_openmeteo import OpenMeteoProvider
 
 from pyscript.openmeteo import fetch_openmeteo
 from pyscript.modules.infra.store.hydrostore import hydro_store
@@ -448,7 +450,7 @@ def etoengine_collecthourly():
     etoengine.prune()
 
     # etoengine.collect_all_sources()
-    etoengine.provider_manager.update_observed()
+    await etoengine.provider_manager.update_observed()
 
     hydro_store.compute_eto_all_days()
     hydro_store.compute_soil_all_days(soil_min = 0, soil_opt = SOIL_OPTIMAL, soil_max = SOIL_CAPACITY, scope="global", force_all = False)
@@ -471,8 +473,8 @@ def etoengine_startup():
 
     etoengine.prune()
 
-#    etoengine.collect_all_sources()
-    etoengine.provider_manager.update_observed()
+#    etoengine.collect_all_sources()        
+    await etoengine.provider_manager.update_observed()
 
     hydro_store.compute_eto_all_days()
     hydro_store.compute_soil_all_days(soil_min = 0, soil_opt = SOIL_OPTIMAL, soil_max = SOIL_CAPACITY, scope="global", force_all = False)
