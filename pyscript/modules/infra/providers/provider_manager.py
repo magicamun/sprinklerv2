@@ -11,7 +11,7 @@ class ProviderManager:
 
         for name, config in sources.items():
             provider = config.get("provider", "homeassistant")
-            self.ctx.logger.info(f"Source={name}, provider={provider}")
+            self.ctx.logger.debug(f"source={name} provider={provider} action=initialized")
             
             if provider == "homeassistant":
                 self.providers.append(HomeAssistantProvider(ctx, name, config))
@@ -33,6 +33,9 @@ class ProviderManager:
     async def update_observed(self):
 
         for provider in self.providers:
+            self.ctx.logger.debug(
+                f"provider={provider.name} action=update_observed_dispatched"
+            )
             result = provider.update_observed()
 
             if inspect.isawaitable(result):

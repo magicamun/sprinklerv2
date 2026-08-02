@@ -23,10 +23,16 @@ class HomeAssistantProvider(ProviderBase):
             if entity:
                 try:
                     raw_val = self.ctx.state_get(entity)
-                    self.ctx.logger.info(f"[COLLECT] entity={entity} key={key} raw={raw_val}")
+                    self.ctx.logger.debug(
+                        f"provider={self.name} action=read_observed "
+                        f"entity={entity} key={key} raw={raw_val}"
+                    )
                     val = float(raw_val) if raw_val is not None else None
                 except Exception as e:
-                    self.ctx.logger.warning(f"[COLLECT] entity={entity} key={key} conversion failed: {e}")
+                    self.ctx.logger.warning(
+                        f"provider={self.name} action=read_observed "
+                        f"entity={entity} key={key} conversion_failed error={e}"
+                    )
                     val = None
             else:
                 val = None
@@ -40,7 +46,9 @@ class HomeAssistantProvider(ProviderBase):
                 
             data[key] = val
 
-        self.ctx.logger.info(f"[COLLECT] source_data={data}")
+        self.ctx.logger.debug(
+            f"provider={self.name} action=collected_observed values={data}"
+        )
         return data
 
     def collect_weather_source(self):
@@ -50,21 +58,24 @@ class HomeAssistantProvider(ProviderBase):
         # 🔥 CASE: direct ETo
         if weather.get("eto_mm") is not None:
             self.ctx.store.write_observed("global", "eto_mm", self.name, weather["eto_mm"])
+            self.ctx.logger.info(
+                f"provider={self.name} action=observed_updated fields=eto_mm"
+            )
             return
 
         # 🔥 GENERIC WRITE
+        written_fields = []
         for key, value in weather.items():
-            self.ctx.logger.info(
-
-                f"{self.name}: {key} -> {value}"
-
-            )
             if value is None:
                 continue
 
             self.ctx.store.write_observed("global", key, self.name, value)
+            written_fields.append(key)
+
+        self.ctx.logger.info(
+            f"provider={self.name} action=observed_updated "
+            f"fields={','.join(written_fields)}"
+        )
 
     def update_observed(self):
-        self.ctx.logger.info(f"Provider Local for {self.name}")
         self.collect_weather_source()
-        

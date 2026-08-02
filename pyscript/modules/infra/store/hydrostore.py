@@ -289,7 +289,7 @@ class HydroStore:
         try:
             self._write_file(HYDRO_FILE, payload, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
         finally:
-            log_store.info(f"Store Today geschrieben")
+            log_store.debug(f"Store Today geschrieben")
 
     def save_today(self):
         if not self._dirty_persist:
@@ -1186,4 +1186,3 @@ class HydroStore:
         return result
                     
 hydro_store = HydroStore()
-

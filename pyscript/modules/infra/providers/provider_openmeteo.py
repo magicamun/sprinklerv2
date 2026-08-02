@@ -34,12 +34,20 @@ class OpenMeteoProvider(ProviderBase):
 
     async def update_observed(self):
 
-        self.ctx.logger.info(f"Provider OpenMeteo observed for {self.name}")
         data = await self._fetch()
         observed = self._aggregate_today(data["hourly"])
 
+        self.ctx.logger.debug(
+            f"provider={self.name} action=aggregate_observed values={observed}"
+        )
+
         for key, value in observed.items():
             self.ctx.store.write_observed("global", key, self.name, value)
+
+        self.ctx.logger.info(
+            f"provider={self.name} action=observed_updated "
+            f"fields={','.join(observed)}"
+        )
 
     def update_forecast(self):
         self.ctx.logger.info(f"Provider OpenMeteo forecast for {self.name}")
@@ -70,7 +78,9 @@ class OpenMeteoProvider(ProviderBase):
 
     async def _fetch(self):
         url = self._build_url()
-        self.ctx.logger.debug(f"Fetching Url: {url}")
+        self.ctx.logger.debug(
+            f"provider={self.name} action=fetch_observed url={url}"
+        )
 
         return await self.ctx.http.get_json(url)
 
