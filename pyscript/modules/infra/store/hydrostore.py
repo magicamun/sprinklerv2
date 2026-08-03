@@ -1080,7 +1080,7 @@ class HydroStore:
         # ------------------------
         # blend
         # ------------------------
-        now = datetime.utcnow()
+        now = datetime.now()
         hour = now.hour + now.minute / 60
 
         t = min(1.0, max(0.0, hour / 24))
