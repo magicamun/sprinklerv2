@@ -1,6 +1,5 @@
 from pyscript.modules.infra.providers.provider_base import ProviderBase
 from datetime import datetime
-import json
 
 OPENMETEO_FIELDS = {
     "temp_c": {
@@ -138,12 +137,7 @@ class OpenMeteoProvider(ProviderBase):
             f"provider={self.name} action=fetch_{kind} url={url}"
         )
 
-        data = await self.ctx.http.get_json(url)
-        self.ctx.logger.debug(
-            f"provider={self.name} action=fetch_{kind}_response "
-            f"json={json.dumps(data, ensure_ascii=False)}"
-        )
-        return data
+        return await self.ctx.http.get_json(url)
 
     def _aggregate_today(self, hourly):
         now = datetime.now()

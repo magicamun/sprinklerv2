@@ -2,20 +2,11 @@
 ETo Calculator (FAO-56-Light)
 Phase 1: Manual trigger, no soil model, no scheduler
 """
-from typing import Dict
-
-from datetime import datetime, date, timedelta
-import math
+from datetime import date, timedelta
 import logging
-import urllib.request
-import requests
-import json
-from collections import defaultdict
 import yaml
 import os
-from pyscript.modules.infra.providers.provider_openmeteo import OpenMeteoProvider
 
-from pyscript.openmeteo import fetch_openmeteo
 from pyscript.modules.infra.store.hydrostore import hydro_store
 
 from pyscript.modules.sprinkler.sprinkler_config import SENSOR_HYDRO_ETO, SENSOR_HYDRO_RAIN, SENSOR_HYDRO_SOIL, INPUT_SOIL_CAPACITY, INPUT_SOIL_OPTIMAL, CHART_DAYS_PAST, CHART_DAYS_FUTURE
@@ -102,155 +93,6 @@ class EToEngine:
         self.eto_min_mm = ETO_SETTINGS.get("min_mm", 1.0)
         self.eto_max_mm = ETO_SETTINGS.get("max_mm", 8.0)
         self.solar_saturation = ETO_SETTINGS.get("solar_saturation", 0.7)
-
-    def _normalize_forecast_date(self, value):
-
-        if not value:
-            return None
-
-        # OpenMeteo -> "2026-03-11"
-        if len(value) == 10:
-            return date.fromisoformat(value)
-
-        # Weather integrations -> ISO datetime
-        return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
-
-    def normalize_wind(self, value, source=None, mode=None):
-
-        # mode: "daily" / "hourly"
-
-        if value is None:
-            return None
-
-        # Heuristik + bekannte Fälle
-        if mode == "daily":
-            return value / 3.6   # km/h → m/s
-
-        if mode == "hourly":
-            return value         # already m/s
-
-        # fallback safety
-        if value > 20:           # unrealistisch für m/s im Alltag
-            return value / 3.6
-
-        return value
-
-    def rh_from_dewpoint(self, temp_c, dew_point_c):
-
-        if temp_c is None or dew_point_c is None:
-            return None
-
-        a = 17.625
-        b = 243.04
-
-        es = 6.1094 * math.exp((a * temp_c) / (b + temp_c))
-        e  = 6.1094 * math.exp((a * dew_point_c) / (b + dew_point_c))
-
-        rh = 100 * (e / es)
-
-        return max(0, min(100, rh))
-
-    # -----------------------------
-    # Forecast - Collectors
-    # -----------------------------
-    def collect_forecast_openmeteo(self):
-
-        data = task.executor(fetch_openmeteo, LATITUDE, LONGITUDE)
-
-        daily = data.get("daily")
-        if not daily:
-            log_eto.error("OpenMeteo: missing daily data")
-            return
-
-        days = daily.get("time", [])
-        eto_vals = daily.get("et0_fao_evapotranspiration", [])
-        rain_vals = daily.get("precipitation_sum", [])
-        prob_vals = daily.get("precipitation_probability_max", [])
-
-        for i, day in enumerate(days):
-
-            date = self._normalize_forecast_date(day)
-            try:
-                # ------------------------
-                # ETo
-                # ------------------------
-                if i < len(eto_vals):
-                    self.store.write(
-                        "global", "eto_mm", "forecast", "openmeteo",
-                        float(eto_vals[i]), date
-                    )
-
-                # ------------------------
-                # Rain
-                # ------------------------
-                if i < len(rain_vals):
-                    self.store.write(
-                        "global", "rain_mm", "forecast", "openmeteo",
-                        float(rain_vals[i]), date
-                    )
-
-                # ------------------------
-                # Probability
-                # ------------------------
-                if i < len(prob_vals):
-                    self.store.write(
-                        "global", "prob_pct", "forecast", "openmeteo",
-                        float(prob_vals[i]), date
-                    )
-
-            except Exception as e:
-                log_eto.error(f"Forecast write failed for {day}: {e}")
-                
-    def collect_forecast_for_source(self, source, cfg):
-
-        mode = "daily"
-
-        if not cfg.get("forecast_id"):
-            return
-
-        try:
-            result = service.call(
-                "weather",
-                "get_forecasts",
-                blocking=True,
-                return_response=True,
-                entity_id=cfg["forecast_id"],
-                type=mode
-            )
-
-            forecasts = result[cfg["forecast_id"]]["forecast"]
-
-            for entry in forecasts:
-
-                day = entry.get("datetime")[:10]  # YYYY-MM-DD
-
-                date = self._normalize_forecast_date(day)
-
-                temp = entry.get("temperature")
-                hum  = entry.get("humidity")
-                dew  = entry.get("dew_point") 
-                wind = entry.get("wind_speed")
-                rain = entry.get("precipitation")
-
-                if hum is None:
-                    hum = self.rh_from_dewpoint(temp, dew)
-
-                if temp is not None:
-                    self.store.write("global", "temp_c", "forecast", source, float(temp), date)
-
-                if hum is not None:
-                    self.store.write("global", "humidity_pct", "forecast", source, float(hum), date)
-
-                if wind is not None:
-                    wind = round(self.normalize_wind(wind, source, mode), 3)
-                    self.store.write("global", "wind_ms", "forecast", source, float(wind), date)
-
-                if rain is not None:
-                    self.store.write("global", "rain_mm", "forecast", source, float(rain), date)
-
-        except Exception as e:
-            log_eto.error(f"Forecast collect failed for {source}: {e}")
-
 
     # -----------------------------
     # Projections
@@ -449,7 +291,6 @@ def soil_params_changed(var_name=None, value=None, old_value=None):
 def etoengine_collecthourly():
     etoengine.prune()
 
-    # etoengine.collect_all_sources()
     await etoengine.provider_manager.update_observed()
     await etoengine.provider_manager.update_forecast()
 
@@ -474,7 +315,6 @@ def etoengine_startup():
 
     etoengine.prune()
 
-#    etoengine.collect_all_sources()        
     await etoengine.provider_manager.update_observed()
     await etoengine.provider_manager.update_forecast()
 
