@@ -26,8 +26,11 @@ class EToResult:
     eto: float
 
     # Eingabedaten
-    temp_c: float
-    humidity_pct: float
+    temp_min_c: float
+    temp_max_c: float
+    humidity_min_pct: float
+    humidity_max_pct: float
+    t_mean: float
     wind_ms: float
     solar_rad_mj_m2: float
 
@@ -62,8 +65,11 @@ class EToResult:
 
         return (
             f"ETo={fmt(self.eto)} mm | "
-            f"T={fmt(self.temp_c,1)}°C "
-            f"RH={fmt(self.humidity_pct,0)}% "
+            f"Tmin={fmt(self.temp_min_c,1)}°C "
+            f"Tmax={fmt(self.temp_max_c,1)}°C "
+            f"Tmean={fmt(self.t_mean,1)}°C "
+            f"RHmin={fmt(self.humidity_min_pct,0)}% "
+            f"RHmax={fmt(self.humidity_max_pct,0)}% "
             f"Wind={fmt(self.wind_ms,1)}m/s "
             f"RsInput={fmt(self.solar_rad_mj_m2)}MJ/m²/day | "
             f"Lat={fmt(self.latitude,4)} "
@@ -464,8 +470,11 @@ class HydroStore:
         # -----------------------------
         # Input
         # -----------------------------
-        t_mean = data["temp_c"]
-        rh_mean = data.get("humidity_pct", 60)
+        t_min = data["temp_min_c"]
+        t_max = data["temp_max_c"]
+        rh_min = data["humidity_min_pct"]
+        rh_max = data["humidity_max_pct"]
+        t_mean = (t_min + t_max) / 2
         wind = data["wind_ms"]
         solar_rad_mj_m2 = data["solar_rad_mj_m2"]
 
@@ -479,9 +488,17 @@ class HydroStore:
         # -----------------------------
         # Saturation vapour pressure
         # -----------------------------
-        es = 0.6108 * math.exp((17.27 * t_mean) / (t_mean + 237.3))
-        ea = es * (rh_mean / 100.0)
-        delta = (4098 * es) / ((t_mean + 237.3) ** 2)
+        es_tmax = 0.6108 * math.exp((17.27 * t_max) / (t_max + 237.3))
+        es_tmin = 0.6108 * math.exp((17.27 * t_min) / (t_min + 237.3))
+        es = (es_tmax + es_tmin) / 2
+        ea = (
+            es_tmin * (rh_max / 100.0)
+            + es_tmax * (rh_min / 100.0)
+        ) / 2
+        es_tmean = 0.6108 * math.exp(
+            (17.27 * t_mean) / (t_mean + 237.3)
+        )
+        delta = (4098 * es_tmean) / ((t_mean + 237.3) ** 2)
 
         # -----------------------------
         # Extraterrestrial radiation
@@ -513,7 +530,10 @@ class HydroStore:
 
         rnl = (
             4.903e-9
-            * ((t_mean + 273.16) ** 4)
+            * (
+                ((t_max + 273.16) ** 4 + (t_min + 273.16) ** 4)
+                / 2
+            )
             * (0.34 - 0.14 * math.sqrt(ea))
             * cloud_factor
         )
@@ -537,8 +557,11 @@ class HydroStore:
 
         return EToResult(
             eto=eto,
-            temp_c=t_mean,
-            humidity_pct=rh_mean,
+            temp_min_c=t_min,
+            temp_max_c=t_max,
+            humidity_min_pct=rh_min,
+            humidity_max_pct=rh_max,
+            t_mean=t_mean,
             wind_ms=wind,
             solar_rad_mj_m2=solar_rad_mj_m2,
             latitude=self.latitude,
@@ -564,19 +587,23 @@ class HydroStore:
 
         scope = "global"
 
-        temp = self.get(scope, "temp_c", variant, source, day)
-        hum  = self.get(scope, "humidity_pct", variant, source, day)
+        temp_min = self.get(scope, "temp_min_c", variant, source, day)
+        temp_max = self.get(scope, "temp_max_c", variant, source, day)
+        hum_min = self.get(scope, "humidity_min_pct", variant, source, day)
+        hum_max = self.get(scope, "humidity_max_pct", variant, source, day)
         wind = self.get(scope, "wind_ms", variant, source, day)
         solar_rad = self.get(
             scope, "solar_rad_mj_m2", variant, source, day
         )
 
-        if None in (temp, hum, wind, solar_rad):
+        if None in (temp_min, temp_max, hum_min, hum_max, wind, solar_rad):
             return None
 
         result = self.calculate_eto_fao56_light({
-            "temp_c": temp,
-            "humidity_pct": hum,
+            "temp_min_c": temp_min,
+            "temp_max_c": temp_max,
+            "humidity_min_pct": hum_min,
+            "humidity_max_pct": hum_max,
             "wind_ms": wind,
             "solar_rad_mj_m2": solar_rad,
         }, day)
@@ -593,8 +620,12 @@ class HydroStore:
         # ----------------------------------
 
         variants = {
-            "observed": self.get_sources(scope, "temp_c", "observed", day),
-            "forecast": self.get_sources(scope, "temp_c", "forecast", day),
+            "observed": self.get_sources(
+                scope, "temp_min_c", "observed", day
+            ),
+            "forecast": self.get_sources(
+                scope, "temp_min_c", "forecast", day
+            ),
             "derived":  ["median", "current"],
         }
 
