@@ -6,8 +6,6 @@ from pathlib import Path
 from datetime import date as dt_date, datetime, timedelta
 from dataclasses import dataclass
 
-from typing import Optional
-
 from pyscript.modules.sprinkler.sprinkler_config import (
     HYDRO_FILE, MAX_HISTORY_DAYS
 )
@@ -31,7 +29,7 @@ class EToResult:
     temp_c: float
     humidity_pct: float
     wind_ms: float
-    sun_hours: Optional[float]
+    solar_rad_mj_m2: float
 
     # Standort
     latitude: float
@@ -67,7 +65,7 @@ class EToResult:
             f"T={fmt(self.temp_c,1)}°C "
             f"RH={fmt(self.humidity_pct,0)}% "
             f"Wind={fmt(self.wind_ms,1)}m/s "
-            f"Sun={fmt(self.sun_hours,1)}h | "
+            f"RsInput={fmt(self.solar_rad_mj_m2)}MJ/m²/day | "
             f"Lat={fmt(self.latitude,4)} "
             f"Elev={fmt(self.elevation,0)}m "
             f"DOY={self.day_of_year} | "
@@ -460,7 +458,7 @@ class HydroStore:
     def calculate_eto_fao56_light(self, data: dict, day: str) -> EToResult:
         """
         FAO-56-Light Reference Evapotranspiration (mm/day)
-        Uses temperature, humidity, sun hours, fixed wind.
+        Uses temperature, humidity, solar radiation, and wind.
         """
 
         # -----------------------------
@@ -469,7 +467,7 @@ class HydroStore:
         t_mean = data["temp_c"]
         rh_mean = data.get("humidity_pct", 60)
         wind = data["wind_ms"]
-        sun_hours = data.get("sun_hours")
+        solar_rad_mj_m2 = data["solar_rad_mj_m2"]
 
         # -----------------------------
         # Constants
@@ -494,7 +492,7 @@ class HydroStore:
             solar_dec,
             ws,
             ra,
-            daylight_hours,
+            _,
         ) = self._solar_geometry(day)
 
         # -----------------------------
@@ -503,13 +501,9 @@ class HydroStore:
         rso = (0.75 + 2e-5 * self.elevation) * ra
 
         # -----------------------------
-        # Solar radiation from sun hours
+        # Solar radiation
         # -----------------------------
-        if sun_hours is not None:
-            n = sun_hours
-            rs = (0.25 + 0.5 * (n / daylight_hours)) * ra
-        else:
-            rs = 0.75 * ra  # fallback
+        rs = solar_rad_mj_m2
 
         # Net shortwave radiation
         rns = (1 - albedo) * rs
@@ -535,7 +529,7 @@ class HydroStore:
             + gamma * (900 / (t_mean + 273)) * wind * (es - ea)
         ) / (delta + gamma * (1 + 0.34 * wind))
 
-        #log_store.info(f"ETo inputs: T={t_mean} RH={rh_mean} Sun={sun_hours} Wind={wind}, Latitude={self.latitude}, Elevation={self.elevation}")
+        #log_store.info(f"ETo inputs: T={t_mean} RH={rh_mean} Rs={solar_rad_mj_m2} Wind={wind}, Latitude={self.latitude}, Elevation={self.elevation}")
         #log_store.info(f"Ra={ra:.2f} Rs={rs:.2f} Rso={rso:.2f} Cloud={cloud_factor:.2f} Rn={rn:.2f}")
         #log_store.info(f"ETo result: {eto:.2f} mm")
                 
@@ -546,7 +540,7 @@ class HydroStore:
             temp_c=t_mean,
             humidity_pct=rh_mean,
             wind_ms=wind,
-            sun_hours=sun_hours,
+            solar_rad_mj_m2=solar_rad_mj_m2,
             latitude=self.latitude,
             elevation=self.elevation,
             day_of_year=day_of_year,
@@ -573,16 +567,18 @@ class HydroStore:
         temp = self.get(scope, "temp_c", variant, source, day)
         hum  = self.get(scope, "humidity_pct", variant, source, day)
         wind = self.get(scope, "wind_ms", variant, source, day)
-        sun  = self.get(scope, "sun_hours", variant, source, day)
+        solar_rad = self.get(
+            scope, "solar_rad_mj_m2", variant, source, day
+        )
 
-        if None in (temp, hum, wind, sun):
+        if None in (temp, hum, wind, solar_rad):
             return None
 
         result = self.calculate_eto_fao56_light({
             "temp_c": temp,
             "humidity_pct": hum,
             "wind_ms": wind,
-            "sun_hours": sun,
+            "solar_rad_mj_m2": solar_rad,
         }, day)
 
         return round(result.eto, 3), result
