@@ -6,9 +6,25 @@ OPENMETEO_FIELDS = {
         "api": "temperature_2m",
         "aggregate": "mean",
     },
+    "temp_min_c": {
+        "api": "temperature_2m",
+        "aggregate": "min",
+    },
+    "temp_max_c": {
+        "api": "temperature_2m",
+        "aggregate": "max",
+    },
     "humidity_pct": {
         "api": "relative_humidity_2m",
         "aggregate": "mean",
+    },
+    "humidity_min_pct": {
+        "api": "relative_humidity_2m",
+        "aggregate": "min",
+    },
+    "humidity_max_pct": {
+        "api": "relative_humidity_2m",
+        "aggregate": "max",
     },
     "wind_ms": {
         "api": "wind_speed_10m",
@@ -31,6 +47,18 @@ OPENMETEO_FIELDS = {
 }
 
 OPENMETEO_FORECAST_FIELDS = {
+    "temp_min_c": {
+        "api": "temperature_2m_min",
+    },
+    "temp_max_c": {
+        "api": "temperature_2m_max",
+    },
+    "humidity_min_pct": {
+        "api": "relative_humidity_2m_min",
+    },
+    "humidity_max_pct": {
+        "api": "relative_humidity_2m_max",
+    },
     "eto_ref_mm": {
         "api": "et0_fao_evapotranspiration",
     },
@@ -100,6 +128,15 @@ class OpenMeteoProvider(ProviderBase):
         self.ctx.logger.debug(
             f"provider={self.name} action=normalize_forecast values={forecast}"
         )
+        for forecast_date, values in forecast.items():
+            self.ctx.logger.debug(
+                f"provider={self.name} action=normalize_forecast_daily "
+                f"date={forecast_date} "
+                f"temp_min={values.get('temp_min_c')} "
+                f"temp_max={values.get('temp_max_c')} "
+                f"humidity_min={values.get('humidity_min_pct')} "
+                f"humidity_max={values.get('humidity_max_pct')}"
+            )
         solar_radiation = {
             forecast_date: values["solar_rad_mj_m2"]
             for forecast_date, values in forecast.items()
@@ -147,6 +184,10 @@ class OpenMeteoProvider(ProviderBase):
             "et0_fao_evapotranspiration,"
             "shortwave_radiation"
             "&daily="
+            "temperature_2m_max,"
+            "temperature_2m_min,"
+            "relative_humidity_2m_max,"
+            "relative_humidity_2m_min,"
             "et0_fao_evapotranspiration,"
             "precipitation_sum,"
             "precipitation_probability_max,"
@@ -176,6 +217,10 @@ class OpenMeteoProvider(ProviderBase):
 
             if cfg["aggregate"] == "mean":
                 value = sum(values) / len(values)
+            elif cfg["aggregate"] == "min":
+                value = min(values)
+            elif cfg["aggregate"] == "max":
+                value = max(values)
             elif cfg["aggregate"] == "sum":
                 value = sum(values)
             else:
