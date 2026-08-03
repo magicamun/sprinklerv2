@@ -23,6 +23,11 @@ OPENMETEO_FIELDS = {
         "api": "et0_fao_evapotranspiration",
         "aggregate": "sum",
     },
+    "solar_rad_mj_m2": {
+        "api": "shortwave_radiation",
+        "aggregate": "sum",
+        "factor": 3600 / 1_000_000,
+    },
 }
 
 OPENMETEO_FORECAST_FIELDS = {
@@ -38,6 +43,9 @@ OPENMETEO_FORECAST_FIELDS = {
     "sun_hours": {
         "api": "sunshine_duration",
         "factor": 1 / 3600,
+    },
+    "solar_rad_mj_m2": {
+        "api": "shortwave_radiation_sum",
     },
 }
 
@@ -72,6 +80,10 @@ class OpenMeteoProvider(ProviderBase):
         self.ctx.logger.debug(
             f"provider={self.name} action=aggregate_observed values={observed}"
         )
+        self.ctx.logger.debug(
+            f"provider={self.name} action=solar_radiation_observed "
+            f"value={observed.get('solar_rad_mj_m2')} unit=MJ/m2/day"
+        )
 
         for key, value in observed.items():
             self.ctx.store.write_observed("global", key, self.name, value)
@@ -87,6 +99,15 @@ class OpenMeteoProvider(ProviderBase):
 
         self.ctx.logger.debug(
             f"provider={self.name} action=normalize_forecast values={forecast}"
+        )
+        solar_radiation = {
+            forecast_date: values["solar_rad_mj_m2"]
+            for forecast_date, values in forecast.items()
+            if "solar_rad_mj_m2" in values
+        }
+        self.ctx.logger.debug(
+            f"provider={self.name} action=solar_radiation_forecast "
+            f"values={solar_radiation} unit=MJ/m2/day"
         )
 
         written_fields = []
@@ -123,12 +144,14 @@ class OpenMeteoProvider(ProviderBase):
             "relative_humidity_2m,"
             "wind_speed_10m,"
             "precipitation,"
-            "et0_fao_evapotranspiration"
+            "et0_fao_evapotranspiration,"
+            "shortwave_radiation"
             "&daily="
             "et0_fao_evapotranspiration,"
             "precipitation_sum,"
             "precipitation_probability_max,"
-            "sunshine_duration"
+            "sunshine_duration,"
+            "shortwave_radiation_sum"
         )
 
     async def _fetch(self, kind):

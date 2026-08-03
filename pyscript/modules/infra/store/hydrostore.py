@@ -13,6 +13,14 @@ from pyscript.modules.sprinkler.sprinkler_config import (
 )
 
 log_store           = logging.getLogger("pyscript.sprinkler.hydrostore")
+
+CURRENT_POLICIES = {
+    "rain_mm": "daily_total",
+    "sun_hours": "daily_total",
+    "solar_rad_mj_m2": "daily_total",
+    "eto_ref_mm": "daily_total",
+}
+
 @dataclass(slots=True)
 
 class EToResult:
@@ -1064,6 +1072,13 @@ class HydroStore:
 
         if fc_vals:
             med_fc = self._median(fc_vals)
+
+        if CURRENT_POLICIES.get(key) == "daily_total":
+            if med_fc is not None:
+                return round(med_fc, 3)
+            if med_obs is not None:
+                return round(med_obs, 3)
+            return None
 
         # ------------------------
         # fallback logic
