@@ -294,6 +294,7 @@ def etoengine_collecthourly():
     await etoengine.provider_manager.update_observed()
     await etoengine.provider_manager.update_forecast()
 
+    hydro_store.compute_solar_radiation_all_days()
     hydro_store.compute_eto_all_days()
     hydro_store.compute_soil_all_days(soil_min = 0, soil_opt = SOIL_OPTIMAL, soil_max = SOIL_CAPACITY, scope="global", force_all = False)
 
@@ -318,6 +319,7 @@ def etoengine_startup():
     await etoengine.provider_manager.update_observed()
     await etoengine.provider_manager.update_forecast()
 
+    hydro_store.compute_solar_radiation_all_days()
     hydro_store.compute_eto_all_days()
     hydro_store.compute_soil_all_days(soil_min = 0, soil_opt = SOIL_OPTIMAL, soil_max = SOIL_CAPACITY, scope="global", force_all = False)
 

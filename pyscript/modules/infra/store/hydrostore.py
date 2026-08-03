@@ -379,6 +379,84 @@ class HydroStore:
     # -----------------------------
     # CORE: FAO-56-Light (Stub)
     # -----------------------------
+    def _solar_geometry(self, day):
+        day_of_year = datetime.fromisoformat(day).timetuple().tm_yday
+        lat_rad = math.radians(self.latitude)
+
+        dr = 1 + 0.033 * math.cos(2 * math.pi / 365 * day_of_year)
+        solar_dec = 0.409 * math.sin(2 * math.pi / 365 * day_of_year - 1.39)
+        ws = math.acos(-math.tan(lat_rad) * math.tan(solar_dec))
+
+        ra = (
+            24 * 60 / math.pi
+            * 0.0820
+            * dr
+            * (
+                ws * math.sin(lat_rad) * math.sin(solar_dec)
+                + math.cos(lat_rad) * math.cos(solar_dec) * math.sin(ws)
+            )
+        )
+        daylight_hours = 24 / math.pi * ws
+
+        return day_of_year, dr, solar_dec, ws, ra, daylight_hours
+
+    def compute_solar_radiation_for_day(self, day):
+        scope = "global"
+        results = {}
+
+        for variant in ("observed", "forecast"):
+            for source in self.get_sources(scope, "sun_hours", variant, day):
+                sun_hours = self.get(
+                    scope, "sun_hours", variant, source, day
+                )
+                if sun_hours is None:
+                    continue
+
+                existing = self.get(
+                    scope, "solar_rad_mj_m2", variant, source, day
+                )
+                if existing is not None:
+                    log_store.debug(
+                        f"action=derive_solar_radiation day={day} "
+                        f"variant={variant} source={source} "
+                        "result=skipped reason=existing_value"
+                    )
+                    continue
+
+                _, _, _, _, ra, daylight_hours = self._solar_geometry(day)
+                solar_radiation = (
+                    0.25 + 0.5 * (sun_hours / daylight_hours)
+                ) * ra
+                solar_radiation = round(solar_radiation, 3)
+
+                self.write(
+                    scope,
+                    "solar_rad_mj_m2",
+                    variant,
+                    source,
+                    solar_radiation,
+                    day,
+                )
+                results.setdefault(variant, {})[source] = solar_radiation
+
+                log_store.debug(
+                    f"action=derive_solar_radiation day={day} "
+                    f"variant={variant} source={source} "
+                    f"sun_hours={sun_hours} ra={ra} "
+                    f"daylight_hours={daylight_hours} "
+                    f"solar_rad_mj_m2={solar_radiation}"
+                )
+
+        return results
+
+    def compute_solar_radiation_all_days(self):
+        results = {}
+
+        for day in self.get_days("global"):
+            results[day] = self.compute_solar_radiation_for_day(day)
+
+        return results
+
     def calculate_eto_fao56_light(self, data: dict, day: str) -> EToResult:
         """
         FAO-56-Light Reference Evapotranspiration (mm/day)
@@ -410,23 +488,14 @@ class HydroStore:
         # -----------------------------
         # Extraterrestrial radiation
         # -----------------------------
-        # day_of_year = datetime.now().timetuple().tm_yday
-        day_of_year = datetime.fromisoformat(day).timetuple().tm_yday
-        lat_rad = math.radians(self.latitude)
-
-        dr = 1 + 0.033 * math.cos(2 * math.pi / 365 * day_of_year)
-        solar_dec = 0.409 * math.sin(2 * math.pi / 365 * day_of_year - 1.39)
-        ws = math.acos(-math.tan(lat_rad) * math.tan(solar_dec))
-
-        ra = (
-            24 * 60 / math.pi
-            * 0.0820
-            * dr
-            * (
-                ws * math.sin(lat_rad) * math.sin(solar_dec)
-                + math.cos(lat_rad) * math.cos(solar_dec) * math.sin(ws)
-            )
-        )
+        (
+            day_of_year,
+            dr,
+            solar_dec,
+            ws,
+            ra,
+            daylight_hours,
+        ) = self._solar_geometry(day)
 
         # -----------------------------
         # Clear sky radiation
@@ -438,8 +507,7 @@ class HydroStore:
         # -----------------------------
         if sun_hours is not None:
             n = sun_hours
-            N = 24 / math.pi * ws
-            rs = (0.25 + 0.5 * (n / N)) * ra
+            rs = (0.25 + 0.5 * (n / daylight_hours)) * ra
         else:
             rs = 0.75 * ra  # fallback
 
