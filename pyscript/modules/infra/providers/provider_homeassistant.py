@@ -1,10 +1,13 @@
 from pyscript.modules.infra.providers.provider_base import ProviderBase
+from datetime import datetime
 import math
+from zoneinfo import ZoneInfo
 
 class HomeAssistantProvider(ProviderBase):
 
     supports_observed = True
     supports_forecast = False
+    HISTORY_OBSERVED_FIELDS = {"temp_c", "humidity_pct", "wind_ms"}
 
     def __init__(self, ctx, name, config):
         super().__init__(ctx, name, config)
@@ -18,6 +21,9 @@ class HomeAssistantProvider(ProviderBase):
         data = {}
 
         for key, conf in self.config.get("fields", {}).items():
+
+            if key in self.HISTORY_OBSERVED_FIELDS:
+                continue
 
             entity = conf.get("entity")
             default = conf.get(
@@ -45,7 +51,6 @@ class HomeAssistantProvider(ProviderBase):
             if val is None and default is not None:
                 val = default
 
-            # 👉 HIER
             if val is not None:
                 val = round(val, 3)
                 
@@ -60,15 +65,10 @@ class HomeAssistantProvider(ProviderBase):
 
         weather = self.collect_weather_data_for_source()
 
-        # 🔥 CASE: direct ETo
         if weather.get("eto_mm") is not None:
             self.ctx.store.write_observed("global", "eto_mm", self.name, weather["eto_mm"])
-            self.ctx.logger.info(
-                f"provider={self.name} action=observed_updated fields=eto_mm"
-            )
-            return
+            return ["eto_mm"]
 
-        # 🔥 GENERIC WRITE
         written_fields = []
         for key, value in weather.items():
             if value is None:
@@ -77,13 +77,185 @@ class HomeAssistantProvider(ProviderBase):
             self.ctx.store.write_observed("global", key, self.name, value)
             written_fields.append(key)
 
+        return written_fields
+
+    @staticmethod
+    def _history_state_value(item):
+        raw_value = (
+            item.state
+            if hasattr(item, "state")
+            else item.get("state")
+        )
+        if raw_value in (None, "", "unknown", "unavailable"):
+            return None
+
+        try:
+            value = float(raw_value)
+        except (TypeError, ValueError):
+            return None
+
+        return value if math.isfinite(value) else None
+
+    @staticmethod
+    def _history_state_time(item):
+        timestamp = (
+            item.last_changed
+            if hasattr(item, "last_changed")
+            else item.get("last_changed")
+        )
+        if isinstance(timestamp, str):
+            timestamp = datetime.fromisoformat(timestamp)
+        return timestamp
+
+    @classmethod
+    def _aggregate_daily_history(cls, states, history_start, history_end):
+        values = []
+        weighted_sum = 0.0
+        valid_duration_seconds = 0.0
+        invalid_intervals = 0
+
+        for index, item in enumerate(states):
+            value = cls._history_state_value(item)
+            if value is not None:
+                values.append(value)
+
+            interval_start = max(
+                cls._history_state_time(item),
+                history_start,
+            )
+            interval_end = (
+                cls._history_state_time(states[index + 1])
+                if index + 1 < len(states)
+                else history_end
+            )
+            interval_end = min(interval_end, history_end)
+            duration_seconds = max(
+                0.0,
+                (interval_end - interval_start).total_seconds(),
+            )
+
+            if duration_seconds == 0:
+                continue
+            if value is None:
+                invalid_intervals += 1
+                continue
+
+            weighted_sum += value * duration_seconds
+            valid_duration_seconds += duration_seconds
+
+        return {
+            "mean": (
+                weighted_sum / valid_duration_seconds
+                if valid_duration_seconds > 0
+                else None
+            ),
+            "min": min(values) if values else None,
+            "max": max(values) if values else None,
+            "states": len(states),
+            "valid_states": len(values),
+            "valid_hours": valid_duration_seconds / 3600,
+            "invalid_intervals": invalid_intervals,
+        }
+
+    async def _collect_history_observed(self):
+        fields = self.config.get("fields", {})
+        history_fields = {
+            key: conf
+            for key, conf in fields.items()
+            if key in self.HISTORY_OBSERVED_FIELDS and conf.get("entity")
+        }
+        if not history_fields:
+            return {}
+
+        local_timezone = ZoneInfo(self.ctx.time_zone)
+        history_end = datetime.now(local_timezone)
+        history_start = history_end.replace(
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+        entity_ids = list(dict.fromkeys(
+            conf["entity"] for conf in history_fields.values()
+        ))
+        history = await self.ctx.history_get_states(
+            entity_ids,
+            history_start,
+            history_end,
+        )
+        aggregates = {
+            key: self._aggregate_daily_history(
+                history.get(conf["entity"], []),
+                history_start,
+                history_end,
+            )
+            for key, conf in history_fields.items()
+        }
+
+        observed = {}
+        temperature = aggregates.get("temp_c")
+        if temperature and temperature["mean"] is not None:
+            observed.update({
+                "temp_c": round(temperature["mean"], 3),
+                "temp_min_c": round(temperature["min"], 3),
+                "temp_max_c": round(temperature["max"], 3),
+            })
+
+        humidity = aggregates.get("humidity_pct")
+        if humidity and humidity["mean"] is not None:
+            observed.update({
+                "humidity_pct": round(humidity["mean"], 3),
+                "humidity_min_pct": round(humidity["min"], 3),
+                "humidity_max_pct": round(humidity["max"], 3),
+            })
+
+        wind = aggregates.get("wind_ms")
+        if wind and wind["mean"] is not None:
+            wind_unit = history_fields["wind_ms"].get("unit")
+            wind_ms = self._wind_to_ms(wind["mean"], wind_unit)
+            if wind_ms is not None:
+                observed["wind_ms"] = round(wind_ms, 3)
+
+        self.ctx.logger.debug(
+            f"provider={self.name} action=history_daily_observed "
+            f"start={history_start.isoformat()} end={history_end.isoformat()} "
+            f"temp_mean={observed.get('temp_c')} "
+            f"temp_min={observed.get('temp_min_c')} "
+            f"temp_max={observed.get('temp_max_c')} "
+            f"humidity_mean={observed.get('humidity_pct')} "
+            f"humidity_min={observed.get('humidity_min_pct')} "
+            f"humidity_max={observed.get('humidity_max_pct')} "
+            f"wind_mean_ms={observed.get('wind_ms')} "
+            f"states_temp={temperature.get('states') if temperature else 0} "
+            f"states_humidity={humidity.get('states') if humidity else 0} "
+            f"states_wind={wind.get('states') if wind else 0} "
+            f"valid_hours_temp={temperature.get('valid_hours') if temperature else 0:.3f} "
+            f"valid_hours_humidity={humidity.get('valid_hours') if humidity else 0:.3f} "
+            f"valid_hours_wind={wind.get('valid_hours') if wind else 0:.3f}"
+        )
+
+        return observed
+
+    async def update_observed(self):
+        written_fields = self.collect_weather_source()
+        if written_fields == ["eto_mm"]:
+            self.ctx.logger.info(
+                f"provider={self.name} action=observed_updated fields=eto_mm"
+            )
+            return
+
+        history_observed = await self._collect_history_observed()
+
+        for key, value in history_observed.items():
+            self.ctx.store.write_observed(
+                "global", key, self.name, value
+            )
+            written_fields.append(key)
+
         self.ctx.logger.info(
             f"provider={self.name} action=observed_updated "
             f"fields={','.join(written_fields)}"
         )
-
-    def update_observed(self):
-        self.collect_weather_source()
 
     # -----------------------------
     # Weather Forecast
