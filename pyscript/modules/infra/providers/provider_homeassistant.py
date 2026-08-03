@@ -1,4 +1,7 @@
-from pyscript.modules.infra.providers.provider_base import ProviderBase
+from pyscript.modules.infra.providers.provider_base import (
+    ProviderBase,
+    normalize_wind_height,
+)
 from datetime import datetime
 import math
 from zoneinfo import ZoneInfo
@@ -213,6 +216,9 @@ class HomeAssistantProvider(ProviderBase):
         if wind and wind["mean"] is not None:
             wind_unit = history_fields["wind_ms"].get("unit")
             wind_ms = self._wind_to_ms(wind["mean"], wind_unit)
+            wind_ms = self._normalize_configured_wind_height(
+                wind_ms, "observed"
+            )
             if wind_ms is not None:
                 observed["wind_ms"] = round(wind_ms, 3)
 
@@ -309,6 +315,24 @@ class HomeAssistantProvider(ProviderBase):
 
         return float(value) * factor
 
+    def _normalize_configured_wind_height(self, wind_ms, kind):
+        wind_config = self.config.get("fields", {}).get("wind_ms", {})
+        source_height_m = wind_config.get("source_height_m")
+        if wind_ms is None or source_height_m is None:
+            return wind_ms
+
+        normalized_wind_ms = normalize_wind_height(
+            wind_ms,
+            source_height_m,
+            target_height_m=2.0,
+        )
+        self.ctx.logger.debug(
+            f"provider={self.name} action=normalize_wind_height "
+            f"kind={kind} source_height_m={source_height_m} "
+            f"wind_ms_before={wind_ms} wind_ms_after={normalized_wind_ms}"
+        )
+        return normalized_wind_ms
+
     def _precipitation_to_mm(self, value, unit):
         if value is None:
             return None
@@ -378,6 +402,9 @@ class HomeAssistantProvider(ProviderBase):
             values["humidity_pct"] = round(float(humidity), 2)
 
         wind_ms = self._wind_to_ms(entry.get("wind_speed"), wind_speed_unit)
+        wind_ms = self._normalize_configured_wind_height(
+            wind_ms, "forecast"
+        )
         if wind_ms is not None:
             values["wind_ms"] = round(wind_ms, 3)
 

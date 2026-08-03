@@ -1,4 +1,7 @@
-from pyscript.modules.infra.providers.provider_base import ProviderBase
+from pyscript.modules.infra.providers.provider_base import (
+    ProviderBase,
+    normalize_wind_height,
+)
 from datetime import datetime
 
 OPENMETEO_FIELDS = {
@@ -30,6 +33,7 @@ OPENMETEO_FIELDS = {
         "api": "wind_speed_10m",
         "aggregate": "mean",
         "factor": 1 / 3.6,
+        "source_height_m": 10.0,
     },
     "rain_mm": {
         "api": "precipitation",
@@ -87,6 +91,7 @@ OPENMETEO_FORECAST_HOURLY_FIELDS = {
     "wind_ms": {
         "api": "wind_speed_10m",
         "factor": 1 / 3.6,
+        "source_height_m": 10.0,
     },
 }
 
@@ -229,7 +234,17 @@ class OpenMeteoProvider(ProviderBase):
                     f"Unknown aggregation {cfg['aggregate']}"
 
                 )
+            raw_value = value
             value *= cfg.get("factor", 1.0)
+            source_height_m = cfg.get("source_height_m")
+            if source_height_m is not None:
+                wind_ms_10m = value
+                value = normalize_wind_height(value, source_height_m)
+                self.ctx.logger.debug(
+                    f"provider={self.name} action=normalize_wind_height "
+                    f"kind=observed raw_kmh={raw_value} "
+                    f"wind_ms_10m={wind_ms_10m} wind_ms_2m={value}"
+                )
             
             result[target_field] = round(value, 2)
 
@@ -261,7 +276,20 @@ class OpenMeteoProvider(ProviderBase):
                 factor = OPENMETEO_FORECAST_HOURLY_FIELDS[target_field].get(
                     "factor", 1.0
                 )
-                value = sum(source_values) / len(source_values) * factor
+                raw_value = sum(source_values) / len(source_values)
+                value = raw_value * factor
+                source_height_m = OPENMETEO_FORECAST_HOURLY_FIELDS[
+                    target_field
+                ].get("source_height_m")
+                if source_height_m is not None:
+                    wind_ms_10m = value
+                    value = normalize_wind_height(value, source_height_m)
+                    self.ctx.logger.debug(
+                        f"provider={self.name} action=normalize_wind_height "
+                        f"kind=forecast date={forecast_date} "
+                        f"raw_kmh={raw_value} wind_ms_10m={wind_ms_10m} "
+                        f"wind_ms_2m={value}"
+                    )
                 values[target_field] = round(value, 2)
             forecast[forecast_date] = values
 
