@@ -1,5 +1,6 @@
 from pyscript.modules.infra.providers.provider_base import (
     ProviderBase,
+    normalize_pressure_kpa,
     normalize_wind_height,
 )
 from datetime import datetime
@@ -34,6 +35,11 @@ OPENMETEO_FIELDS = {
         "aggregate": "mean",
         "factor": 1 / 3.6,
         "source_height_m": 10.0,
+    },
+    "pressure_station_kpa": {
+        "api": "surface_pressure",
+        "aggregate": "mean",
+        "unit": "hPa",
     },
     "rain_mm": {
         "api": "precipitation",
@@ -93,6 +99,10 @@ OPENMETEO_FORECAST_HOURLY_FIELDS = {
         "factor": 1 / 3.6,
         "source_height_m": 10.0,
     },
+    "pressure_station_kpa": {
+        "api": "surface_pressure",
+        "unit": "hPa",
+    },
 }
 
 
@@ -108,7 +118,9 @@ class OpenMeteoProvider(ProviderBase):
     async def update_observed(self):
 
         data = await self._fetch("observed")
-        observed = self._aggregate_today(data["hourly"])
+        observed = self._aggregate_today(
+            data["hourly"], data.get("hourly_units", {})
+        )
 
         self.ctx.logger.debug(
             f"provider={self.name} action=aggregate_observed values={observed}"
@@ -116,6 +128,10 @@ class OpenMeteoProvider(ProviderBase):
         self.ctx.logger.debug(
             f"provider={self.name} action=solar_radiation_observed "
             f"value={observed.get('solar_rad_mj_m2')} unit=MJ/m2/day"
+        )
+        self.ctx.logger.debug(
+            f"provider={self.name} action=normalize_observed "
+            f"pressure_station_kpa={observed.get('pressure_station_kpa')}"
         )
 
         for key, value in observed.items():
@@ -128,7 +144,11 @@ class OpenMeteoProvider(ProviderBase):
 
     async def update_forecast(self):
         data = await self._fetch("forecast")
-        forecast = self._normalize_forecast(data["daily"], data["hourly"])
+        forecast = self._normalize_forecast(
+            data["daily"],
+            data["hourly"],
+            data.get("hourly_units", {}),
+        )
 
         self.ctx.logger.debug(
             f"provider={self.name} action=normalize_forecast values={forecast}"
@@ -140,7 +160,8 @@ class OpenMeteoProvider(ProviderBase):
                 f"temp_min={values.get('temp_min_c')} "
                 f"temp_max={values.get('temp_max_c')} "
                 f"humidity_min={values.get('humidity_min_pct')} "
-                f"humidity_max={values.get('humidity_max_pct')}"
+                f"humidity_max={values.get('humidity_max_pct')} "
+                f"pressure_station_kpa={values.get('pressure_station_kpa')}"
             )
         solar_radiation = {
             forecast_date: values["solar_rad_mj_m2"]
@@ -185,6 +206,7 @@ class OpenMeteoProvider(ProviderBase):
             "temperature_2m,"
             "relative_humidity_2m,"
             "wind_speed_10m,"
+            "surface_pressure,"
             "precipitation,"
             "et0_fao_evapotranspiration,"
             "shortwave_radiation"
@@ -208,10 +230,11 @@ class OpenMeteoProvider(ProviderBase):
 
         return await self.ctx.http.get_json(url)
 
-    def _aggregate_today(self, hourly):
+    def _aggregate_today(self, hourly, hourly_units=None):
         now = datetime.now()
         current_hour = now.hour
         result = {}
+        hourly_units = hourly_units or {}
 
         for target_field, cfg in OPENMETEO_FIELDS.items():
             values = hourly[cfg["api"]]
@@ -235,7 +258,18 @@ class OpenMeteoProvider(ProviderBase):
 
                 )
             raw_value = value
-            value *= cfg.get("factor", 1.0)
+            if target_field == "pressure_station_kpa":
+                pressure_unit = hourly_units.get(cfg["api"], cfg["unit"])
+                value = normalize_pressure_kpa(value, pressure_unit)
+                if value is None:
+                    self.ctx.logger.warning(
+                        f"provider={self.name} action=normalize_observed "
+                        f"field=pressure_station_kpa "
+                        f"unsupported_unit={pressure_unit}"
+                    )
+                    continue
+            else:
+                value *= cfg.get("factor", 1.0)
             source_height_m = cfg.get("source_height_m")
             if source_height_m is not None:
                 wind_ms_10m = value
@@ -250,9 +284,10 @@ class OpenMeteoProvider(ProviderBase):
 
         return result
 
-    def _aggregate_forecast_hourly(self, hourly):
+    def _aggregate_forecast_hourly(self, hourly, hourly_units=None):
         grouped_values = {}
         times = hourly.get("time", [])
+        hourly_units = hourly_units or {}
 
         for target_field, cfg in OPENMETEO_FORECAST_HOURLY_FIELDS.items():
             source_values = hourly.get(cfg["api"], [])
@@ -277,7 +312,26 @@ class OpenMeteoProvider(ProviderBase):
                     "factor", 1.0
                 )
                 raw_value = sum(source_values) / len(source_values)
-                value = raw_value * factor
+                if target_field == "pressure_station_kpa":
+                    pressure_unit = hourly_units.get(
+                        OPENMETEO_FORECAST_HOURLY_FIELDS[
+                            target_field
+                        ]["api"],
+                        OPENMETEO_FORECAST_HOURLY_FIELDS[
+                            target_field
+                        ]["unit"],
+                    )
+                    value = normalize_pressure_kpa(raw_value, pressure_unit)
+                    if value is None:
+                        self.ctx.logger.warning(
+                            f"provider={self.name} "
+                            f"action=normalize_forecast "
+                            f"field=pressure_station_kpa "
+                            f"unsupported_unit={pressure_unit}"
+                        )
+                        continue
+                else:
+                    value = raw_value * factor
                 source_height_m = OPENMETEO_FORECAST_HOURLY_FIELDS[
                     target_field
                 ].get("source_height_m")
@@ -295,10 +349,12 @@ class OpenMeteoProvider(ProviderBase):
 
         return forecast
 
-    def _normalize_forecast(self, daily, hourly):
+    def _normalize_forecast(self, daily, hourly, hourly_units=None):
         forecast = {}
         dates = daily.get("time", [])
-        hourly_forecast = self._aggregate_forecast_hourly(hourly)
+        hourly_forecast = self._aggregate_forecast_hourly(
+            hourly, hourly_units
+        )
 
         for index, forecast_date in enumerate(dates):
             values = {}

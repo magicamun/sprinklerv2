@@ -1,5 +1,6 @@
 from pyscript.modules.infra.providers.provider_base import (
     ProviderBase,
+    normalize_pressure_kpa,
     normalize_wind_height,
 )
 from datetime import datetime
@@ -10,7 +11,15 @@ class HomeAssistantProvider(ProviderBase):
 
     supports_observed = True
     supports_forecast = False
-    HISTORY_OBSERVED_FIELDS = {"temp_c", "humidity_pct", "wind_ms"}
+    PRESSURE_FIELDS = {
+        "pressure_station_kpa",
+        "pressure_msl_kpa",
+    }
+    HISTORY_OBSERVED_FIELDS = {
+        "temp_c",
+        "humidity_pct",
+        "wind_ms",
+    } | PRESSURE_FIELDS
 
     def __init__(self, ctx, name, config):
         super().__init__(ctx, name, config)
@@ -222,6 +231,41 @@ class HomeAssistantProvider(ProviderBase):
             if wind_ms is not None:
                 observed["wind_ms"] = round(wind_ms, 3)
 
+        pressure_diagnostics = {}
+        for pressure_key in self.PRESSURE_FIELDS:
+            pressure = aggregates.get(pressure_key)
+            if not pressure or pressure["mean"] is None:
+                continue
+
+            pressure_config = history_fields[pressure_key]
+            pressure_entity = pressure_config["entity"]
+            pressure_unit = self.ctx.state_get(
+                f"{pressure_entity}.unit_of_measurement"
+            )
+            pressure_kpa = normalize_pressure_kpa(
+                pressure["mean"], pressure_unit
+            )
+            if pressure_kpa is None:
+                self.ctx.logger.warning(
+                    f"provider={self.name} action=normalize_observed "
+                    f"field={pressure_key} entity={pressure_entity} "
+                    f"unsupported_unit={pressure_unit}"
+                )
+                continue
+
+            observed[pressure_key] = round(pressure_kpa, 3)
+            pressure_diagnostics[pressure_key] = {
+                "unit": pressure_unit,
+                "states": pressure["states"],
+                "valid_hours": round(pressure["valid_hours"], 3),
+            }
+
+        pressure_means = {
+            key: observed[key]
+            for key in self.PRESSURE_FIELDS
+            if key in observed
+        }
+
         self.ctx.logger.debug(
             f"provider={self.name} action=history_daily_observed "
             f"start={history_start.isoformat()} end={history_end.isoformat()} "
@@ -232,6 +276,8 @@ class HomeAssistantProvider(ProviderBase):
             f"humidity_min={observed.get('humidity_min_pct')} "
             f"humidity_max={observed.get('humidity_max_pct')} "
             f"wind_mean_ms={observed.get('wind_ms')} "
+            f"pressure_means_kpa={pressure_means} "
+            f"pressure_diagnostics={pressure_diagnostics} "
             f"states_temp={temperature.get('states') if temperature else 0} "
             f"states_humidity={humidity.get('states') if humidity else 0} "
             f"states_wind={wind.get('states') if wind else 0} "
@@ -355,6 +401,15 @@ class HomeAssistantProvider(ProviderBase):
 
         return float(value) * factor
 
+    def _pressure_to_kpa(self, value, unit):
+        pressure_kpa = normalize_pressure_kpa(value, unit)
+        if value is not None and pressure_kpa is None:
+            self.ctx.logger.warning(
+                f"provider={self.name} action=normalize_forecast "
+                f"field=pressure_kpa unsupported_unit={unit}"
+            )
+        return pressure_kpa
+
     def _humidity_from_dewpoint(self, temp_c, dew_point_c):
         if temp_c is None or dew_point_c is None:
             return None
@@ -373,6 +428,7 @@ class HomeAssistantProvider(ProviderBase):
         temperature_unit,
         wind_speed_unit,
         precipitation_unit,
+        pressure_unit,
     ):
         values = {}
         temperature_high = entry.get("temperature")
@@ -418,6 +474,17 @@ class HomeAssistantProvider(ProviderBase):
         if probability is not None:
             values["prob_pct"] = round(float(probability), 2)
 
+        configured_pressure_fields = self.PRESSURE_FIELDS.intersection(
+            self.config.get("fields", {})
+        )
+        if len(configured_pressure_fields) == 1:
+            pressure_key = next(iter(configured_pressure_fields))
+            pressure_kpa = self._pressure_to_kpa(
+                entry.get("pressure"), pressure_unit
+            )
+            if pressure_kpa is not None:
+                values[pressure_key] = round(pressure_kpa, 3)
+
         return values
 
     async def update_forecast(self):
@@ -441,6 +508,7 @@ class HomeAssistantProvider(ProviderBase):
         temperature_unit = self._weather_unit("temperature_unit")
         wind_speed_unit = self._weather_unit("wind_speed_unit")
         precipitation_unit = self._weather_unit("precipitation_unit")
+        pressure_unit = self._weather_unit("pressure_unit")
         written_fields = []
 
         for entry in forecasts:
@@ -458,6 +526,7 @@ class HomeAssistantProvider(ProviderBase):
                 temperature_unit,
                 wind_speed_unit,
                 precipitation_unit,
+                pressure_unit,
             )
             self.ctx.logger.debug(
                 f"provider={self.name} action=normalize_forecast "
