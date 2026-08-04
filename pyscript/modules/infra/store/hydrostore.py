@@ -663,12 +663,6 @@ class HydroStore:
             "derived":  ["median", "current"],
         }
 
-        # vorhandene direkte Beobachtungen übernehmen
-        direct = self.get(scope, "eto_mm", "observed", date=day)
-
-        if direct:
-            results["observed"] = dict(direct)
-
         # ----------------------------------
         # berechnen
         # ----------------------------------
@@ -676,9 +670,6 @@ class HydroStore:
         for variant, sources in variants.items():
 
             for source in sources:
-
-                if source in results.get(variant, {}):
-                    continue
 
                 try:
 
