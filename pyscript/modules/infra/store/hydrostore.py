@@ -44,6 +44,7 @@ class EToResult:
     t_mean: float
     wind_ms: float
     solar_rad_mj_m2: float
+    pressure_station_kpa: float | None
 
     # Standort
     latitude: float
@@ -55,6 +56,7 @@ class EToResult:
     ea: float
     delta: float
     gamma: float
+    gamma_source: str
     dr: float
     solar_declination: float
     sunset_hour_angle: float
@@ -83,6 +85,8 @@ class EToResult:
             f"RHmax={fmt(self.humidity_max_pct,0)}% "
             f"Wind={fmt(self.wind_ms,1)}m/s "
             f"RsInput={fmt(self.solar_rad_mj_m2)}MJ/m²/day | "
+            f"PressureStation={fmt(self.pressure_station_kpa,3)}kPa "
+            f"GammaSource={self.gamma_source} | "
             f"Lat={fmt(self.latitude,4)} "
             f"Elev={fmt(self.elevation,0)}m "
             f"DOY={self.day_of_year} | "
@@ -488,12 +492,18 @@ class HydroStore:
         t_mean = (t_min + t_max) / 2
         wind = data["wind_ms"]
         solar_rad_mj_m2 = data["solar_rad_mj_m2"]
+        pressure_station_kpa = data.get("pressure_station_kpa")
 
         # -----------------------------
         # Constants
         # -----------------------------
         G = 0.0  # soil heat flux (daily)
-        pressure_kpa = _air_pressure_from_elevation(self.elevation)
+        if pressure_station_kpa is not None:
+            pressure_kpa = pressure_station_kpa
+            gamma_source = "pressure"
+        else:
+            pressure_kpa = _air_pressure_from_elevation(self.elevation)
+            gamma_source = "elevation"
         gamma = _psychrometric_constant(pressure_kpa)
         albedo = 0.23
 
@@ -576,6 +586,7 @@ class HydroStore:
             t_mean=t_mean,
             wind_ms=wind,
             solar_rad_mj_m2=solar_rad_mj_m2,
+            pressure_station_kpa=pressure_station_kpa,
             latitude=self.latitude,
             elevation=self.elevation,
             day_of_year=day_of_year,
@@ -583,6 +594,7 @@ class HydroStore:
             ea=ea,
             delta=delta,
             gamma=gamma,
+            gamma_source=gamma_source,
             dr=dr,
             solar_declination=solar_dec,
             sunset_hour_angle=ws,
@@ -607,6 +619,9 @@ class HydroStore:
         solar_rad = self.get(
             scope, "solar_rad_mj_m2", variant, source, day
         )
+        pressure_station = self.get(
+            scope, "pressure_station_kpa", variant, source, day
+        )
 
         if None in (temp_min, temp_max, hum_min, hum_max, wind, solar_rad):
             return None
@@ -618,7 +633,14 @@ class HydroStore:
             "humidity_max_pct": hum_max,
             "wind_ms": wind,
             "solar_rad_mj_m2": solar_rad,
+            "pressure_station_kpa": pressure_station,
         }, day)
+
+        log_store.debug(
+            f"action=eto_gamma day={day} variant={variant} source={source} "
+            f"pressure_station_kpa={result.pressure_station_kpa} "
+            f"gamma={result.gamma} gamma_source={result.gamma_source}"
+        )
 
         return round(result.eto, 3), result
 
