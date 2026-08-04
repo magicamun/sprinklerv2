@@ -738,10 +738,14 @@ class HydroStore:
         # ------------------------
         # ETo
         # ------------------------
-        #eto = self.get(scope, "eto_mm", "derived", "current", day)
+        eto = self.get("global", "eto_mm", "derived", "median", day)
 
-        #if eto is None:
-        eto = self.get("global", "eto_mm", "derived", "median", day) or 0
+        if eto is None:
+            log_store.debug(
+                f"action=soil_eto_fallback day={day} scope={scope} "
+                "reason=missing_eto fallback_mm=0.0"
+            )
+            eto = 0.0
 
         # ------------------------
         # Rain
@@ -752,12 +756,6 @@ class HydroStore:
         # Irrigation
         # ------------------------
         irrigation = self.get(scope, "irrigation_mm", "derived", "median", day) or 0
-
-        # ------------------------
-        # SKIP wenn kein ETo
-        # ------------------------
-        if eto is None:
-            return
 
         # ------------------------
         # Compute

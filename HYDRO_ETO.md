@@ -591,6 +591,10 @@ For the target day it reads:
 - `global/rain_mm/derived/median`, defaulting to zero;
 - `<scope>/irrigation_mm/derived/median`, defaulting to zero.
 
+Soil continuity policy: missing derived ETo is treated as `0.0` for
+water-balance continuity. This fallback does not mean that the physical ETo
+was measured as zero.
+
 The update is:
 
 ```text

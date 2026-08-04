@@ -963,8 +963,15 @@ class SprinklerCore():
             rain = hydro_store.get("global", "rain_mm", "derived", "median", d)
             prob = hydro_store.get("global", "prob_pct","derived", "median", d)
 
+            if eto is None:
+                log_scheduler.debug(
+                    f"action=sprinkler_eto_fallback day={d} "
+                    f"scope={zone_key} reason=missing_eto fallback_mm=0.0"
+                )
+                eto = 0.0
+
             rain_eff = round((rain or 0) * ((prob or 0) / 100) * rain_factor, 2)
-            eto_eff  = round((eto or 0) * eto_factor, 2)
+            eto_eff  = round(eto * eto_factor, 2)
 
 
             if d == today:
@@ -984,7 +991,7 @@ class SprinklerCore():
 
             details["forecast"].append({
                 "date": d,
-                "eto": eto or 0,
+                "eto": eto,
                 "rain": rain or 0,
                 "prob": prob or 0,
                 "rain_effective": rain_eff,
@@ -1313,7 +1320,14 @@ class SprinklerCore():
 
             day = d.isoformat()
             log_scheduler.info(f"Zone: {zone_id}, {day}")
-            eto_val  = eto.get(day, 0) or 0
+            eto_val = eto.get(day)
+            if eto_val is None:
+                log_scheduler.debug(
+                    f"action=sprinkler_eto_fallback day={day} "
+                    f"scope={zone_key} reason=missing_eto fallback_mm=0.0"
+                )
+                eto_val = 0.0
+
             rain_val = rain.get(day, 0) or 0
             irr_val  = irrigation_forecast.get(day, 0) or 0
 
@@ -1392,5 +1406,4 @@ class SprinklerCore():
         await self._process_start_logic()
 
         # log_scheduler.info(f"Scheduler Tick({is_active}, {capacity}) ended...")
-
 
