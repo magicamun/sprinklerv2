@@ -19,6 +19,17 @@ CURRENT_POLICIES = {
     "eto_ref_mm": "daily_total",
 }
 
+
+def _air_pressure_from_elevation(elevation_m):
+    return 101.3 * (
+        (293.0 - 0.0065 * elevation_m) / 293.0
+    ) ** 5.26
+
+
+def _psychrometric_constant(pressure_kpa):
+    return 0.000665 * pressure_kpa
+
+
 @dataclass(slots=True)
 
 class EToResult:
@@ -482,7 +493,8 @@ class HydroStore:
         # Constants
         # -----------------------------
         G = 0.0  # soil heat flux (daily)
-        gamma = 0.066  # psychrometric constant (kPa/°C)
+        pressure_kpa = _air_pressure_from_elevation(self.elevation)
+        gamma = _psychrometric_constant(pressure_kpa)
         albedo = 0.23
 
         # -----------------------------
