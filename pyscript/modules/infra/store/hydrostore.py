@@ -223,6 +223,28 @@ class HydroStore:
         self._ensure_meta()
         return self.meta.get(scope, {}).get("soil_anchor")
 
+    def is_day_finalized(self, day):
+        self._ensure_meta()
+        return str(day) in self.meta.get("finalized_days", [])
+
+    def mark_day_finalized(self, day):
+        day = str(day)
+        self._ensure_meta()
+        finalized_days = self.meta.setdefault("finalized_days", [])
+        if day not in finalized_days:
+            finalized_days.append(day)
+            finalized_days.sort()
+
+        for scope, scope_block in self.today.get(day, {}).items():
+            if not isinstance(scope_block, dict):
+                continue
+            for key in scope_block:
+                self._update_derived_median(day, scope, key)
+                self._update_derived_current(day, scope, key)
+
+        self._dirty_persist = True
+        self.save_today()
+
     def set_anchor(self, scope, value):
         self._ensure_meta()
         self.meta.setdefault(scope, {})["soil_anchor"] = value
@@ -419,7 +441,7 @@ class HydroStore:
 
         return day_of_year, dr, solar_dec, ws, ra, daylight_hours
 
-    def compute_solar_radiation_for_day(self, day):
+    def compute_solar_radiation_for_day(self, day, force=False):
         scope = "global"
         results = {}
 
@@ -434,7 +456,20 @@ class HydroStore:
                 existing = self.get(
                     scope, "solar_rad_mj_m2", variant, source, day
                 )
-                if existing is not None:
+                existing_entry = (
+                    self.today.get(str(day), {})
+                    .get(scope, {})
+                    .get("solar_rad_mj_m2", {})
+                    .get(variant, {})
+                    .get(source)
+                )
+                is_sun_hours_derived = (
+                    isinstance(existing_entry, dict)
+                    and existing_entry.get("derived_from") == "sun_hours"
+                )
+                if existing is not None and not (
+                    force and is_sun_hours_derived
+                ):
                     log_store.debug(
                         f"action=derive_solar_radiation day={day} "
                         f"variant={variant} source={source} "
@@ -455,6 +490,7 @@ class HydroStore:
                     source,
                     solar_radiation,
                     day,
+                    metadata={"derived_from": "sun_hours"},
                 )
                 results.setdefault(variant, {})[source] = solar_radiation
 
@@ -884,20 +920,24 @@ class HydroStore:
     # ------------------------------------------------
     # Store API
     # ------------------------------------------------
-    def write_observed(self, scope, key, source, value):
+    def write_observed(self, scope, key, source, value, day=None):
 
-        today = dt_date.today().isoformat()
+        observed_day = (
+            dt_date.today().isoformat()
+            if day is None
+            else str(day)
+        )
         
-        self._ensure_path(today, scope, key, "observed")
+        self._ensure_path(observed_day, scope, key, "observed")
 
-        self.today[today][scope][key]["observed"][source] = {
+        self.today[observed_day][scope][key]["observed"][source] = {
             "value": value,
             "ts": self._now_ts()
         }
 
         # 🔥 AUTO MEDIAN, AUTO CURRENT
-        self._update_derived_median(today, scope, key)
-        self._update_derived_current(today, scope, key)
+        self._update_derived_median(observed_day, scope, key)
+        self._update_derived_current(observed_day, scope, key)
 
         self._dirty_persist = True
         self.save_today()
@@ -931,7 +971,7 @@ class HydroStore:
         else:
             self.mark_zone_dirty(scope)
 
-    def write(self, scope, key, variant, source, value, day):
+    def write(self, scope, key, variant, source, value, day, metadata=None):
 
         day = str(day)
 
@@ -943,10 +983,13 @@ class HydroStore:
         # ------------------------
         # write value
         # ------------------------
-        self.today[day][scope][key][variant][source] = {
+        entry = {
             "value": value,
             "ts": self._now_ts()
         }
+        if metadata:
+            entry.update(metadata)
+        self.today[day][scope][key][variant][source] = entry
 
         if variant in ("observed", "forecast"):
             self._update_derived_median(day, scope, key)
@@ -1096,7 +1139,7 @@ class HydroStore:
         # ------------------------
         # TODAY → observed bevorzugen
         # ------------------------
-        if day == today:
+        if day == today or self.is_day_finalized(day):
 
             observed = block.get("observed", {})
 

@@ -39,6 +39,7 @@ class ProviderBase:
     provider = "base"
     supports_observed = False
     supports_forecast = False
+    supports_finalize_day = False
 
     def __init__(self, ctx, name, config):
         self.ctx = ctx
@@ -49,4 +50,7 @@ class ProviderBase:
         raise NotImplementedError()
 
     def update_forecast(self):
+        raise NotImplementedError()
+
+    def finalize_day(self, day):
         raise NotImplementedError()

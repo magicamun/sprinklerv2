@@ -3,7 +3,7 @@ from pyscript.modules.infra.providers.provider_base import (
     normalize_pressure_kpa,
     normalize_wind_height,
 )
-from datetime import datetime
+from datetime import datetime, timedelta
 import math
 from zoneinfo import ZoneInfo
 
@@ -11,6 +11,7 @@ class HomeAssistantProvider(ProviderBase):
 
     supports_observed = True
     supports_forecast = False
+    supports_finalize_day = True
     PRESSURE_FIELDS = {
         "pressure_station_kpa",
         "pressure_msl_kpa",
@@ -169,7 +170,7 @@ class HomeAssistantProvider(ProviderBase):
             "invalid_intervals": invalid_intervals,
         }
 
-    async def _collect_history_observed(self):
+    async def _collect_history_observed(self, history_start=None, history_end=None):
         fields = self.config.get("fields", {})
         history_fields = {
             key: conf
@@ -179,14 +180,15 @@ class HomeAssistantProvider(ProviderBase):
         if not history_fields:
             return {}
 
-        local_timezone = ZoneInfo(self.ctx.time_zone)
-        history_end = datetime.now(local_timezone)
-        history_start = history_end.replace(
-            hour=0,
-            minute=0,
-            second=0,
-            microsecond=0,
-        )
+        if history_start is None or history_end is None:
+            local_timezone = ZoneInfo(self.ctx.time_zone)
+            history_end = datetime.now(local_timezone)
+            history_start = history_end.replace(
+                hour=0,
+                minute=0,
+                second=0,
+                microsecond=0,
+            )
         entity_ids = list(dict.fromkeys(
             conf["entity"] for conf in history_fields.values()
         ))
@@ -287,6 +289,82 @@ class HomeAssistantProvider(ProviderBase):
         )
 
         return observed
+
+    def _collect_finalize_snapshot_fields(self, day):
+        finalized = {}
+
+        for key, conf in self.config.get("fields", {}).items():
+            entity = conf.get("finalize_entity")
+            if not entity:
+                continue
+
+            date_attribute = conf.get("finalize_date_attribute")
+            if date_attribute:
+                source_day = self.ctx.state_get(
+                    f"{entity}.{date_attribute}"
+                )
+                if str(source_day) != str(day):
+                    self.ctx.logger.debug(
+                        f"provider={self.name} action=finalize_snapshot_skipped "
+                        f"day={day} key={key} entity={entity} "
+                        f"source_day={source_day} reason=date_mismatch"
+                    )
+                    continue
+
+            raw_value = self.ctx.state_get(entity)
+            if raw_value in (None, "unknown", "unavailable"):
+                self.ctx.logger.debug(
+                    f"provider={self.name} action=finalize_snapshot_skipped "
+                    f"day={day} key={key} entity={entity} "
+                    "reason=missing_value"
+                )
+                continue
+
+            try:
+                finalized[key] = round(float(raw_value), 3)
+            except (TypeError, ValueError):
+                self.ctx.logger.warning(
+                    f"provider={self.name} action=finalize_snapshot "
+                    f"day={day} key={key} entity={entity} "
+                    f"conversion_failed raw={raw_value}"
+                )
+
+        return finalized
+
+    async def finalize_day(self, day):
+        local_timezone = ZoneInfo(self.ctx.time_zone)
+        day_date = datetime.fromisoformat(str(day)).date()
+        history_start = datetime(
+            day_date.year,
+            day_date.month,
+            day_date.day,
+            tzinfo=local_timezone,
+        )
+        next_day = day_date + timedelta(days=1)
+        history_end = datetime(
+            next_day.year,
+            next_day.month,
+            next_day.day,
+            tzinfo=local_timezone,
+        )
+
+        finalized = await self._collect_history_observed(
+            history_start,
+            history_end,
+        )
+        finalized.update(self._collect_finalize_snapshot_fields(day))
+
+        for key, value in finalized.items():
+            self.ctx.store.write_observed(
+                "global", key, self.name, value, day=day
+            )
+
+        self.ctx.logger.debug(
+            f"provider={self.name} action=finalize_day day={day} "
+            f"fields={','.join(finalized)}"
+        )
+
+        return finalized
 
     async def update_observed(self):
         written_fields = self.collect_weather_source()

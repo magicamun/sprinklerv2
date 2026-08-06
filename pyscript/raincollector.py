@@ -1,11 +1,14 @@
 import logging
+from datetime import date, timedelta
 
 log_rain = logging.getLogger("pyscript.raincollector")
 
 RAIN_SOURCE = "sensor.regen_pro_h"
 
-HELPER_TOTAL = "input_number.rain_today_corrected"
+HELPER_TOTAL = "pyscript.rain_today_corrected"
+HELPER_YESTERDAY = "pyscript.rain_yesterday_corrected"
 SENSOR_TOTAL = "sensor.regen_mm_heute_korrigiert"
+SENSOR_YESTERDAY = "sensor.regen_mm_gestern_korrigiert"
 
 # --------------------------------------------------
 # Helper
@@ -40,6 +43,24 @@ def publish_sensor():
     )
 
 
+def publish_yesterday_sensor():
+
+    total = get_float(HELPER_YESTERDAY)
+    finalized_day = state.get(f"{HELPER_YESTERDAY}.date")
+
+    state.set(
+        SENSOR_YESTERDAY,
+        round(total, 2),
+        {
+            "friendly_name": "Regen Gestern (korrigiert)",
+            "unit_of_measurement": "mm",
+            "state_class": "measurement",
+            "date": finalized_day,
+            "source": "persisted rain_today_corrected before reset",
+        }
+    )
+
+
 # --------------------------------------------------
 # Startup
 # --------------------------------------------------
@@ -47,7 +68,25 @@ def publish_sensor():
 @time_trigger("startup")
 def raincollector_startup():
 
+    current_day = date.today().isoformat()
+    state.persist(
+        HELPER_TOTAL,
+        default_value=0.0,
+        default_attributes={"date": current_day}
+    )
+    state.persist(HELPER_YESTERDAY, default_value=0.0)
+
+    accumulator_day = state.get(f"{HELPER_TOTAL}.date")
+    if accumulator_day and str(accumulator_day) != current_day:
+        state.set(
+            HELPER_YESTERDAY,
+            round(get_float(HELPER_TOTAL), 2),
+            {"date": str(accumulator_day)}
+        )
+        state.set(HELPER_TOTAL, 0, {"date": current_day})
+
     publish_sensor()
+    publish_yesterday_sensor()
 
     log_rain.info(
         f"[STARTUP] rain_today={get_float(HELPER_TOTAL)}"
@@ -77,11 +116,10 @@ def rain_changed(value=None, old_value=None):
 
     total += delta
 
-    service.call(
-        "input_number",
-        "set_value",
-        entity_id=HELPER_TOTAL,
-        value=round(total, 2)
+    state.set(
+        HELPER_TOTAL,
+        round(total, 2),
+        {"date": date.today().isoformat()}
     )
 
     publish_sensor()
@@ -105,11 +143,20 @@ def reset_daily():
         f"[RESET] final rain_today={total}"
     )
 
-    service.call(
-        "input_number",
-        "set_value",
-        entity_id=HELPER_TOTAL,
-        value=0
-    )
+    finalized_day = state.get(f"{HELPER_TOTAL}.date")
+    if not finalized_day:
+        finalized_day = (date.today() - timedelta(days=1)).isoformat()
 
+    state.set(
+        HELPER_YESTERDAY,
+        round(total, 2),
+        {"date": finalized_day}
+    )
+    publish_yesterday_sensor()
+
+    state.set(
+        HELPER_TOTAL,
+        0,
+        {"date": date.today().isoformat()}
+    )
     publish_sensor()

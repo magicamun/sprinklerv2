@@ -121,3 +121,50 @@ class ProviderManager:
         )
 
         return summary
+
+    async def finalize_day(self, day):
+
+        summary = {
+            "providers": 0,
+            "ok": 0,
+            "failed": 0,
+            "failed_sources": [],
+        }
+
+        for provider in self.providers:
+            if not provider.supports_finalize_day:
+                self.ctx.logger.debug(
+                    f"provider={provider.name} action=finalize_day_skipped "
+                    f"day={day} reason=unsupported"
+                )
+                continue
+
+            summary["providers"] += 1
+
+            self.ctx.logger.debug(
+                f"provider={provider.name} action=finalize_day_dispatched "
+                f"day={day}"
+            )
+
+            try:
+                result = provider.finalize_day(day)
+
+                if inspect.isawaitable(result):
+                    await result
+
+                summary["ok"] += 1
+            except Exception as exc:
+                summary["failed"] += 1
+                summary["failed_sources"].append(provider.name)
+                self.ctx.logger.exception(
+                    f"provider={provider.name} action=finalize_day "
+                    f"day={day} result=failed error={exc}"
+                )
+
+        self.ctx.logger.info(
+            f"action=finalize_day day={day} "
+            f"providers={summary['providers']} ok={summary['ok']} "
+            f"failed={summary['failed']}"
+        )
+
+        return summary

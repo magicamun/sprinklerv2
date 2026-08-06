@@ -2,7 +2,7 @@
 ETo Calculator (FAO-56-Light)
 Phase 1: Manual trigger, no soil model, no scheduler
 """
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 import logging
 import yaml
 import os
@@ -272,6 +272,19 @@ class EToEngine:
     def prune(self):
         self.store.prune()
 
+    async def finalize_day(self, day):
+        await self.provider_manager.finalize_day(day)
+        self.store.mark_day_finalized(day)
+        self.store.compute_solar_radiation_for_day(day, force=True)
+        self.store.compute_eto_for_day(day)
+        self.store.compute_soil_for_day(
+            scope="global",
+            soil_min=0,
+            soil_opt=SOIL_OPTIMAL,
+            soil_max=SOIL_CAPACITY,
+            day=day,
+        )
+
 etoengine = EToEngine(hydro_store)
 hydro_store.configure_site(LATITUDE, LONGITUDE, ELEVATION)
 
@@ -288,8 +301,12 @@ def soil_params_changed(var_name=None, value=None, old_value=None):
 
 
 @time_trigger("cron(5 * * * *)")
-def etoengine_collecthourly():
+async def etoengine_collecthourly():
     etoengine.prune()
+
+    if datetime.now().hour == 0:
+        yesterday = (date.today() - timedelta(days=1)).isoformat()
+        await etoengine.finalize_day(yesterday)
 
     await etoengine.provider_manager.update_observed()
     await etoengine.provider_manager.update_forecast()
@@ -302,7 +319,7 @@ def etoengine_collecthourly():
     etoengine.project_global_chart_sensors()
 
 @time_trigger("startup")
-def etoengine_startup():
+async def etoengine_startup():
 
     for source, cfg in ETO_SOURCES.items():
 
@@ -315,6 +332,10 @@ def etoengine_startup():
         )
 
     etoengine.prune()
+
+    if datetime.now().hour == 0:
+        yesterday = (date.today() - timedelta(days=1)).isoformat()
+        await etoengine.finalize_day(yesterday)
 
     await etoengine.provider_manager.update_observed()
     await etoengine.provider_manager.update_forecast()
